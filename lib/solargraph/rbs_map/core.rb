@@ -4,6 +4,9 @@ module Solargraph
   module RbsMap
     class Core < Base
       FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
+      # Every .rbs file in it is loaded with the fills, its annotations
+      # copied onto core methods (see #annotate)
+      ANNOTATIONS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'annotations'))
 
       def pins
         @pins ||= generate_pins
@@ -27,8 +30,14 @@ module Solargraph
         # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
         fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
         fill_loader.add(path: Pathname(FILLS_DIRECTORY))
+        fill_loader.add(path: Pathname(ANNOTATIONS_DIRECTORY))
         fill_conversions = Conversions.new(loader: fill_loader)
-        new_pins.concat fill_conversions.pins
+        annotation_pins, fill_pins = fill_conversions.pins.partition do |pin|
+          pin.type_location&.filename&.start_with?(ANNOTATIONS_DIRECTORY)
+        end
+        new_pins.concat fill_pins
+
+        annotate new_pins, annotation_pins
 
         # add some overrides
         new_pins.concat RbsMap::CoreFills::ALL
@@ -38,6 +47,20 @@ module Solargraph
         # serial = Marshal.dump(processed)
         # File.write cache_file, serial, mode: 'wb'
         processed
+      end
+
+      # Copies the annotations that ANNOTATIONS_DIRECTORY declares, e.g. on
+      # 'def compact: ...' in a reopened Array, onto the core methods,
+      # keeping their core signatures
+      #
+      # @param pins [Array<Pin::Base>]
+      # @param annotation_pins [Array<Pin::Base>] pins from ANNOTATIONS_DIRECTORY
+      # @return [void]
+      def annotate pins, annotation_pins
+        removes_nil_paths = annotation_pins.select { |pin| pin.is_a?(Pin::Method) && pin.removes_nil? }.to_set(&:path)
+        pins.each do |pin|
+          pin.removes_nil = true if pin.is_a?(Pin::Method) && removes_nil_paths.include?(pin.path)
+        end
       end
     end
   end

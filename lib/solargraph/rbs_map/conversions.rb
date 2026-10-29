@@ -551,6 +551,7 @@ module Solargraph
         generics = decl.overloads.map(&:method_type).map do |method_type|
           type_parameter_names method_type
         end
+        removes_nil = removes_nil?(decl)
 
         if decl.instance?
           name = decl.name.to_s
@@ -565,6 +566,7 @@ module Solargraph
             signatures: [],
             generics: generics,
             visibility: visibility,
+            removes_nil: removes_nil,
             source: :rbs
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
@@ -587,10 +589,27 @@ module Solargraph
           scope: final_scope,
           signatures: [],
           generics: generics,
+          removes_nil: removes_nil,
           source: :rbs
         )
         pin.signatures.concat method_def_to_sigs(decl, pin)
         pins.push pin
+      end
+
+      # %a{solargraph:removes-nil} on the method, or on every overload
+      #
+      # @param decl [RBS::AST::Members::MethodDefinition]
+      # @return [Boolean]
+      def removes_nil? decl
+        return true if removes_nil_annotation?(decl.annotations)
+
+        !decl.overloads.empty? && decl.overloads.all? { |overload| removes_nil_annotation?(overload.annotations) }
+      end
+
+      # @param annotations [Array<RBS::AST::Annotation>]
+      # @return [Boolean]
+      def removes_nil_annotation? annotations
+        annotations.any? { |annotation| annotation.string == 'solargraph:removes-nil' }
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]

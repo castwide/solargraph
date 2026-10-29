@@ -124,6 +124,174 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Array<String>')
   end
 
+  it 'removes nil from the element type of Array#compact' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String, nil>]
+      list = things
+      list.compact
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 12])
+    expect(clip.infer.to_s).to eq('Array<String>')
+  end
+
+  it 'leaves non-nil element types of Array#compact unchanged' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String, Integer>]
+      list = things
+      list.compact
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 12])
+    expect(clip.infer.to_s).to eq('Array<String, Integer>')
+  end
+
+  it 'leaves an all-nil element type of Array#compact unchanged' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<nil>]
+      list = things
+      list.compact
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 12])
+    expect(clip.infer.to_s).to eq('Array<NilClass>')
+  end
+
+  it 'keeps nil in the element type of Array#compact!' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String, nil>]
+      list = things
+      list.compact!
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 12])
+    expect(clip.infer.to_s).to eq('Array<String, NilClass>, nil')
+  end
+
+  it 'removes nil from the value type of Hash#compact' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Hash{Symbol, nil => String, nil}]
+      list = things
+      list.compact
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 12])
+    expect(clip.infer.to_s).to eq('Hash{Symbol, NilClass => String}')
+  end
+
+  it 'removes nil from the element type of Enumerable#compact' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Set<String, nil>]
+      list = things
+      list.compact
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 12])
+    expect(clip.infer.to_s).to eq('Array<String>')
+  end
+
+  it 'keeps nil in the return type of a compact method not from core' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [Array<String, nil>]
+        def compact
+          []
+        end
+      end
+      Foo.new.compact
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 15])
+    expect(clip.infer.to_s).to eq('Array<String, NilClass>')
+  end
+
+  it 'keeps nil in the element type of an unannotated core method' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String, nil>]
+      list = things
+      list.uniq
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 12])
+    expect(clip.infer.to_s).to eq('Array<String, NilClass>')
+  end
+
+  context 'with a user RBS method' do
+    around do |example|
+      require 'tmpdir'
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
+        File.write(File.join(dir, 'box.rbs'), rbs)
+        loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+        loader.add(path: Pathname(dir))
+        @rbs_pins = Solargraph::RbsMap::Conversions.new(loader: loader).pins
+        example.run
+      end
+    end
+
+    let(:type) do
+      source = Solargraph::Source.load_string(%(
+        # @type [Box<String, nil>]
+        box = make_box
+        box.present
+      ), 'test.rb')
+      source_map = Solargraph::SourceMap.map(source)
+      api_map = Solargraph::ApiMap.new.index(@rbs_pins + source_map.pins + source_map.locals)
+      chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 13))
+      chain.infer(api_map, Solargraph::Pin::ROOT_PIN, source_map.locals)
+    end
+
+    context 'when annotated %a{solargraph:removes-nil}' do
+      let(:rbs) do
+        <<~RBS
+          class Box[Elem]
+            %a{solargraph:removes-nil}
+            def present: () -> Array[Elem]
+          end
+        RBS
+      end
+
+      it 'removes nil from the element type' do
+        expect(type.to_s).to eq('Array<String>')
+      end
+    end
+
+    context 'when annotated on every overload' do
+      let(:rbs) do
+        <<~RBS
+          class Box[Elem]
+            def present: %a{solargraph:removes-nil} () -> Array[Elem]
+          end
+        RBS
+      end
+
+      it 'removes nil from the element type' do
+        expect(type.to_s).to eq('Array<String>')
+      end
+    end
+
+    context 'when not annotated' do
+      let(:rbs) do
+        <<~RBS
+          class Box[Elem]
+            def present: () -> Array[Elem]
+          end
+        RBS
+      end
+
+      it 'keeps nil in the element type' do
+        expect(type.to_s).to eq('Array<String, NilClass>')
+      end
+    end
+  end
+
   it 'infers constant return types via returns, ignoring blocks' do
     source = Solargraph::Source.load_string(%(
       def yielder(&blk)
