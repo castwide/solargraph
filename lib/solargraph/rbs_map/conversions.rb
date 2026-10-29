@@ -101,12 +101,12 @@ module Solargraph
       def rebound_alias? environment
         decls = environment.type_alias_decls
         decls.any? do |name, entry|
-          # @sg-ignore Unresolved call to decl on generic<D>
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1461
           type = entry.decl.type
           # @sg-ignore Unresolved call to is_a? on generic<D>
           next false unless type.is_a?(RBS::Types::Alias)
 
-          # @sg-ignore Unresolved call to to_s on generic<D>
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1461
           type.name.to_s == name.to_s || !decls.key?(type.name)
         end
       end
