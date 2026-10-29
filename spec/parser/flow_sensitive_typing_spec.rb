@@ -1219,4 +1219,78 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [9, 26])
     expect(clip.infer.to_s).to eq('String, nil')
   end
+
+  it 'unions the reassignment in an if clause with the guarded path that skipped it' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Integer, nil]
+      def check x
+        if x.nil?
+          x = 'a'
+        end
+        x
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 8])
+    expect(clip.infer.to_s).to eq('Integer, String')
+  end
+
+  it 'unions the reassignment in an unless clause with the guarded path that skipped it' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Integer, nil]
+      def check x
+        unless x
+          x = 'a'
+        end
+        x
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 8])
+    expect(clip.infer.to_s).to eq('Integer, String')
+  end
+
+  it 'unions an instance variable reassigned in a guarded clause with the path that skipped it' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def setup
+          # @type [Integer, nil]
+          @v = nil
+        end
+
+        def check
+          if @v.nil?
+            @v = 'a'
+          end
+          @v
+        end
+
+        def check_unless
+          unless @v
+            @v = 'a'
+          end
+          @v
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [11, 10]).infer.to_s).to eq('Integer, String')
+    expect(api_map.clip_at('test.rb', [18, 10]).infer.to_s).to eq('Integer, String')
+  end
+
+  it 'drops a guarded clause reassignment once a later assignment replaces it' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Integer, nil]
+      def check x
+        if x.nil?
+          x = 'a'
+        end
+        x = 1.0
+        x
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Float')
+  end
 end

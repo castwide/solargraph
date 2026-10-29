@@ -389,7 +389,23 @@ module Solargraph
     #
     # @return [Pin::BaseVariable, nil]
     def var_at_location candidates, name, closure, location
-      return unless location
+      var_pins_at_location(candidates, name, closure, location).first
+    end
+
+    # #var_at_location's pin, followed by one combining the branch
+    # assignments that reach the location only past the end of their
+    # branch (Pin::BaseVariable#rejoined).  Those stay apart so that
+    # they are typed on their own and the types unioned: combined, the
+    # narrowing the other paths carry would override them.
+    #
+    # @param candidates [Array<Pin::BaseVariable>]
+    # @param name [String]
+    # @param closure [Pin::Closure]
+    # @param location [Location, nil]
+    #
+    # @return [Array<Pin::BaseVariable>]
+    def var_pins_at_location candidates, name, closure, location
+      return [] unless location
 
       with_correct_name = candidates.select { |pin| pin.name == name }
       vars_at_location = with_correct_name.reject do |pin|
@@ -400,8 +416,23 @@ module Solargraph
           !(pin.starts_at?(location) && !pin.within_own_assignment?(location))
       end
 
-      definite_vars = vars_at_location.map { |pin| pin.definite_at(location) }
-      definite_vars.inject { |acc, pin| acc.combine_with(pin) }
+      # @type [Pin::BaseVariable, nil]
+      combined = nil
+      # @type [Pin::BaseVariable, nil]
+      rejoined = nil
+      vars_at_location.each do |candidate|
+        pin = candidate.definite_at(location)
+        if pin.rejoined
+          rejoined = rejoined.nil? ? pin : rejoined.combine_with(pin)
+        elsif combined.nil?
+          combined = pin
+        else
+          # a later assignment replaces the branches as well
+          rejoined = nil if combined.overwritten_by?(pin)
+          combined = combined.combine_with(pin)
+        end
+      end
+      [combined, rejoined].compact
     end
 
     # Get an array of class variable pins for a namespace.

@@ -178,6 +178,43 @@ module Solargraph
         process_guarded_reassignment(if_node, conditional_node, then_clause, else_clause)
       end
 
+      # #process_guarded_reassignment narrows a variable after the if for
+      # the path that skipped a clause assigning it, and that narrowing
+      # overrides the clause's own value there.  Carry the clause's last
+      # assignment of each variable so narrowed past the if too, so that
+      # a read after it gets both paths.  Run once the clause is mapped.
+      # A later narrowing applies only to the skipping path's value.
+      #
+      # @param if_node [Parser::AST::Node]
+      # @param clause_node [Parser::AST::Node, nil]
+      # @param locals_from [Integer] locals.size before the clause was mapped
+      # @param ivars_from [Integer] ivars.size before the clause was mapped
+      #
+      # @return [void]
+      def rejoin_clause if_node, clause_node, locals_from, ivars_from
+        compound_statement_node = enclosing_compound_statement_pin&.node
+        return if compound_statement_node.nil?
+
+        rest_of_compound_statement = Range.new(get_node_end_position(if_node),
+                                               get_node_end_position(compound_statement_node))
+        definite_assignments(clause_node).reverse.uniq { |asgn| asgn.children[0] }.each do |asgn|
+          name = asgn.children[0].to_s
+          range = Range.from_node(asgn)
+          ivar = asgn.type == :ivasgn
+          pins = ivar ? ivars : locals
+          narrowed = pins.any? do |pin|
+            pin.source == :flow_sensitive_typing && pin.name == name && !pin.rejoined &&
+              pin.presence == rest_of_compound_statement
+          end
+          next unless narrowed
+
+          made = pins.drop(ivar ? ivars_from : locals_from).find do |pin|
+            pin.name == name && pin.location&.range == range
+          end
+          pins.push made.rejoin(rest_of_compound_statement) if made
+        end
+      end
+
       # @param while_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
       # @param false_ranges [Array<Range>]
@@ -278,6 +315,7 @@ module Solargraph
         lhs_node = or_asgn_node.children[0]
         return unless lhs_node.is_a?(::Parser::AST::Node)
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1240
         name = lhs_node.children[0].to_s
         rest = Range.new(get_node_end_position(or_asgn_node), get_node_end_position(parent_node))
 
@@ -313,14 +351,23 @@ module Solargraph
       #
       # @return [Array<String>]
       def definitely_assigned_names clause_node
+        definite_assignments(clause_node).map { |asgn| asgn.children[0].to_s }
+      end
+
+      # The assignments behind #definitely_assigned_names, in order
+      #
+      # @param clause_node [Parser::AST::Node, nil]
+      #
+      # @return [Array<Parser::AST::Node>]
+      def definite_assignments clause_node
         return [] if clause_node.nil?
 
         case clause_node.type
         when :lvasgn, :ivasgn
-          [clause_node.children[0].to_s]
+          [clause_node]
         when :begin, :kwbegin
           clause_node.children.flat_map do |child|
-            (child in ::Parser::AST::Node => child_node) ? definitely_assigned_names(child_node) : []
+            (child in ::Parser::AST::Node => child_node) ? definite_assignments(child_node) : []
           end
         else
           []
@@ -469,7 +516,8 @@ module Solargraph
         # later reassignment can both cover this position. Skip pins
         # still evaluating their own RHS (`baz ||= begin ... end`).
         matches = pins.select do |pin|
-          next false unless pin.name == variable_name
+          # a branch's value carried past its if isn't narrowed further
+          next false unless pin.name == variable_name && !pin.rejoined
           # @sg-ignore flow sensitive typing needs to handle attrs
           next false unless !pin.presence || pin.presence.include?(position)
 

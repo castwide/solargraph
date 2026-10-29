@@ -41,8 +41,11 @@ module Solargraph
                 source: :parser
               )
               pins.push then_cs
+              locals_from = locals.size
+              ivars_from = ivars.size
               NodeProcessor.process(then_node, region.update(compound_statement: then_cs), pins, locals, ivars)
               start_modifier_assignment_after_if(then_node, condition_node)
+              flow_sensitive_typing.rejoin_clause(node, then_node, locals_from, ivars_from)
             end
 
             else_node = node.children[2]
@@ -56,8 +59,11 @@ module Solargraph
                 source: :parser
               )
               pins.push else_cs
+              locals_from = locals.size
+              ivars_from = ivars.size
               NodeProcessor.process(else_node, region.update(compound_statement: else_cs), pins, locals, ivars)
               start_modifier_assignment_after_if(else_node, condition_node)
+              flow_sensitive_typing.rejoin_clause(node, else_node, locals_from, ivars_from)
             end
 
             true

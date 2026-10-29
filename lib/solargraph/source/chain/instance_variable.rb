@@ -17,8 +17,7 @@ module Solargraph
           ivars = api_map.get_instance_variable_pins(name_pin.context.namespace, name_pin.context.scope).select do |p|
             p.name == word
           end
-          out = api_map.var_at_location(reaching(ivars, name_pin), word, name_pin, location)
-          [out].compact
+          api_map.var_pins_at_location(reaching(ivars, name_pin), word, name_pin, location)
         end
 
         private

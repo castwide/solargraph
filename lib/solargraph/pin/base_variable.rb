@@ -41,6 +41,12 @@ module Solargraph
       # @return [String, nil]
       attr_reader :type_assertion
 
+      # True for a copy of a branch's assignment that reaches past the
+      # branch, to where its paths rejoin - see #rejoin
+      #
+      # @return [Boolean]
+      attr_reader :rejoined
+
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
@@ -99,6 +105,7 @@ module Solargraph
         @presence = presence
         @definite = definite
         @compound_statement = compound_statement
+        @rejoined = false
       end
 
       # @param presence [Range]
@@ -116,6 +123,30 @@ module Solargraph
         result.presence = presence
         result.reset_generated!
         result
+      end
+
+      # A copy of this assignment for `presence`, past the end of the
+      # branch it was made in, that adds to rather than overrides what
+      # the other paths into `presence` assigned: ApiMap
+      # #var_pins_at_location types it apart from them.
+      #
+      # @param presence [Range]
+      # @return [self]
+      def rejoin presence
+        result = dup
+        result.presence = presence
+        result.definite = false
+        result.rejoined = true
+        result
+      end
+
+      # True if `other` overwrites our value with a different
+      # assignment, rather than narrowing the same one
+      #
+      # @param other [self]
+      # @return [Boolean]
+      def overwritten_by? other
+        override_assignments?(other) && !same_assignment_sites?(other)
       end
 
       # @param presence [Range]
@@ -417,6 +448,9 @@ module Solargraph
 
       # @return [Range]
       attr_writer :presence
+
+      # @return [Boolean]
+      attr_writer :rejoined
 
       public
 

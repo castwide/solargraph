@@ -46,9 +46,9 @@ module Solargraph
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
-          found = api_map.var_at_location(locals, word, name_pin, location) if head?
+          found = head? ? api_map.var_pins_at_location(locals, word, name_pin, location) : []
 
-          return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
+          return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
           binder = name_pin.binder
           # this is a q_call - i.e., foo&.bar - assume result of call
           # will be nil or result as if binder were not nil -
