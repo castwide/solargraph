@@ -21,14 +21,10 @@ module Solargraph
                                     ivars,
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_case_match(node)
-            node => [_, ::Parser::AST::Node => subject, *]
+            subject = node.children.fetch(0)
             NodeProcessor.process(subject, region, pins, locals, ivars)
-            unless node.type == :case_match
-              node => [_, _, ::Parser::AST::Node => pattern]
-              return add_captures(pattern, subject)
-            end
+            return add_captures(node.children.fetch(1), subject) unless node.type == :case_match
 
-            # @type [Array<Parser::AST::Node>]
             clauses = node.children.drop(1).compact
             clauses.each do |clause|
               next process_body(clause) unless clause.type == :in_pattern
@@ -74,7 +70,7 @@ module Solargraph
               add_array_captures(pattern, subject)
             else
               pattern.children.each do |child|
-                add_captures(child) if child.is_a?(::Parser::AST::Node)
+                add_captures(child) if Parser.is_ast_node?(child)
               end
             end
           end
@@ -83,7 +79,8 @@ module Solargraph
           # @param subject [Parser::AST::Node, nil]
           # @return [void]
           def add_as_capture pattern, subject
-            pattern => [:match_as, ::Parser::AST::Node => inner, ::Parser::AST::Node => var]
+            inner = pattern.children.fetch(0)
+            var = pattern.children.fetch(1)
             type_name = pattern_type_name(inner)
             if type_name.nil?
               add_capture(var, assignment: subject)
@@ -100,7 +97,6 @@ module Solargraph
           # @param subject [Parser::AST::Node, nil]
           # @return [void]
           def add_array_captures pattern, subject
-            # @type [Array<Parser::AST::Node>]
             elements = pattern.children
             # Indexes stop meaning anything after a splat
             indexed = elements.take_while { |element| element.type != :match_rest }

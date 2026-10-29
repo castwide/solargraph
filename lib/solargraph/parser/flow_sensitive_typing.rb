@@ -204,13 +204,12 @@ module Solargraph
       def process_case_match case_node
         return unless case_node.type == :case_match
 
-        case_node => [:case_match, ::Parser::AST::Node => subject, *]
+        subject = case_node.children.fetch(0)
         return unless %i[lvar ivar].include?(subject.type)
 
         pin = find_var(subject.children.fetch(0).to_s, get_node_start_position(subject))
         return unless pin
 
-        # @type [Array<Parser::AST::Node>]
         clauses = case_node.children.drop(1).compact
         clauses.each do |clause|
           next unless clause.type == :in_pattern
@@ -487,9 +486,8 @@ module Solargraph
       #
       # @return [void]
       def process_in_pattern pin, in_pattern
-        in_pattern => [:in_pattern, ::Parser::AST::Node => pattern, *]
+        pattern = in_pattern.children.fetch(0)
         type_name = pattern_type_name(pattern)
-        # @type [Array<Parser::AST::Node>]
         guard_and_body = in_pattern.children.drop(1).compact
         return if type_name.nil? || guard_and_body.empty?
 
