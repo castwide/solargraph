@@ -125,7 +125,8 @@ module Solargraph
         super
         @type = :class
         @visibility = :public
-        @open_gates = nil
+        # @type [::Array<String>]
+        @open_gates = []
         @domains = nil
         @full_context = nil
       end
