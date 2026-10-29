@@ -611,6 +611,9 @@ module Solargraph
           report_cache_progress spec.name, pending
 
           cmd = [workspace.command_path, 'cache', spec.name]
+          # Load the plugins this process has, not the workspace's
+          # configured ones, so the cache lands in the gem_dir read here.
+          cmd.push("--plugins=#{CacheDir.plugin_requires.join(File::PATH_SEPARATOR)}")
           cmd.push('--directory', workspace.directory) if workspace.directory
           begin
             _o, e, s = Open3.capture3(*cmd)

@@ -21,6 +21,7 @@ module Solargraph
     # @return [void]
     def self.register convention
       @@conventions.add convention.new
+      CacheDir.add_convention convention
     end
 
     # @param convention [Class<Convention::Base>]
