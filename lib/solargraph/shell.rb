@@ -116,7 +116,7 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
-      require_plugins
+      require_plugins!
       repo = Solargraph::Repo.new(options[:directory])
 
       gems.each do |gem|
@@ -163,7 +163,7 @@ module Solargraph
     # @return [void]
     # @param [Array<Object>] gem_names
     def cache *gem_names
-      require_plugins
+      require_plugins!
       repo = Solargraph::Repo.new(options[:directory])
       metagems = if gem_names.empty?
                    if repo.bundled?
@@ -541,8 +541,8 @@ module Solargraph
     # directory, so the language server's cache subprocess needs them too.
     #
     # @return [void]
-    def require_plugins
-      return Workspace::Config.new(options[:directory] || Dir.pwd).require_plugins if options[:plugins].nil?
+    def require_plugins!
+      return Workspace::Config.new(options[:directory] || Dir.pwd).require_plugins! if options[:plugins].nil?
 
       options[:plugins].split(File::PATH_SEPARATOR).each do |plugin|
         require plugin

@@ -222,7 +222,7 @@ module Solargraph
 
     # @return [void]
     def require_plugins
-      config.require_plugins
+      config.require_plugins!
     end
 
     # @return [String, nil]

@@ -115,7 +115,7 @@ module Solargraph
       # the gem cache key.
       #
       # @return [void]
-      def require_plugins
+      def require_plugins!
         plugins.each do |plugin|
           require plugin
           CacheDir.add_plugin plugin

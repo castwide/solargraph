@@ -8,7 +8,7 @@ describe Solargraph::Workspace::Config do
 
   after { FileUtils.remove_entry(dir_path) }
 
-  describe '#require_plugins' do
+  describe '#require_plugins!' do
     before do
       File.write(File.join(dir_path, 'config_probe_plugin.rb'), '')
       File.write(File.join(dir_path, '.solargraph.yml'), "plugins:\n  - config_probe_plugin\n  - missing_probe_plugin\n")
@@ -22,12 +22,12 @@ describe Solargraph::Workspace::Config do
     end
 
     it 'records the plugins it loads in the gem cache key' do
-      described_class.new(dir_path).require_plugins
+      described_class.new(dir_path).require_plugins!
       expect(Solargraph::CacheDir.plugins.keys).to include('config_probe_plugin')
     end
 
     it 'leaves plugins that fail to load out of the gem cache key' do
-      described_class.new(dir_path).require_plugins
+      described_class.new(dir_path).require_plugins!
       expect(Solargraph::CacheDir.plugins.keys).not_to include('missing_probe_plugin')
     end
   end
