@@ -1132,6 +1132,23 @@ end
     expect(api_map.clip_at('test.rb', [8, 8]).infer.to_s).to eq('String, nil')
   end
 
+  it 'lets a reassignment in the true branch replace a narrowed `in` capture' do
+    pending 'https://github.com/castwide/solargraph/pull/1338'
+
+    source = Solargraph::Source.load_string(%(
+      # @param x [Integer, String]
+      # @param y [String]
+      def m(x, y)
+        if x in Integer => i
+          i = y
+          i
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String')
+  end
+
   it 'types an alternative capture as the union' do
     source = Solargraph::Source.load_string(%(
       # @param x [String, Integer, Symbol]
