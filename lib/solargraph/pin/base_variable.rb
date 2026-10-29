@@ -250,7 +250,7 @@ module Solargraph
         ComplexType.new([array_type]).qualify(api_map, *gates)
       end
 
-      NEVER_DECONSTRUCTED = %w[::Integer ::Float ::Symbol ::TrueClass ::FalseClass].freeze
+      NEVER_DECONSTRUCTED = %w[::Integer ::Float ::Symbol ::TrueClass ::FalseClass ::Boolean].freeze
       private_constant :NEVER_DECONSTRUCTED
 
       # What an array pattern matches against, for each member of a
