@@ -28,6 +28,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install libjitterentropy.a for rugged
+        # Ubuntu 26.04's libcrypto.pc links it statically
+        run: |
+          if pkg-config --libs --static libcrypto | grep -q jitterentropy; then
+            sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+          fi
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.4
@@ -66,6 +72,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install libjitterentropy.a for rugged
+        # Ubuntu 26.04's libcrypto.pc links it statically
+        run: |
+          if pkg-config --libs --static libcrypto | grep -q jitterentropy; then
+            sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+          fi
       - uses: ruby/setup-ruby@1a615958ad9d422dd932dc1d5823942ee002799f # v1.227.0
         with:
           ruby-version: '3.3'
@@ -86,6 +98,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install libjitterentropy.a for rugged
+      # Ubuntu 26.04's libcrypto.pc links it statically
+      run: |
+        if pkg-config --libs --static libcrypto | grep -q jitterentropy; then
+          sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+        fi
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -97,14 +115,18 @@ jobs:
 
     - name: Run rbs validate
       run: bundle exec rbs validate
-      # @todo Temporary, expect to revert in 0.60
-      continue-on-error: true
   rubocop_todo:
     name: .rubocop_todo.yml
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install libjitterentropy.a for rugged
+      # Ubuntu 26.04's libcrypto.pc links it statically
+      run: |
+        if pkg-config --libs --static libcrypto | grep -q jitterentropy; then
+          sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+        fi
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
