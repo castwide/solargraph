@@ -192,6 +192,7 @@ module Solargraph
           return adjust_type api_map, rest_capture_type(api_map, types, index) if index.is_a?(::Range)
 
           types.map! do |type|
+            type = deconstructed_type(api_map, type)
             if type.tuple?
               type.all_params[index]
             elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)

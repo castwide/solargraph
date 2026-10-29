@@ -1318,6 +1318,23 @@ end
     expect(api_map.clip_at('test.rb', [4, 8]).infer.to_s).to eq('Array<Integer>')
   end
 
+  it 'types index captures from the return type of the subject deconstruct method' do
+    source = Solargraph::Source.load_string(%(
+      class Pair
+        # @return [Array<Symbol>]
+        def deconstruct; end
+      end
+
+      # @param pair [Pair]
+      def m(pair)
+        pair => [a, b]
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [9, 8]).infer.to_s).to eq('Symbol')
+  end
+
   it 'types rest captures from the return type of the subject deconstruct method' do
     source = Solargraph::Source.load_string(%(
       class Pair
