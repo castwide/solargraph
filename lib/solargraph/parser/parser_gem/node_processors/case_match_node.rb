@@ -107,6 +107,7 @@ module Solargraph
               if subject && index < indexed.length && element.type == :match_var
                 add_capture(element, mass_assignment: [subject, index])
               elsif element in [:match_rest, ::Parser::AST::Node[:match_var, *] => rest_var]
+                # @sg-ignore Captures of `x in PAT` are not narrowed to non-nil in its true branch
                 add_rest_capture(rest_var, subject, rest_range(pattern, index))
               else
                 add_captures(element)
