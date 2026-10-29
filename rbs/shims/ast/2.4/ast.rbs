@@ -26,8 +26,6 @@ module AST
 
     def concat: (_ToA[untyped] array) -> self
 
-    def deconstruct: () -> Array[untyped]
-
     def dup: () -> self
 
     def eql?: (untyped other) -> bool
