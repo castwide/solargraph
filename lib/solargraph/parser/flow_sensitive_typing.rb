@@ -285,11 +285,13 @@ module Solargraph
                            [rest_of_compound_statement], [])
       end
 
-      # A leaving guard inside a `x ||= ...` body still dominates the
-      # code after the ||=, but only for x: the body is skipped
-      # exactly when x was truthy, so both paths reach the same
-      # conclusion about x. No other variable gets that guarantee,
-      # hence the restriction to x by name.
+      # A leaving guard is an if whose branch always leaves the
+      # compound statement (return, raise, next, redo, retry).  Inside
+      # a `x ||= ...` body it still dominates the code after the ||=,
+      # but only for a test of x's truthiness: the body is skipped
+      # exactly when x was truthy, which proves `x.nil?` and `!x` false
+      # and `x` and `!x.nil?` true on that path too, but nothing about
+      # any other test, such as `x.is_a?(String)`, or variable.
       #
       # @param conditional_node [Parser::AST::Node, nil]
       # @param then_clause [Parser::AST::Node, nil]
@@ -318,9 +320,41 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1240
         name = lhs_node.children[0].to_s
         rest = Range.new(get_node_end_position(or_asgn_node), get_node_end_position(parent_node))
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1240
+        variable = name.to_sym
 
-        assert_after_guard(conditional_node, [name], [], [rest]) if always_leaves_compound_statement?(then_clause)
-        assert_after_guard(conditional_node, [name], [rest], []) if always_leaves_compound_statement?(else_clause)
+        if always_leaves_compound_statement?(then_clause) && falsiness_test?(conditional_node, variable)
+          assert_after_guard(conditional_node, [name], [], [rest])
+        end
+        return unless always_leaves_compound_statement?(else_clause) && truthiness_test?(conditional_node, variable)
+
+        assert_after_guard(conditional_node, [name], [rest], [])
+      end
+
+      # True if `node` is `x.nil?` or `!x` for the variable named
+      # `variable`, so false whenever that variable is truthy
+      #
+      # @param node [Parser::AST::Node]
+      # @param variable [::Symbol]
+      #
+      # @return [Boolean]
+      def falsiness_test? node, variable
+        return true if node in [:send, [:lvar | :ivar, ^variable], :nil? | :!]
+
+        false
+      end
+
+      # True if `node` is `x` or `!x.nil?` for the variable named
+      # `variable`, so true whenever that variable is truthy
+      #
+      # @param node [Parser::AST::Node]
+      # @param variable [::Symbol]
+      #
+      # @return [Boolean]
+      def truthiness_test? node, variable
+        return true if node in [:lvar | :ivar, ^variable]
+
+        node in [:send, [:send, [:lvar | :ivar, ^variable], :nil?], :!]
       end
 
       # Narrows only `names`, as if the condition were true over

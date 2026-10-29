@@ -939,6 +939,29 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
   end
 
+  it 'keeps types a ||= body guard does not rule out on the path that skipped the body' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param x [String, Integer, nil]
+        # @return [void]
+        def bar(x)
+          x ||= begin
+            return if x.is_a?(String)
+            1
+          end
+          x
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    # skipping the body means x was truthy, which says nothing about
+    # whether it was a String, so the guard does not survive the ||=
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.items.map(&:rooted_tag)).to include('::String', '::Integer')
+  end
+
   it 'uses .nil? in a return if() in a try / rescue / ensure to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       class Foo
