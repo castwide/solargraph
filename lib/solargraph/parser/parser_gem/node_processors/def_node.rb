@@ -25,7 +25,7 @@ module Solargraph
             )
             if region.visibility == :module_function
               # the body's narrowings land on methpin, its closure below
-              pins.push Solargraph::Pin::Method.new(
+              pins.push(Solargraph::Pin::Method.new(
                 location: methpin.location,
                 closure: methpin.closure,
                 name: methpin.name,
@@ -36,8 +36,8 @@ module Solargraph
                 parameters: methpin.parameters,
                 node: methpin.node,
                 source: :parser
-              ).tap { |copy| copy.share_downcast_vars(methpin) }
-              pins.push Solargraph::Pin::Method.new(
+              ).tap { |copy| copy.share_downcast_vars(methpin) })
+              pins.push(Solargraph::Pin::Method.new(
                 location: methpin.location,
                 closure: methpin.closure,
                 name: methpin.name,
@@ -48,7 +48,7 @@ module Solargraph
                 parameters: methpin.parameters,
                 node: methpin.node,
                 source: :parser
-              ).tap { |copy| copy.share_downcast_vars(methpin) }
+              ).tap { |copy| copy.share_downcast_vars(methpin) })
             else
               pins.push methpin
             end
