@@ -105,7 +105,7 @@ module Solargraph
             indexed = elements.take_while { |element| element.type != :match_rest }
             elements.each_with_index do |element, index|
               if subject && index < indexed.length && element.type == :match_var
-                add_capture(element, mass_assignment: [subject, index])
+                add_capture(element, mass_assignment: [subject, index], deconstruct: true)
               elsif element in [:match_rest, ::Parser::AST::Node[:match_var, *] => rest_var]
                 # @sg-ignore Captures of `x in PAT` are not narrowed to non-nil in its true branch
                 add_rest_capture(rest_var, subject, rest_range(pattern, index))
@@ -154,8 +154,10 @@ module Solargraph
           # @param mass_assignment [::Array(Parser::AST::Node, Integer), ::Array(Parser::AST::Node, ::Range<Integer>), nil]
           # @param return_type [ComplexType, nil]
           # @param intersection_return_type [ComplexType, nil]
+          # @param deconstruct [Boolean] see Pin::BaseVariable#initialize
           # @return [void]
-          def add_capture var, assignment: nil, mass_assignment: nil, return_type: nil, intersection_return_type: nil
+          def add_capture var, assignment: nil, mass_assignment: nil, return_type: nil, intersection_return_type: nil,
+                          deconstruct: false
             if @nilable
               # A failed match leaves its captures nil
               assignments = [assignment, NIL_NODE] unless assignment.nil?
@@ -171,6 +173,7 @@ module Solargraph
               name: var.children.fetch(0).to_s,
               assignments: assignments || [assignment].compact,
               mass_assignment: mass_assignment,
+              deconstruct: deconstruct,
               return_type: return_type,
               intersection_return_type: intersection_return_type,
               presence: presence,

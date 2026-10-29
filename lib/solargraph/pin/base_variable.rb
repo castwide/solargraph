@@ -45,15 +45,19 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param presence [Range, nil]
+      # @param deconstruct [Boolean] true if mass_assignment is an array
+      #   pattern, which reads its subject through #deconstruct where a
+      #   multiple assignment reads it through #to_ary
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
-                     **splat
+                     deconstruct: false, **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer), ::Array(Parser::AST::Node, ::Range<Integer>)]
         @mass_assignment = mass_assignment
+        @deconstruct = deconstruct
         @return_type = return_type
         @intersection_return_type = intersection_return_type
         @exclude_return_type = exclude_return_type
@@ -192,7 +196,7 @@ module Solargraph
           return adjust_type api_map, rest_capture_type(api_map, types, index) if index.is_a?(::Range)
 
           types.map! do |type|
-            type = deconstructed_type(api_map, type)
+            type = deconstructed_type(api_map, type) if @deconstruct
             if type.tuple?
               type.all_params[index]
             elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)

@@ -1345,6 +1345,24 @@ end
     expect(api_map.clip_at('test.rb', [9, 8]).infer.to_s).to eq('Symbol')
   end
 
+  it 'does not read #deconstruct for a multiple assignment' do
+    source = Solargraph::Source.load_string(%(
+      class Pair
+        # @return [Array<Symbol>]
+        def deconstruct; end
+      end
+
+      # @param pair [Pair]
+      def m(pair)
+        a, b = pair
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    # Multiple assignment destructures with #to_ary, which Pair lacks, not #deconstruct
+    expect(api_map.clip_at('test.rb', [9, 8]).infer.to_s).to eq('undefined')
+  end
+
   it 'types rest captures from the return type of the subject deconstruct method' do
     source = Solargraph::Source.load_string(%(
       class Pair
