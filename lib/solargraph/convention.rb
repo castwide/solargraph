@@ -9,7 +9,6 @@ module Solargraph
     autoload :Gemfile, 'solargraph/convention/gemfile'
     autoload :Gemspec, 'solargraph/convention/gemspec'
     autoload :Rakefile, 'solargraph/convention/rakefile'
-    autoload :ActiveSupportConcern, 'solargraph/convention/active_support_concern'
 
     # @type [Set<Convention::Base>]
     @@conventions = Set.new
@@ -73,6 +72,5 @@ module Solargraph
     register Gemfile
     register Gemspec
     register Rakefile
-    register ActiveSupportConcern
   end
 end
