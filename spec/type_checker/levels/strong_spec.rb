@@ -1298,6 +1298,27 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'resolves a repeated core-method call on a var reassigned mid-method after a reopened-class call' do
+      checker = type_checker(%(
+        class String
+          # @return [String]
+          def depunctuate
+            self
+          end
+        end
+
+        # @param str [String]
+        # @param other [String]
+        # @return [String]
+        def go(str, other)
+          str = str.gsub(other.depunctuate, other)
+          str = str.gsub(other, other)
+          str.gsub(other, other)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     # TypeChecker.load_string builds a bare ApiMap, so a gem's own pins -
     # Forwardable's def_delegators among them - are not available. Cataloging a
     # Bench with external_requires loads just the gems named in `requires`.

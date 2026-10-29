@@ -196,13 +196,12 @@ module Solargraph
           # e.g., singleton(String)
           # @sg-ignore flow sensitive typing should support case/when
           type_tag(type.name, [], type_alias_decls, expanding_aliases)
-        when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
-          # `Bottom`` is used in contexts where nothing will ever return
-          # - e.g., it could be the return type of 'exit()' or 'raise'
-          # @todo define a specific bottom type and use it to
-          #   determine dead code
-          #
+        when RBS::Types::Bases::Any
           'undefined'
+        when RBS::Types::Bases::Bottom
+          # `Bottom` is used in contexts where nothing will ever return
+          # - e.g., it could be the return type of 'exit()' or 'raise'
+          'bot'
         else
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
