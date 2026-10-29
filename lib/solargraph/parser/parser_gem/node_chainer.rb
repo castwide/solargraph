@@ -194,10 +194,11 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @return [::Array<::Array(Chain, Chain)>, nil]
         def hash_pairs node
-          return nil unless Parser.is_ast_node?(node) && node.type == :hash
-          return nil unless node.children.all? { |pair| Parser.is_ast_node?(pair) && pair.type == :pair }
+          return nil unless node.is_a?(::Parser::AST::Node) && node.type == :hash
 
           node.children.map do |pair|
+            return nil unless pair.is_a?(::Parser::AST::Node) && pair.type == :pair
+
             key_node, value_node = pair.children
             [NodeChainer.chain(key_node, @filename, pair), NodeChainer.chain(value_node, @filename, pair)]
           end
