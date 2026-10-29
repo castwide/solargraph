@@ -1064,7 +1064,7 @@ describe Solargraph::ApiMap do
     expect(api_map.get_path_pins('Example.foo_two')).to be_one
   end
 
-  it 'keeps a branch value reaching a variable read past its if apart from the combined pin' do
+  it 'keeps a branch value carried past its if apart from the combined pin' do
     source = Solargraph::Source.load_string(%(
       # @param x [Integer, nil]
       def check x

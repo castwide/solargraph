@@ -20,12 +20,12 @@ module Solargraph
       attr_accessor :definite
 
       # Self, or a definite copy of it when the assignment dominates
-      # `location` - see #definite_reaches?.
+      # `location` - see #definitely_visible_at?.
       #
       # @param location [Location, nil]
       # @return [self]
       def definite_at location
-        return self if definite || !definite_reaches?(location)
+        return self if definite || !definitely_visible_at?(location)
 
         result = dup
         result.definite = true
@@ -33,7 +33,7 @@ module Solargraph
       end
 
       # The CompoundStatement this assignment was made within. Used by
-      # #definite_reaches? to decide whether it dominates a reference.
+      # #definitely_visible_at? to decide whether it dominates a reference.
       #
       # @return [Pin::CompoundStatement, nil]
       attr_reader :compound_statement
@@ -41,7 +41,7 @@ module Solargraph
       # @return [String, nil]
       attr_reader :type_assertion
 
-      # True for a copy of a branch's assignment that reaches past the
+      # True for a copy of a branch's assignment carried past the
       # branch, to where its paths rejoin - see #rejoin
       #
       # @return [Boolean]
@@ -83,7 +83,7 @@ module Solargraph
       #   than union with earlier ones.
       # @param compound_statement [Pin::CompoundStatement, nil] Where the
       #   assignment was made; lets a non-definite one still override
-      #   within its own range - see #definite_reaches?.
+      #   within its own range - see #definitely_visible_at?.
       # @param type_assertion [String, nil] RBS type from a trailing
       #   rbs-inline `#: TYPE` comment on the assignment
       # @param [Hash{Symbol => Object}] splat
@@ -521,7 +521,7 @@ module Solargraph
       #
       # @param location [Location, nil]
       # @return [Boolean]
-      def definite_reaches? location
+      def definitely_visible_at? location
         cs = compound_statement
         return false unless location && cs&.location&.range
 

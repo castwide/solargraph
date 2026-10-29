@@ -40,7 +40,7 @@ module Solargraph
       #
       # @param location [Location, nil]
       # @return [Boolean]
-      def definite_reaches? location
+      def definitely_visible_at? location
         start = self.location&.range&.start
         return false unless super && start
 
@@ -58,7 +58,7 @@ module Solargraph
       # @param location [Location]
       # @return [Boolean]
       def dominates? viewing_closure, location
-        definite_reaches?(location) && within_closure?(viewing_closure) &&
+        definitely_visible_at?(location) && within_closure?(viewing_closure) &&
           value_nodes.none? { |node| references_name?(node) }
       end
 

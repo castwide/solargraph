@@ -285,13 +285,12 @@ module Solargraph
                            [rest_of_compound_statement], [])
       end
 
-      # A leaving guard is an if whose branch always leaves the
-      # compound statement (return, raise, next, redo, retry).  Inside
-      # a `x ||= ...` body it still dominates the code after the ||=,
-      # but only for a test of x's truthiness: the body is skipped
-      # exactly when x was truthy, which proves `x.nil?` and `!x` false
-      # and `x` and `!x.nil?` true on that path too, but nothing about
-      # any other test, such as `x.is_a?(String)`, or variable.
+      # A guard clause (`return if x.nil?`) inside a `x ||= ...` body
+      # still dominates the code after the ||=, but only for a test of
+      # x's truthiness: the body is skipped exactly when x was truthy,
+      # which proves `x.nil?` and `!x` false and `x` and `!x.nil?` true
+      # on that path too, but nothing about any other test, such as
+      # `x.is_a?(String)`, or variable.
       #
       # @param conditional_node [Parser::AST::Node, nil]
       # @param then_clause [Parser::AST::Node, nil]
@@ -359,7 +358,7 @@ module Solargraph
 
       # Narrows only `names`, as if the condition were true over
       # true_ranges and false over false_ranges; callers pass only ranges
-      # where that holds on every path reaching them.
+      # where that holds on every path into them.
       #
       # @param conditional_node [Parser::AST::Node]
       # @param names [Array<String>]
@@ -558,7 +557,7 @@ module Solargraph
           other_loc = Location.new(pin.location&.filename, Range.new(position, position))
           !pin.within_own_assignment?(other_loc)
         end
-        matches.max_by { |pin| pin.presence&.start || reaching_start(pin, position) }
+        matches.max_by { |pin| pin.presence&.start || visible_from(pin, position) }
       end
 
       # Where an ivar assignment, which has no presence, starts if it
@@ -568,10 +567,10 @@ module Solargraph
       # @param pin [Pin::BaseVariable]
       # @param position [Position]
       # @return [Position]
-      def reaching_start pin, position
+      def visible_from pin, position
         here = Location.new(pin.location&.filename, Range.new(position, position))
         start = pin.location&.range&.start
-        return Position.new(0, 0) unless start && pin.definite_reaches?(here)
+        return Position.new(0, 0) unless start && pin.definitely_visible_at?(here)
 
         start
       end

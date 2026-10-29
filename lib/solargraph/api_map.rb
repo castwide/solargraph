@@ -393,7 +393,7 @@ module Solargraph
     end
 
     # #var_at_location's pin, followed by one combining the branch
-    # assignments that reach the location only past the end of their
+    # assignments visible at the location only past the end of their
     # branch (Pin::BaseVariable#rejoined).  Those stay apart so that
     # they are typed on their own and the types unioned: combined, the
     # narrowing the other paths carry would override them.

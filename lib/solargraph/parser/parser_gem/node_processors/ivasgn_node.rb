@@ -17,7 +17,7 @@ module Solargraph
               type_assertion: type_assertion_for(node),
               assignment: node.children[1],
               # dominates a read only within its compound statement - see
-              # Pin::InstanceVariable#definite_reaches?
+              # Pin::InstanceVariable#definitely_visible_at?
               definite: false,
               compound_statement: region.compound_statement,
               source: :parser
