@@ -117,6 +117,19 @@ module Solargraph
                      [path] + @open_gates
                    end
       end
+
+      private
+
+      # @return [void]
+      def preassign_ivars
+        super
+        @type = :class
+        @visibility = :public
+        # @type [::Array<String>]
+        @open_gates = []
+        @domains = nil
+        @full_context = nil
+      end
     end
   end
 end
