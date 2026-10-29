@@ -312,9 +312,9 @@ module Solargraph
 
                  # @param a [ComplexType::UniqueType]
                  sorted = types.flat_map(&:items).sort { |a, _| a.tag == 'nil' ? 1 : 0 }
-                 ComplexType.new(sorted.uniq)
+                 ComplexType.intern(sorted.uniq)
                else
-                 ComplexType.new(types)
+                 ComplexType.intern(types)
                end
         if name_pin.nil? || name_pin.context.undefined?
           # up to downstream to resolve self type
@@ -329,7 +329,7 @@ module Solargraph
       def maybe_nil type, api_map
         return type if type.undefined? || type.void? || type.nullable?
         return type unless nullable?(api_map)
-        ComplexType.new(type.items + [ComplexType::NIL])
+        ComplexType.intern(type.items + [ComplexType::NIL])
       end
 
       protected
