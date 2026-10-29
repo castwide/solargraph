@@ -1412,6 +1412,29 @@ end
     expect(api_map.clip_at('test.rb', [18, 8]).infer.to_s).to eq('Array')
   end
 
+  it 'leaves index and rest captures unknown for a member with no visible deconstruct' do
+    source = Solargraph::Source.load_string(%(
+      class Base2; end
+
+      # @param x [Array<String>, Base2]
+      # @param y [Array<String>, nil]
+      def m(x, y)
+        x => [a, *rest]
+        a
+        rest
+        y => [b, *more]
+        b
+        more
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    # A Base2 subclass may define #deconstruct; nil never does
+    expect(api_map.clip_at('test.rb', [7, 8]).infer.to_s).to eq('undefined')
+    expect(api_map.clip_at('test.rb', [8, 8]).infer.to_s).to eq('Array')
+    expect(api_map.clip_at('test.rb', [10, 8]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [11, 8]).infer.to_s).to eq('Array<String>')
+  end
+
   it 'types a multiple assignment from every member of a union' do
     source = Solargraph::Source.load_string(%(
       # @param x [Array<String>, Array<Integer>]

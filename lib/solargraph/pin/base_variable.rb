@@ -250,6 +250,9 @@ module Solargraph
         ComplexType.new([array_type]).qualify(api_map, *gates)
       end
 
+      NEVER_DECONSTRUCTED = %w[::Integer ::Float ::Symbol ::TrueClass ::FalseClass].freeze
+      private_constant :NEVER_DECONSTRUCTED
+
       # What an array pattern matches against, for each member of a
       # subject: the member itself if it is already an Array, else the
       # return type of its `deconstruct` method.
@@ -261,8 +264,12 @@ module Solargraph
         items.flat_map do |type|
           next [type] if type.rooted_name == '::Array'
 
+          # These never match an array pattern, and no subclass can add #deconstruct
+          next [] if type.nil_type? || NEVER_DECONSTRUCTED.include?(type.rooted_name)
+
           deconstruct = api_map.get_method_stack(type.rooted_tag, 'deconstruct').first
-          next [type] if deconstruct.nil?
+          # A subclass or a type we cannot see into may still deconstruct
+          next [ComplexType::UniqueType::UNDEFINED] if deconstruct.nil?
 
           deconstruct.typify(api_map).self_to_type(type).items
         end

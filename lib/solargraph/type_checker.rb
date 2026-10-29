@@ -203,6 +203,9 @@ module Solargraph
       # will need to probe when a constant name is assigned to a
       # class/module (alias)
       return true if constant_pins.find { |p| p.probe(api_map).defined? }
+      # A qualified constant, e.g. a capture of `in Float::INFINITY => f`
+      path = api_map.resolve(pin.return_type.namespace, pin.closure&.gates || [''])
+      return true if path && api_map.get_path_pins(path).any?(Pin::Constant)
       false
     end
 

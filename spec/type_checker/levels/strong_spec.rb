@@ -95,6 +95,22 @@ describe Solargraph::TypeChecker do
         .to eq(['Wrong argument type for Sub#takes_int: i expected Integer, received String, Integer'])
     end
 
+    it 'accepts a capture of a qualified value constant pattern' do
+      checker = type_checker(%(
+        class Foo
+          # @param x [Float, String]
+          # @return [void]
+          def check x
+            case x
+            in Float::INFINITY => f
+              f
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include(a_string_including('Unresolved type'))
+    end
+
     it 'does not flag attributes whose declared type already allows nil' do
       checker = type_checker(%(
         class Foo
