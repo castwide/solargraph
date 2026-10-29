@@ -136,18 +136,14 @@ module Solargraph
       def type_to_tag type, type_alias_decls = {}, expanding_aliases = []
         case type
         when RBS::Types::Optional
-          # @sg-ignore flow sensitive typing should support case/when
           "#{type_to_tag(type.type, type_alias_decls, expanding_aliases)}, nil"
         when RBS::Types::Bases::Bool
           '::Boolean'
         when RBS::Types::Tuple
-          # @sg-ignore flow sensitive typing should support case/when
           "::Array(#{type.types.map { |t| type_to_tag(t, type_alias_decls, expanding_aliases) }.join(', ')})"
         when RBS::Types::Literal
-          # @sg-ignore flow sensitive typing should support case/when
           type.literal.inspect
         when RBS::Types::Union
-          # @sg-ignore flow sensitive typing should support case/when
           type.types.map { |t| type_to_tag(t, type_alias_decls, expanding_aliases) }.join(', ')
         when RBS::Types::Record
           # @todo Better record support
@@ -157,7 +153,6 @@ module Solargraph
         when RBS::Types::Bases::Void
           'void'
         when RBS::Types::Variable
-          # @sg-ignore flow sensitive typing should support case/when
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         when RBS::Types::Bases::Self, RBS::Types::Bases::Instance
           'self'
@@ -165,7 +160,6 @@ module Solargraph
           # `Top` is the most super superclass
           '::BasicObject'
         when RBS::Types::Intersection
-          # @sg-ignore flow sensitive typing should support case/when
           type.types.map { |member| type_to_tag(member, type_alias_decls, expanding_aliases) }.join(', ')
         when RBS::Types::Proc
           '::Proc'
@@ -173,12 +167,9 @@ module Solargraph
           # Expand so conformance checks see the members, not the name. A
           # generic alias falls back: args are not substituted, so expanding
           # would leak an unbound generic<T>.
-          # @sg-ignore flow sensitive typing should support case/when
           alias_name = type.name.to_s
           alias_decl = type_alias_decls[alias_name]
-          # @sg-ignore flow sensitive typing should support case/when
           if alias_decl.nil? || expanding_aliases.include?(alias_name) || !type.args.empty?
-            # @sg-ignore flow sensitive typing should support case/when
             type_tag(type.name, type.args, type_alias_decls, expanding_aliases)
           else
             # The alias body belongs to the alias's declaration, not the
@@ -190,11 +181,9 @@ module Solargraph
         when RBS::Types::ClassInstance, RBS::Types::Interface
           # `Interface` represents a mix-in module which can be considered a
           # subtype of a consumer of it
-          # @sg-ignore flow sensitive typing should support case/when
           type_tag(type.name, type.args, type_alias_decls, expanding_aliases)
         when RBS::Types::ClassSingleton
           # e.g., singleton(String)
-          # @sg-ignore flow sensitive typing should support case/when
           type_tag(type.name, [], type_alias_decls, expanding_aliases)
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
           # `Bottom`` is used in contexts where nothing will ever return

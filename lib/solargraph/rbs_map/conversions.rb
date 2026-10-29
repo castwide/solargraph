@@ -131,11 +131,9 @@ module Solargraph
             Solargraph.assert_or_log(:rbs_closure,
                                      "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
-          # @sg-ignore flow sensitive typing should support case/when
           alias_return_type = RbsTranslator.to_complex_type(decl.type, type_alias_decls: type_alias_decls).force_rooted
           pins.push(
             Solargraph::Pin::Reference::TypeAlias.new(
-              # @sg-ignore flow sensitive typing should support case/when
               name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: alias_return_type, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
             )
           )
