@@ -47,15 +47,12 @@ module Solargraph
         within?(other_closure)
       end
 
-      # A local variable of the same name declared in a nested closure,
-      # e.g. a block parameter, is a different variable from the one this
-      # fact is about.
-      #
-      # @param variable [Pin::LocalVariable] a variable a lookup reads
-      # @return [Boolean] true if `variable` belongs to this fact's closure
-      #   or one enclosing it
-      def outer_binding? variable
-        nested_in?(closure, variable.closure)
+      # @param api_map [ApiMap]
+      # @param bindings [::Array<Pin::LocalVariable>] the local variables
+      #   a lookup of the same 'h[k]' reads
+      # @return [Boolean] true if this fact proves that lookup present
+      def proves? api_map, bindings
+        bindings.all? { |variable| outer_binding?(variable) } && non_nil_value?(api_map)
       end
 
       # @param node [::Parser::AST::Node, nil]
@@ -83,6 +80,34 @@ module Solargraph
       end
 
       private
+
+      # A local variable of the same name declared in a nested closure,
+      # e.g. a block parameter, is a different variable from the one this
+      # fact is about.
+      #
+      # @param variable [Pin::LocalVariable] a variable a lookup reads
+      # @return [Boolean] true if `variable` belongs to this fact's closure
+      #   or one enclosing it
+      def outer_binding? variable
+        nested_in?(closure, variable.closure)
+      end
+
+      # @param api_map [ApiMap]
+      # @return [Boolean] true unless the fact comes from 'h[k] ||= v'
+      #   and the type of 'v' is unknown or includes nil
+      def non_nil_value? api_map
+        value = self.value
+        return true if value.nil?
+
+        filename = location&.filename
+        range = Range.from_node(value)
+        closure = self.closure
+        return false unless filename && range && closure
+
+        locals = api_map.clip_at(filename, range.ending).locals
+        type = Parser.chain(value, nil, nil).infer(api_map, closure, locals)
+        type.defined? && type.to_a.none? { |t| t.namespace == 'NilClass' }
+      end
 
       # @param scope [Pin::Closure, nil]
       # @param outer [Pin::Closure, nil]

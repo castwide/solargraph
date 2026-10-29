@@ -20,6 +20,7 @@ module Solargraph
       autoload :Link,             'solargraph/source/chain/link'
       autoload :Call,             'solargraph/source/chain/call'
       autoload :QCall,            'solargraph/source/chain/q_call'
+      autoload :Index,            'solargraph/source/chain/index'
       autoload :Variable,         'solargraph/source/chain/variable'
       autoload :ClassVariable,    'solargraph/source/chain/class_variable'
       autoload :Constant,         'solargraph/source/chain/constant'
@@ -111,10 +112,10 @@ module Solargraph
         # @todo ProxyType uses 'type' for the binder, but '
         working_pin = name_pin
         # @sg-ignore Need to add nil check here
-        links[0..-2].each_with_index do |link, index|
+        links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
           type = infer_from_definitions(pins, working_pin, api_map, locals)
-          type = type.without_nil if key_present?(index, api_map, name_pin, working_pin, locals)
+          type = type.without_nil if key_present?(link, api_map, name_pin, working_pin, locals)
           if type.undefined?
             logger.debug do
               "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) => [] - undefined type from #{link.desc}"
@@ -175,7 +176,7 @@ module Solargraph
         type = infer_from_definitions(pins, last_context, api_map, locals)
         # @sg-ignore https://github.com/apiology/solargraph/pull/286
         #   also covers: Unresolved call to without_nil on Solargraph::ComplexType, Solargraph::ComplexType::UniqueType
-        type = type.without_nil if key_present?(links.length - 1, api_map, name_pin, last_context, locals)
+        type = type.without_nil if key_present?(links.last, api_map, name_pin, last_context, locals)
         out = maybe_nil(type, api_map)
         logger.debug do
           "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}, " \
@@ -330,151 +331,15 @@ module Solargraph
         type.self_to_type(name_pin.context)
       end
 
-      # True if links[index] is an 'h[k]' lookup that a Pin::KeyLookup in
-      # `locals` proves present, e.g. after 'return unless h.key?(k)'.
-      # Applies only when 'h' is a Hash whose values can't be nil, and 'h'
-      # and 'k' read variables or attr_readers, which return the same value
-      # every time.
-      #
-      # @param index [Integer] position of the possible '[]' link
+      # @param link [Chain::Link]
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param working_pin [Pin::Base] its binder is the receiver's type
       # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
-      # @return [Boolean]
-      def key_present? index, api_map, name_pin, working_pin, locals
-        link = links[index]
-        return false unless link.is_a?(Chain::Call) && link.word == '[]' && !link.nullable? && !link.with_block?
-        location = link.location
-        argument = link.arguments.first
-        return false unless link.arguments.length == 1 && argument && location
-
-        facts = locals.grep(Pin::KeyLookup).select { |fact| fact.visible_at?(name_pin, location) }
-        return false if facts.empty? || !non_nil_hash?(working_pin.binder, api_map)
-
-        # the local variables 'h' and 'k' read here
-        bindings = []
-        receiver = steps_of(links.first(index), api_map, name_pin, locals, bindings)
-        key = key_steps_of(argument, api_map, name_pin, locals, bindings)
-        return false unless receiver && key
-
-        facts.any? do |fact|
-          # @sg-ignore https://github.com/apiology/solargraph/pull/358
-          #   also covers: Wrong argument type for Solargraph::Source::Chain#proves?
-          fact.receiver == receiver && fact.key == key && proves?(fact, bindings, api_map)
-        end
-      end
-
-      # @param fact [Pin::KeyLookup] a fact about the same 'h[k]'
-      # @param bindings [::Array<Pin::LocalVariable>] the local variables
-      #   the lookup reads
-      # @param api_map [ApiMap]
-      # @return [Boolean]
-      def proves? fact, bindings, api_map
-        bindings.all? { |variable| fact.outer_binding?(variable) } && non_nil_value?(fact, api_map)
-      end
-
-      # @param fact [Pin::KeyLookup]
-      # @param api_map [ApiMap]
-      # @return [Boolean] true unless the fact comes from 'h[k] ||= v'
-      #   and the type of 'v' is unknown or includes nil
-      def non_nil_value? fact, api_map
-        value = fact.value
-        return true if value.nil?
-
-        filename = fact.location&.filename
-        range = Range.from_node(value)
-        closure = fact.closure
-        return false unless filename && range && closure
-
-        locals = api_map.clip_at(filename, range.ending).locals
-        type = Parser.chain(value, nil, nil).infer(api_map, closure, locals)
-        type.defined? && type.to_a.none? { |t| t.namespace == 'NilClass' }
-      end
-
-      # @param key [Chain]
-      # @param api_map [ApiMap]
-      # @param name_pin [Pin::Base]
-      # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
-      # @param bindings [::Array<Pin::LocalVariable>] gets the local
-      #   variables `key` reads
-      # @return [::Array<::Array>, nil] see Pin::KeyLookup#key
-      def key_steps_of key, api_map, name_pin, locals, bindings
-        literal = key.links.first
-        if key.links.length == 1 && literal.is_a?(Chain::Literal)
-          return Pin::KeyLookup.key_steps_from_node(literal.node)
-        end
-
-        steps_of(key.links, api_map, name_pin, locals, bindings)
-      end
-
-      # @param chain_links [::Array<Chain::Link>]
-      # @param api_map [ApiMap]
-      # @param name_pin [Pin::Base]
-      # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
-      # @param bindings [::Array<Pin::LocalVariable>] gets the local
-      #   variables `chain_links` read
-      # @return [::Array<::Array>, nil] see Pin::KeyLookup#receiver, or
-      #   nil unless each link reads a variable or an attr_reader
-      def steps_of chain_links, api_map, name_pin, locals, bindings
-        steps = []
-        chain_links.each_with_index do |link, index|
-          # 'self.table' reads the same attr_reader as 'table'
-          next if index.zero? && link.is_a?(Chain::Head) && link.word == 'self'
-
-          step = step_of(link, chain_links.first(index + 1), api_map, name_pin, locals,
-                         on_self: steps.empty?, bindings: bindings)
-          return nil unless step
-
-          steps.push step
-        end
-        steps unless steps.empty?
-      end
-
-      # @param link [Chain::Link]
-      # @param prefix [::Array<Chain::Link>] the links up to and including `link`
-      # @param api_map [ApiMap]
-      # @param name_pin [Pin::Base]
-      # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
-      # @param on_self [Boolean] true if `link` has no receiver but self
-      # @param bindings [::Array<Pin::LocalVariable>] gets the local
-      #   variables `link` reads
-      # @return [::Array, nil] e.g. [:lvar, :h] or [:self_call, :table]
-      def step_of link, prefix, api_map, name_pin, locals, on_self:, bindings:
-        return [:ivar, link.word.to_sym] if link.is_a?(Chain::InstanceVariable)
-        return [:cvar, link.word.to_sym] if link.is_a?(Chain::ClassVariable)
-        return unless link.is_a?(Chain::Call) && !link.nullable? && link.arguments.empty? && !link.with_block?
-
-        # a bare 'table' chains the same way whether it reads a local or
-        # calls a method, so tell them apart by what it resolves to
-        pins = Chain.new(prefix).define(api_map, name_pin, locals)
-        return if pins.empty?
-        if prefix.length == 1 && pins.all?(Pin::LocalVariable)
-          location = link.location
-          return unless location
-
-          # every same-named variable in sight, as #define merges a block
-          # parameter with the outer variable it shadows
-          bindings.concat(locals.grep(Pin::LocalVariable).select do |pin|
-            pin.name == link.word && pin.visible_at?(name_pin, location)
-          end)
-          return [:lvar, link.word.to_sym]
-        end
-        return unless pins.all? { |pin| pin.is_a?(Pin::Method) && pin.attribute? }
-
-        [on_self ? :self_call : :call, link.word.to_sym]
-      end
-
-      # @param type [ComplexType, ComplexType::UniqueType]
-      # @param api_map [ApiMap]
-      # @return [Boolean] true for a Hash whose declared values exclude
-      #   nil, e.g. Hash{String => Integer}
-      def non_nil_hash? type, api_map
-        type.defined? && type.to_a.all? do |t|
-          api_map.super_and_sub?('Hash', t.name) &&
-            # 'nil' can arrive spelled 'NilClass'
-            t.value_types.none? { |value| value.to_a.any? { |u| u.namespace == 'NilClass' } }
-        end
+      # @return [Boolean] true if `link` is an 'h[k]' lookup that a
+      #   Pin::KeyLookup in `locals` proves present
+      def key_present? link, api_map, name_pin, working_pin, locals
+        link.is_a?(Chain::Index) && link.present?(api_map, name_pin, working_pin.binder, locals)
       end
 
       # @param type [ComplexType, ComplexType::UniqueType]
