@@ -132,7 +132,7 @@ module Solargraph
           end
         end
         links.last.last_context = working_pin
-        # @sg-ignore Unresolved call to resolve on Solargraph::Source::Chain::Link, nil
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         links.last.resolve(api_map, working_pin, locals)
       end
 
@@ -170,10 +170,11 @@ module Solargraph
           end
           return ComplexType::UNDEFINED
         end
-        # @sg-ignore Unresolved call to last_context on Solargraph::Source::Chain::Link, nil
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         last_context = links.last.last_context
         type = infer_from_definitions(pins, last_context, api_map, locals)
-        # @sg-ignore Wrong argument type for Integer#-: arg_0 expected BigDecimal, received Integer
+        # @sg-ignore https://github.com/apiology/solargraph/pull/286
+        #   also covers: Unresolved call to without_nil on Solargraph::ComplexType, Solargraph::ComplexType::UniqueType
         type = type.without_nil if key_present?(links.length - 1, api_map, name_pin, last_context, locals)
         out = maybe_nil(type, api_map)
         logger.debug do
@@ -355,7 +356,7 @@ module Solargraph
         key = key_steps_of(argument, api_map, name_pin, locals)
         return false unless receiver && key
 
-        # @sg-ignore Unresolved call to receiver on Solargraph::Pin::LocalVariable, Solargraph::Pin::KeyLookup
+        # @sg-ignore https://github.com/apiology/solargraph/pull/358
         facts.any? { |fact| fact.receiver == receiver && fact.key == key }
       end
 
