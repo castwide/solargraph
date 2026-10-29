@@ -263,6 +263,9 @@ module Solargraph
       end
 
       def typify api_map
+        # A narrowing to a value constant (`in PATTERN => f`) is no declared type
+        return ComplexType::UNDEFINED if @return_type.nil? && narrowed_to_value_constant?(api_map)
+
         raw_return_type = super
 
         adjust_type(api_map, raw_return_type)
@@ -347,8 +350,28 @@ module Solargraph
       def adjust_type api_map, raw_return_type
         qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
         minus_exclusions = raw_return_type.exclude qualified_exclude, api_map
-        qualified_intersection = intersection_return_type&.qualify(api_map, *(closure&.gates || ['']))
+        intersection = narrowed_to_value_constant?(api_map) ? nil : intersection_return_type
+        qualified_intersection = intersection&.qualify(api_map, *(closure&.gates || ['']))
         minus_exclusions.intersect_with qualified_intersection, api_map
+      end
+
+      # True if narrowed to a constant that is not a class or module,
+      # e.g. `in PATTERN` with `PATTERN = /abc/`: a pattern matches it
+      # with ===, which says nothing about the type
+      #
+      # @param api_map [ApiMap]
+      # @return [Boolean]
+      def narrowed_to_value_constant? api_map
+        intersection = intersection_return_type
+        return false if intersection.nil?
+
+        gates = closure&.gates || ['']
+        intersection.items.any? do |unique_type|
+          gates.any? do |gate|
+            path = [gate, unique_type.name].reject(&:empty?).join('::')
+            api_map.get_path_pins(path).any?(Pin::Constant)
+          end
+        end
       end
 
       # See if this variable is visible within 'viewing_closure'
