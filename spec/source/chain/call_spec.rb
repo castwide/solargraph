@@ -892,4 +892,75 @@ describe Solargraph::Source::Chain::Call do
     clip = api_map.clip_at('test.rb', [14, 14])
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
   end
+
+  it 'narrows select results to the class their block checks' do
+    source = Solargraph::Source.load_string(%(
+      # @param items [Array<String, Integer>]
+      def foo items
+        a = items.select { |i| i.is_a?(String) }
+        b = items.filter { |i| i.kind_of?(::Integer) }
+        c = items.select { |i| i.instance_of?(String) }
+        a
+        b
+        c
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    expect(api_map.clip_at('test.rb', [6, 8]).infer.rooted_tags).to eq('::Array<::String>')
+    # Flow-sensitive typing does not yet narrow by kind_of? or
+    # instance_of? (castwide/solargraph#1297) or by `::Integer`
+    # (castwide/solargraph#1259)
+    expect(api_map.clip_at('test.rb', [7, 8]).infer.rooted_tags).to eq('::Array<::String, ::Integer>')
+    expect(api_map.clip_at('test.rb', [8, 8]).infer.rooted_tags).to eq('::Array<::String, ::Integer>')
+  end
+
+  it 'narrows select results by any condition flow-sensitive typing understands' do
+    source = Solargraph::Source.load_string(%(
+      # @param items [Array<String, Integer>]
+      def foo items
+        a = items.select { |i| i.is_a?(String) && !i.empty? }
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.rooted_tags).to eq('::Array<::String>')
+  end
+
+  it 'keeps select element types when the block does more than check its parameter' do
+    source = Solargraph::Source.load_string(%(
+      # @param items [Array<String, Integer>]
+      # @param other [Object]
+      def foo items, other
+        a = items.select { |i| other.is_a?(String) }
+        b = items.select { |i| i.is_a?(String) || i.zero? }
+        a
+        b
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    expect(api_map.clip_at('test.rb', [6, 8]).infer.rooted_tags).to eq('::Array<::String, ::Integer>')
+    expect(api_map.clip_at('test.rb', [7, 8]).infer.rooted_tags).to eq('::Array<::String, ::Integer>')
+  end
+
+  it 'does not narrow select by a check on an enclosing block parameter' do
+    source = Solargraph::Source.load_string(%(
+      # @param items [Array<String, Integer>]
+      def foo items
+        items.each do |i|
+          a = items.select { |j| i.is_a?(String) }
+          a
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.rooted_tags).to eq('::Array<::String, ::Integer>')
+  end
 end
