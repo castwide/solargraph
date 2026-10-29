@@ -1063,4 +1063,23 @@ describe Solargraph::ApiMap do
     expect(api_map.get_path_pins('Example.foo_one')).to be_one
     expect(api_map.get_path_pins('Example.foo_two')).to be_one
   end
+
+  it 'keeps a branch value reaching a variable read past its if apart from the combined pin' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Integer, nil]
+      def check x
+        if x.nil?
+          x = 'a'
+        end
+        x
+      end
+    ), 'test.rb')
+    api_map = described_class.new.map(source)
+    source_map = api_map.source_map('test.rb')
+    closure = source_map.pins.find { |pin| pin.is_a?(Solargraph::Pin::Method) && pin.name == 'check' }
+    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(6, 8, 6, 9))
+    pins = api_map.var_pins_at_location(source_map.locals, 'x', closure, location)
+    expect(pins.map(&:rejoined)).to eq([false, true])
+    expect(api_map.var_at_location(source_map.locals, 'x', closure, location)).to eq(pins.first)
+  end
 end
