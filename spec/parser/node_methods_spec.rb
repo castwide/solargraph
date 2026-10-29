@@ -488,6 +488,14 @@ describe Solargraph::Parser::NodeMethods do
       expect(calls.length).to eq(3)
     end
 
+    it 'handles safe navigation calls' do
+      source = Solargraph::Source.load_string(%(
+        Foo.new&.bar('string')
+      ))
+      calls = described_class.call_nodes_from(source.node)
+      expect(calls.map(&:type)).to eq(%i[csend send])
+    end
+
     it 'does not over-report calls' do
       source = Solargraph::Source.load_string(%(
         class Foo

@@ -271,6 +271,45 @@ describe Solargraph::TypeChecker do
                                                      'Unresolved call to upcase on String, nil'])
     end
 
+    it 'reports a safe navigation call that a union member does not support' do
+      checker = type_checker(%(
+        # @param name [String, Symbol, nil]
+        # @return [void]
+        def quux(name)
+          name&.chomp(':')
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to chomp on String, Symbol'])
+    end
+
+    it 'accepts a safe navigation call that every non-nil member supports' do
+      checker = type_checker(%(
+        # @param name [String, Symbol, nil]
+        # @return [String, nil]
+        def quux(name)
+          name&.to_s
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'checks argument types on safe navigation calls' do
+      checker = type_checker(%(
+        class Foo
+          # @param num [Integer]
+          # @return [void]
+          def bar(num); end
+        end
+
+        # @param foo [Foo, nil]
+        # @return [void]
+        def quux(foo)
+          foo&.bar('one')
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Wrong argument type for Foo#bar: num expected Integer, received String'])
+    end
+
     it 'applies a yieldparam type declared on a block-form @overload' do
       checker = type_checker(%(
         # @overload build
