@@ -1270,6 +1270,28 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'narrows a .nil?-guarded attribute call chain in a module_function method' do
+      checker = type_checker(%(
+        class Tag
+          # @return [Array<String>, nil]
+          attr_reader :types
+        end
+
+        module Directive
+          module_function
+
+          # @param tag [Tag]
+          # @return [String, nil]
+          def type_string tag
+            t = tag.types.nil? ? nil : tag.types.join
+            t
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'narrows a repeated index with a local variable argument, also through an assignment' do
       checker = type_checker(%(
         class Repro
