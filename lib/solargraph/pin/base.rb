@@ -134,7 +134,6 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
       # @return [undefined]
       def choose_longer other, attr
         # @type [undefined]
@@ -245,7 +244,6 @@ module Solargraph
       # @param other [Pin::Base]
       # @param attr [::Symbol]
       #
-      # @sg-ignore
       # @return [undefined, nil]
       def choose other, attr
         results = [self, other].map(&attr).compact
@@ -261,7 +259,6 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
       # @return [undefined]
       def choose_node other, attr
         if other.object_id < attr.object_id
@@ -273,7 +270,6 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
       # @return [undefined]
       def prefer_rbs_location other, attr
         if rbs_location? && !other.rbs_location?
@@ -342,7 +338,6 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @sg-ignore
       # @return [undefined]
       def assert_same other, attr
         if other.nil?
@@ -360,7 +355,6 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
       # @return [undefined]
       def choose_pin_attr_with_same_name other, attr
         # @type [Pin::Base, nil]
@@ -381,7 +375,6 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @sg-ignore Missing @return tag for Solargraph::Pin::Base#choose_pin_attr
       # @return [undefined]
       def choose_pin_attr other, attr
         # @type [Pin::Base, nil]
