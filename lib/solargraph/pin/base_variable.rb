@@ -53,6 +53,7 @@ module Solargraph
       # @param deconstruct [Boolean] true if mass_assignment is an array
       #   pattern, which reads its subject through #deconstruct where a
       #   multiple assignment reads it through #to_ary
+      # @see https://docs.ruby-lang.org/en/master/syntax/pattern_matching_rdoc.html#label-Matching+non-primitive+objects-3A+deconstruct+and+deconstruct_keys
       # @param type_assertion [String, nil] RBS type from a trailing
       #   rbs-inline `#: TYPE` comment on the assignment
       # @param [Hash{Symbol => Object}] splat
