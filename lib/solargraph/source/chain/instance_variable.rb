@@ -17,7 +17,7 @@ module Solargraph
           ivars = api_map.get_instance_variable_pins(name_pin.context.namespace, name_pin.context.scope).select do |p|
             p.name == word
           end
-          api_map.var_pins_at_location(reaching(ivars, name_pin), word, name_pin, location)
+          api_map.var_pins_at_location(reaching_pins(ivars, name_pin), word, name_pin, location)
         end
 
         private
@@ -25,15 +25,17 @@ module Solargraph
         # @return [Location, nil]
         attr_reader :location
 
-        # When an assignment dominates this read, the read sees that
-        # assignment, combined with the pins starting between it and
-        # the read - later conditional assignments and narrowings -
-        # rather than every assignment of the ivar.
+        # The pins in +ivars+ whose values can reach this read (its
+        # reaching definitions): for `@x = value`, just that
+        # assignment; when an earlier assignment dominates the read,
+        # the latest such assignment plus the pins starting between
+        # it and the read - later conditional assignments and
+        # narrowings; otherwise every pin in +ivars+.
         #
         # @param ivars [::Array<Pin::InstanceVariable>]
         # @param closure [Pin::Closure]
         # @return [::Array<Pin::InstanceVariable>]
-        def reaching ivars, closure
+        def reaching_pins ivars, closure
           here = location
           return ivars unless here
 
@@ -42,11 +44,11 @@ module Solargraph
           return [own] if own
 
           dominating = ivars.select { |pin| pin.dominates?(closure, here) }
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1399
           latest = dominating.max_by { |pin| pin.location.range.start }
           return ivars unless latest
 
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1399
           after = latest.location.range.start
           between = ivars.select do |pin|
             start = pin.presence&.start || pin.location&.range&.start
