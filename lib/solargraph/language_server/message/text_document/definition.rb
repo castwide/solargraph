@@ -17,14 +17,15 @@ module Solargraph
           def code_location
             suggestions = host.definitions_at(params['textDocument']['uri'], @line, @column) || []
             return nil if suggestions.empty?
-            suggestions.reject { |pin| pin.best_location.nil? || pin.best_location.filename.nil? }.map do |pin|
+            suggestions.map do |pin|
+              loc = pin.best_location
+              next if loc.nil? || loc.filename.nil?
+
               {
-                # @sg-ignore pin.location relies on location always resolved
-                uri: file_to_uri(pin.best_location.filename),
-                # @sg-ignore pin.location relies on location always resolved
-                range: pin.best_location.range.to_hash
+                uri: file_to_uri(loc.filename),
+                range: loc.range.to_hash
               }
-            end
+            end.compact
           end
 
           # @return [Array<Hash>, nil]
