@@ -1114,6 +1114,24 @@ end
     expect(api_map.clip_at('test.rb', [9, 12]).infer.to_s).to eq('String, Integer, nil')
   end
 
+  it 'narrows captures of an `in` match to non-nil in its true branch' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Array<String>, Integer]
+      def m(x)
+        if x in [String => a]
+          a
+        elsif x in Integer => i
+          i
+        end
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 10]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('Integer')
+    expect(api_map.clip_at('test.rb', [8, 8]).infer.to_s).to eq('String, nil')
+  end
+
   it 'types an alternative capture as the union' do
     source = Solargraph::Source.load_string(%(
       # @param x [String, Integer, Symbol]

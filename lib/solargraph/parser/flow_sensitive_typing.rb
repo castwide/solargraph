@@ -278,6 +278,33 @@ module Solargraph
         process_and(expression_node, true_ranges, false_ranges)
         process_or(expression_node, true_ranges, false_ranges)
         process_variable(expression_node, true_ranges, false_ranges)
+        process_pattern_match(expression_node, true_ranges)
+      end
+
+      # `x in PAT` binds every capture in PAT when it is true
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_pattern_match node, true_presences
+        return unless node.type == :match_pattern_p
+
+        capture_vars(node.children.fetch(1)).each do |var|
+          # The capture is present from just after its start
+          pin = find_var(var.children.fetch(0).to_s, get_node_end_position(var))
+          next unless pin
+
+          process_facts({ pin => [{ not_type: ComplexType::NIL }] }, true_presences)
+        end
+      end
+
+      # @param pattern [Parser::AST::Node]
+      # @return [Array<Parser::AST::Node>] the match_var nodes in pattern
+      def capture_vars pattern
+        return [pattern] if pattern.type == :match_var
+
+        pattern.children.flat_map { |child| child.is_a?(::Parser::AST::Node) ? capture_vars(child) : [] }
       end
 
       # @param call_node [Parser::AST::Node]

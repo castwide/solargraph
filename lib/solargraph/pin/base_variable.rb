@@ -84,7 +84,8 @@ module Solargraph
                    source: self.source
         result = dup
         result.exclude_return_type = exclude_return_type
-        result.intersection_return_type = intersection_return_type
+        # Keep a narrowing this pin already has, e.g. a capture's pattern type
+        result.intersection_return_type = intersection_return_type || self.intersection_return_type
         result.source = source
         result.presence = presence
         result.reset_generated!
@@ -388,11 +389,13 @@ module Solargraph
       #
       # @return [ComplexType, ComplexType::UniqueType]
       def adjust_type api_map, raw_return_type
-        qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
-        minus_exclusions = raw_return_type.exclude qualified_exclude, api_map
         intersection = narrowed_to_value_constant?(api_map) ? nil : intersection_return_type
         qualified_intersection = intersection&.qualify(api_map, *(closure&.gates || ['']))
-        minus_exclusions.intersect_with qualified_intersection, api_map
+        # Intersect first: an undefined type takes the intersection whole,
+        # and an exclusion must still apply to it
+        intersected = raw_return_type.intersect_with qualified_intersection, api_map
+        qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
+        intersected.exclude qualified_exclude, api_map
       end
 
       # True if narrowed to a constant that is not a class or module,
