@@ -55,14 +55,16 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      # @param closure [Solargraph::Pin::Closure, nil] the enclosing closure,
-      #   which keeps the downcast vars of call chains; see Pin::Closure#downcast_vars
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure: nil
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
-        @closure = closure
+        # The nearest closure keeps the downcast vars of call chains (see
+        # Pin::Closure#downcast_vars); a compound statement's own closure is
+        # always a Pin::Closure
+        pin = enclosing_compound_statement_pin
+        @closure = pin.is_a?(Pin::Closure) ? pin : pin&.closure
         # @type [Hash{Pin::LocalVariable => ::Array<String>}]
         @chain_paths = {}.compare_by_identity
       end
