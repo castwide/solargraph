@@ -835,7 +835,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'resolves a generic type variable against a union @param type' do
-      pending 'https://github.com/castwide/solargraph/issues/1276'
       checker = type_checker(%(
         # @generic A
         # @param arg [generic<A>, nil]
@@ -870,7 +869,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'resolves a generic type variable against a union @param type with more than two members' do
-      pending 'https://github.com/castwide/solargraph/issues/1276'
       checker = type_checker(%(
         # @generic A
         # @param arg [generic<A>, nil, Symbol]
@@ -889,7 +887,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'resolves a generic type variable against a union @param type through two layers of generic methods' do
-      pending 'https://github.com/castwide/solargraph/issues/1276'
       checker = type_checker(%(
         # @generic A
         # @param arg [generic<A>, nil]
