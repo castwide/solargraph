@@ -69,7 +69,7 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (529):
+      # pending code fixes (528):
       #
       # @todo 140: Need to add nil check here
       # @todo 66: node.children[] relies on grammar-guaranteed arity
@@ -93,7 +93,6 @@ module Solargraph
       # @todo 1: Unresolved call to ==
       # @todo 1: Unresolved call to gsub on Array, nil
       # @todo 1: Unresolved call to end_with? on Array, nil
-      # @todo 1: Unresolved call to @@logger
       # @todo 1: Unresolved call to []=
       # @todo 1: Unresolved constant BlankRubocopFormatter
       # @todo 1: Proc#call return type isn't inferred without generics

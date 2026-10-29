@@ -22,7 +22,7 @@ module Solargraph
               DEFAULT_LOG_LEVEL
             end
     @@logger = Logger.new($stderr, level: level)
-    # @sg-ignore Unresolved call to @@logger
+    # @sg-ignore https://github.com/apiology/solargraph/pull/201
     @@logger.formatter = proc do |severity, _datetime, _progname, msg|
       "[#{severity}] #{msg}\n"
     end
