@@ -1205,6 +1205,36 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'reports a Hash lookup after an ||= that can assign nil' do
+      checker = type_checker(%(
+        # @param k [String]
+        # @return [Integer, nil]
+        def find k; end
+
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @return [Integer]
+        def foo h, k
+          h[k] ||= find(k)
+          h[k] + 1
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include('Unresolved call to + on Integer, nil')
+    end
+
+    it 'reports a Hash lookup after an ||= of an unknown value' do
+      checker = type_checker(%(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @return [Integer]
+        def foo h, k
+          h[k] ||= undefined_call
+          h[k] + 1
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include('Unresolved call to + on Integer, nil')
+    end
+
     it 'resolves the operators TrueClass and FalseClass share on Boolean' do
       checker = type_checker(%(
         class Foo

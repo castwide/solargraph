@@ -356,8 +356,28 @@ module Solargraph
         key = key_steps_of(argument, api_map, name_pin, locals)
         return false unless receiver && key
 
-        # @sg-ignore https://github.com/apiology/solargraph/pull/358
-        facts.any? { |fact| fact.receiver == receiver && fact.key == key }
+        facts.any? do |fact|
+          # @sg-ignore https://github.com/apiology/solargraph/pull/358
+          fact.receiver == receiver && fact.key == key && non_nil_value?(fact, api_map)
+        end
+      end
+
+      # @param fact [Pin::KeyLookup]
+      # @param api_map [ApiMap]
+      # @return [Boolean] true unless the fact comes from 'h[k] ||= v'
+      #   and the type of 'v' is unknown or includes nil
+      def non_nil_value? fact, api_map
+        value = fact.value
+        return true if value.nil?
+
+        filename = fact.location&.filename
+        range = Range.from_node(value)
+        closure = fact.closure
+        return false unless filename && range && closure
+
+        locals = api_map.clip_at(filename, range.ending).locals
+        type = Parser.chain(value, nil, nil).infer(api_map, closure, locals)
+        type.defined? && type.to_a.none? { |t| t.namespace == 'NilClass' }
       end
 
       # @param key [Chain]

@@ -204,7 +204,7 @@ module Solargraph
       # Records that 'h[k]' is not nil for the rest of the statements
       # after 'h[k] ||= v', as a true 'h.key?(k)' guard does. Chain
       # applies the fact only when 'h' is a Hash whose values can't be
-      # nil, so 'v' can't be nil either.
+      # nil and the type of 'v' excludes nil.
       #
       # @param or_asgn_node [Parser::AST::Node]
       #
@@ -223,7 +223,7 @@ module Solargraph
         return unless parent && %i[begin kwbegin].include?(parent.type)
 
         presence = Range.new(get_node_end_position(or_asgn_node), get_node_end_position(parent))
-        add_key_fact(or_asgn_node, lookup, [presence])
+        add_key_fact(or_asgn_node, lookup, [presence], value: or_asgn_node.children[1])
       end
 
       class << self
@@ -594,9 +594,10 @@ module Solargraph
       # @param location_node [Parser::AST::Node] where the fact is learned
       # @param lookup [Parser::AST::Node] the 'h[k]' the fact is about
       # @param presences [Array<Range>]
+      # @param value [Parser::AST::Node, nil] the 'v' in 'h[k] ||= v'
       #
       # @return [void]
-      def add_key_fact location_node, lookup, presences
+      def add_key_fact location_node, lookup, presences, value: nil
         receiver, _, key = lookup.children
         receiver_steps = Pin::KeyLookup.steps_from_node(receiver)
         key_steps = Pin::KeyLookup.key_steps_from_node(key)
@@ -612,6 +613,7 @@ module Solargraph
             receiver: receiver_steps,
             key: key_steps,
             presence: presence,
+            value: value,
             source: :flow_sensitive_typing
           )
         end

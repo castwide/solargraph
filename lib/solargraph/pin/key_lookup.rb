@@ -21,15 +21,21 @@ module Solargraph
       # @return [Range]
       attr_reader :presence
 
+      # @return [::Parser::AST::Node, nil] the 'v' in 'h[k] ||= v', which
+      #   must not be nil for the fact to hold
+      attr_reader :value
+
       # @param receiver [::Array<::Array>]
       # @param key [::Array<::Array>]
       # @param presence [Range]
+      # @param value [::Parser::AST::Node, nil]
       # @param splat [Hash{Symbol => Object}]
-      def initialize receiver:, key:, presence:, **splat
+      def initialize receiver:, key:, presence:, value: nil, **splat
         super(**splat)
         @receiver = receiver
         @key = key
         @presence = presence
+        @value = value
       end
 
       # @param other_closure [Pin::Closure]
