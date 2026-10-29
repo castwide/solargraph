@@ -7,6 +7,12 @@ module Solargraph
         # completionItem/resolve message handler
         #
         class Resolve < Base
+          # Properties that must not be changed during completionItem/resolve
+          # according to the LSP specification.
+          #
+          # @see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
+          IMMUTABLE_FIELDS = %i[label kind sortText filterText insertText textEdit data].freeze
+
           def process
             pins = host.locate_pins(params)
             set_result merge(pins)
@@ -17,14 +23,15 @@ module Solargraph
           # @param pins [Array<Pin::Base>]
           # @return [Hash]
           def merge pins
-            return params if pins.empty?
+            original = params.transform_keys(&:to_sym)
+            return original if pins.empty?
             docs = pins
                    .reject { |pin| pin.documentation.empty? && pin.return_type.undefined? }
-            result = params
-                     .transform_keys(&:to_sym)
+            result = original
                      .merge(pins.first.resolve_completion_item)
                      .merge(documentation: markup_content(join_docs(docs)))
             result[:detail] = pins.first.detail
+            IMMUTABLE_FIELDS.each { |field| result[field] = original[field] }
             result
           end
 
