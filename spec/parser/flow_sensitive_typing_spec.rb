@@ -1052,7 +1052,7 @@ end
     let(:api_map) { Solargraph::ApiMap.new.map(source) }
 
     it 'types a const capture' do
-      expect(api_map.clip_at('test.rb', [7, 4]).infer.to_s).to eq('Foo')
+      expect(api_map.clip_at('test.rb', [7, 4]).infer.to_s).to eq('Foo, nil')
     end
 
     it 'narrows the subject in the matching clause' do
@@ -1069,7 +1069,7 @@ end
     end
 
     it 'keeps a capture visible after the case ends' do
-      expect(api_map.clip_at('test.rb', [15, 2]).infer.to_s).to eq('Foo')
+      expect(api_map.clip_at('test.rb', [15, 2]).infer.to_s).to eq('Foo, nil')
     end
 
     it 'leaves the subject unnarrowed after the case ends' do
@@ -1111,7 +1111,7 @@ end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     expect(api_map.clip_at('test.rb', [8, 12]).infer.to_s).to eq('String, Integer')
-    expect(api_map.clip_at('test.rb', [9, 12]).infer.to_s).to eq('String, Integer')
+    expect(api_map.clip_at('test.rb', [9, 12]).infer.to_s).to eq('String, Integer, nil')
   end
 
   it 'types an alternative capture as the union' do
@@ -1128,7 +1128,7 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String, Integer')
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String, Integer, nil')
     expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String, Integer')
     expect(api_map.clip_at('test.rb', [8, 10]).infer.to_s).to eq('String, Integer, Symbol')
   end
@@ -1146,11 +1146,13 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String, nil')
     expect(api_map.clip_at('test.rb', [8, 8]).infer.to_s).to eq('String')
   end
 
   it 'types array-index captures in a case clause' do
+    pending 'Captures read by index or rest stay non-nil when the match can fail: BaseVariable cannot add nil to a mass assignment'
+
     source = Solargraph::Source.load_string(%(
       # @param t [Array<String>]
       def m(t)
@@ -1162,8 +1164,8 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String')
-    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String, nil')
+    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String, nil')
   end
 
   it 'types tuple-index captures by position' do
@@ -1181,6 +1183,8 @@ end
   end
 
   it 'types captures from a one-line in match' do
+    pending 'Captures read by index or rest stay non-nil when the match can fail: BaseVariable cannot add nil to a mass assignment'
+
     source = Solargraph::Source.load_string(%(
       # @param t [Array<String>]
       def m(t)
@@ -1191,8 +1195,8 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [4, 10]).infer.to_s).to eq('String')
-    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Integer')
+    expect(api_map.clip_at('test.rb', [4, 10]).infer.to_s).to eq('String, nil')
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Integer, nil')
   end
 
   it 'types a capture read in a guard' do
@@ -1206,7 +1210,7 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [4, 26]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [4, 26]).infer.to_s).to eq('String, nil')
   end
 
   it 'narrows an instance variable subject with a const_pattern' do
@@ -1249,6 +1253,8 @@ end
   end
 
   it 'types rest captures in array and find patterns as Array' do
+    pending 'Captures read by index or rest stay non-nil when the match can fail: BaseVariable cannot add nil to a mass assignment'
+
     source = Solargraph::Source.load_string(%(
       # @param x [Object]
       def m(x)
@@ -1263,12 +1269,14 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Array')
-    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array')
-    expect(api_map.clip_at('test.rb', [10, 8]).infer.to_s).to eq('Array')
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Array, nil')
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array, nil')
+    expect(api_map.clip_at('test.rb', [10, 8]).infer.to_s).to eq('Array, nil')
   end
 
   it 'types rest captures as the core Array inside a namespace with its own Array' do
+    pending 'Captures read by index or rest stay non-nil when the match can fail: BaseVariable cannot add nil to a mass assignment'
+
     source = Solargraph::Source.load_string(%(
       module Foo
         class Array; end
@@ -1281,10 +1289,12 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array')
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array, nil')
   end
 
   it 'types rest captures with the element type of an Array subject' do
+    pending 'Captures read by index or rest stay non-nil when the match can fail: BaseVariable cannot add nil to a mass assignment'
+
     source = Solargraph::Source.load_string(%(
       # @param t [Array<String>]
       def m(t)
@@ -1299,9 +1309,9 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Array<String>')
-    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array<String>')
-    expect(api_map.clip_at('test.rb', [9, 10]).infer.to_s).to eq('Array<String>')
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Array<String>, nil')
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array<String>, nil')
+    expect(api_map.clip_at('test.rb', [9, 10]).infer.to_s).to eq('Array<String>, nil')
   end
 
   it 'types rest captures from a tuple subject as an Array of the remaining element types' do

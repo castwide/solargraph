@@ -23,6 +23,9 @@ module Solargraph
                                     enclosing_compound_statement_pin).process_case_match(node)
             subject = node.children.fetch(0)
             NodeProcessor.process(subject, region, pins, locals, ivars)
+            # Only `subject => pattern` raises instead of failing, so
+            # only its captures are always bound
+            @nilable = node.type != :match_pattern
             return add_captures(node.children.fetch(1), subject) unless node.type == :case_match
 
             clauses = node.children.drop(1).compact
@@ -137,6 +140,14 @@ module Solargraph
             after.zero? ? (index..) : (index..-(after + 1))
           end
 
+          # @param type [ComplexType, nil]
+          # @return [ComplexType, nil]
+          def with_nil type
+            return nil if type.nil?
+
+            ComplexType.new(type.items + ComplexType::NIL.items)
+          end
+
           # @param var [Parser::AST::Node] a match_var node
           # @param assignment [Parser::AST::Node, nil]
           # @param mass_assignment [::Array(Parser::AST::Node, Integer), ::Array(Parser::AST::Node, ::Range<Integer>), nil]
@@ -144,6 +155,12 @@ module Solargraph
           # @param intersection_return_type [ComplexType, nil]
           # @return [void]
           def add_capture var, assignment: nil, mass_assignment: nil, return_type: nil, intersection_return_type: nil
+            if @nilable
+              # A failed match leaves its captures nil
+              assignments = [assignment, NIL_NODE] unless assignment.nil?
+              return_type = with_nil(return_type)
+              intersection_return_type = with_nil(intersection_return_type)
+            end
             closure_location = region.closure.location
             # Captures outlive the match, like any local assignment
             presence = Range.new(get_node_start_position(var), closure_location.range.ending) if closure_location
@@ -151,7 +168,7 @@ module Solargraph
               location: get_node_location(var),
               closure: region.closure,
               name: var.children.fetch(0).to_s,
-              assignment: assignment,
+              assignments: assignments || [assignment].compact,
               mass_assignment: mass_assignment,
               return_type: return_type,
               intersection_return_type: intersection_return_type,

@@ -1128,7 +1128,7 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message))
-        .to eq(['Wrong argument type for #takes_string: s expected String, received Integer'])
+        .to eq(['Wrong argument type for #takes_string: s expected String, received Integer, nil'])
     end
 
     it 'types a pattern match capture with a nil alternative' do

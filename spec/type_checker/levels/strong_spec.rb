@@ -67,7 +67,7 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message))
-        .to eq(['Wrong argument type for Foo#takes_int: i expected Integer, received String, Integer'])
+        .to eq(['Wrong argument type for Foo#takes_int: i expected Integer, received String, Integer, nil'])
     end
 
     it 'does not flag attributes whose declared type already allows nil' do
