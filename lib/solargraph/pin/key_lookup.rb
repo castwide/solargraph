@@ -47,6 +47,17 @@ module Solargraph
         within?(other_closure)
       end
 
+      # A local variable of the same name declared in a nested closure,
+      # e.g. a block parameter, is a different variable from the one this
+      # fact is about.
+      #
+      # @param variable [Pin::LocalVariable] a variable a lookup reads
+      # @return [Boolean] true if `variable` belongs to this fact's closure
+      #   or one enclosing it
+      def outer_binding? variable
+        nested_in?(closure, variable.closure)
+      end
+
       # @param node [::Parser::AST::Node, nil]
       # @return [::Array<::Array>, nil] the steps `node` reads, or nil
       #   unless it is made of variables and argument-less calls
@@ -72,6 +83,15 @@ module Solargraph
       end
 
       private
+
+      # @param scope [Pin::Closure, nil]
+      # @param outer [Pin::Closure, nil]
+      # @return [Boolean] true if `scope` is `outer` or nested in it
+      def nested_in? scope, outer
+        return false if scope.nil? || outer.nil?
+
+        scope == outer || nested_in?(scope.closure, outer)
+      end
 
       # @param viewing [Pin::Closure, nil]
       # @return [Boolean] true if `viewing` is this fact's closure or

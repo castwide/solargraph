@@ -1345,6 +1345,57 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       expect(infer_at(code, [16, 12])).to eq('Integer, nil')
     end
 
+    it 'does not narrow a lookup by a block parameter that shadows the key' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @param keys [Array<String>]
+        def foo h, k, keys
+          return 0 unless h.key?(k)
+          keys.each do |k|
+            a = h[k]
+            a
+          end
+          b = h[k]
+          b
+        end
+      )
+      expect(infer_at(code, [8, 12])).to eq('Integer, nil')
+      expect(infer_at(code, [11, 10])).to eq('Integer')
+    end
+
+    it 'narrows a lookup by the guarded key inside a block' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @param keys [Array<String>]
+        def foo h, k, keys
+          return 0 unless h.key?(k)
+          keys.each do |j|
+            a = h[k]
+            a
+          end
+        end
+      )
+      expect(infer_at(code, [8, 12])).to eq('Integer')
+    end
+
+    it 'does not narrow a lookup on a block parameter that shadows the Hash' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @param hashes [Array<Hash{String => Integer}>]
+        def foo h, k, hashes
+          return 0 unless h.key?(k)
+          hashes.each do |h|
+            a = h[k]
+            a
+          end
+        end
+      )
+      expect(infer_at(code, [8, 12])).to eq('Integer, nil')
+    end
+
     it 'does not narrow a key computed by a method call' do
       code = %(
         # @param h [Hash{String => Integer}]

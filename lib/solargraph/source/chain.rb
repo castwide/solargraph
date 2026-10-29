@@ -352,14 +352,26 @@ module Solargraph
         facts = locals.grep(Pin::KeyLookup).select { |fact| fact.visible_at?(name_pin, location) }
         return false if facts.empty? || !non_nil_hash?(working_pin.binder, api_map)
 
-        receiver = steps_of(links.first(index), api_map, name_pin, locals)
-        key = key_steps_of(argument, api_map, name_pin, locals)
+        # the local variables 'h' and 'k' read here
+        bindings = []
+        receiver = steps_of(links.first(index), api_map, name_pin, locals, bindings)
+        key = key_steps_of(argument, api_map, name_pin, locals, bindings)
         return false unless receiver && key
 
         facts.any? do |fact|
           # @sg-ignore https://github.com/apiology/solargraph/pull/358
-          fact.receiver == receiver && fact.key == key && non_nil_value?(fact, api_map)
+          #   also covers: Wrong argument type for Solargraph::Source::Chain#proves?
+          fact.receiver == receiver && fact.key == key && proves?(fact, bindings, api_map)
         end
+      end
+
+      # @param fact [Pin::KeyLookup] a fact about the same 'h[k]'
+      # @param bindings [::Array<Pin::LocalVariable>] the local variables
+      #   the lookup reads
+      # @param api_map [ApiMap]
+      # @return [Boolean]
+      def proves? fact, bindings, api_map
+        bindings.all? { |variable| fact.outer_binding?(variable) } && non_nil_value?(fact, api_map)
       end
 
       # @param fact [Pin::KeyLookup]
@@ -384,29 +396,34 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
+      # @param bindings [::Array<Pin::LocalVariable>] gets the local
+      #   variables `key` reads
       # @return [::Array<::Array>, nil] see Pin::KeyLookup#key
-      def key_steps_of key, api_map, name_pin, locals
+      def key_steps_of key, api_map, name_pin, locals, bindings
         literal = key.links.first
         if key.links.length == 1 && literal.is_a?(Chain::Literal)
           return Pin::KeyLookup.key_steps_from_node(literal.node)
         end
 
-        steps_of(key.links, api_map, name_pin, locals)
+        steps_of(key.links, api_map, name_pin, locals, bindings)
       end
 
       # @param chain_links [::Array<Chain::Link>]
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
+      # @param bindings [::Array<Pin::LocalVariable>] gets the local
+      #   variables `chain_links` read
       # @return [::Array<::Array>, nil] see Pin::KeyLookup#receiver, or
       #   nil unless each link reads a variable or an attr_reader
-      def steps_of chain_links, api_map, name_pin, locals
+      def steps_of chain_links, api_map, name_pin, locals, bindings
         steps = []
         chain_links.each_with_index do |link, index|
           # 'self.table' reads the same attr_reader as 'table'
           next if index.zero? && link.is_a?(Chain::Head) && link.word == 'self'
 
-          step = step_of(link, chain_links.first(index + 1), api_map, name_pin, locals, on_self: steps.empty?)
+          step = step_of(link, chain_links.first(index + 1), api_map, name_pin, locals,
+                         on_self: steps.empty?, bindings: bindings)
           return nil unless step
 
           steps.push step
@@ -420,8 +437,10 @@ module Solargraph
       # @param name_pin [Pin::Base]
       # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
       # @param on_self [Boolean] true if `link` has no receiver but self
+      # @param bindings [::Array<Pin::LocalVariable>] gets the local
+      #   variables `link` reads
       # @return [::Array, nil] e.g. [:lvar, :h] or [:self_call, :table]
-      def step_of link, prefix, api_map, name_pin, locals, on_self:
+      def step_of link, prefix, api_map, name_pin, locals, on_self:, bindings:
         return [:ivar, link.word.to_sym] if link.is_a?(Chain::InstanceVariable)
         return [:cvar, link.word.to_sym] if link.is_a?(Chain::ClassVariable)
         return unless link.is_a?(Chain::Call) && !link.nullable? && link.arguments.empty? && !link.with_block?
@@ -430,7 +449,17 @@ module Solargraph
         # calls a method, so tell them apart by what it resolves to
         pins = Chain.new(prefix).define(api_map, name_pin, locals)
         return if pins.empty?
-        return [:lvar, link.word.to_sym] if prefix.length == 1 && pins.all?(Pin::LocalVariable)
+        if prefix.length == 1 && pins.all?(Pin::LocalVariable)
+          location = link.location
+          return unless location
+
+          # every same-named variable in sight, as #define merges a block
+          # parameter with the outer variable it shadows
+          bindings.concat(locals.grep(Pin::LocalVariable).select do |pin|
+            pin.name == link.word && pin.visible_at?(name_pin, location)
+          end)
+          return [:lvar, link.word.to_sym]
+        end
         return unless pins.all? { |pin| pin.is_a?(Pin::Method) && pin.attribute? }
 
         [on_self ? :self_call : :call, link.word.to_sym]
