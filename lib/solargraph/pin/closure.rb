@@ -69,14 +69,24 @@ module Solargraph
       #
       # @return [Hash{Array<String> => Array<Pin::LocalVariable>}]
       def downcast_vars
-        @downcast_vars || {}
+        @chain_facts || {}
       end
 
       # @param path [::Array<String>]
       # @param var [Pin::LocalVariable]
       # @return [void]
       def add_downcast_var path, var
-        ((@downcast_vars ||= ChainFacts.new)[path] ||= []).push(var)
+        (chain_facts[path] ||= []).push(var)
+      end
+
+      # Keeps this closure's downcast vars in other's, e.g. for the Method
+      # pins module_function makes of one def, whose body is parsed with
+      # another pin as its closure
+      #
+      # @param other [Closure]
+      # @return [void]
+      def share_downcast_vars other
+        @chain_facts = other.chain_facts
       end
 
       # Downcast vars come from parsing this closure, so gem pin caches leave them out
@@ -114,6 +124,13 @@ module Solargraph
         return '' if generics.empty?
 
         "[#{generics.map(&:to_s).join(', ')}] "
+      end
+
+      protected
+
+      # @return [ChainFacts]
+      def chain_facts
+        @chain_facts ||= ChainFacts.new
       end
     end
   end

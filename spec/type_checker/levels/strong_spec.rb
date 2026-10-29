@@ -1292,6 +1292,93 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'narrows a .nil?-guarded call chain as the last expression of a module_function method' do
+      checker = type_checker(%(
+        class Tag
+          # @return [Array<String>, nil]
+          attr_reader :types
+        end
+
+        module Directive
+          module_function
+
+          # @param tag [Tag]
+          # @return [String, nil]
+          def type_string tag
+            x = 1
+            tag.types.nil? ? nil : tag.types.join
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a call chain after a return guard in a module_function method' do
+      checker = type_checker(%(
+        class Tag
+          # @return [Array<String>, nil]
+          attr_reader :types
+        end
+
+        module Directive
+          module_function
+
+          # @param tag [Tag]
+          # @return [String, nil]
+          def type_string tag
+            return nil if tag.types.nil?
+            tag.types.join
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a call chain across || in a module_function method' do
+      checker = type_checker(%(
+        class Tag
+          # @return [Array<String>, nil]
+          attr_reader :types
+        end
+
+        module Directive
+          module_function
+
+          # @param tag [Tag]
+          # @return [String, nil]
+          def type_string tag
+            t = tag.types.nil? || tag.types.empty? ? nil : tag.types.join
+            t
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a call chain in a method named by module_function' do
+      checker = type_checker(%(
+        class Tag
+          # @return [Array<String>, nil]
+          attr_reader :types
+        end
+
+        module Directive
+          # @param tag [Tag]
+          # @return [String, nil]
+          def type_string tag
+            return nil if tag.types.nil?
+            tag.types.join
+          end
+          module_function :type_string
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'narrows a repeated index with a local variable argument, also through an assignment' do
       checker = type_checker(%(
         class Repro
