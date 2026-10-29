@@ -3,6 +3,8 @@
 module Solargraph
   module Pin
     class LocalVariable < BaseVariable
+      include ClosureRequired
+
       # @param api_map [ApiMap]
       # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map

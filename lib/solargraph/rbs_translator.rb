@@ -27,7 +27,7 @@ module Solargraph
     # @param param_type [RBS::Types::Function::Param]
     # @param name [String]
     # @param decl [Symbol]
-    # @param closure [Pin::Closure]
+    # @param closure [Pin::Callable]
     # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
     # @return [Pin::Parameter]
     def self.to_parameter_pin param_type, name, decl, closure, type_alias_decls: {}
@@ -42,7 +42,7 @@ module Solargraph
     end
 
     # @param method_type [RBS::MethodType, RBS::Types::Block]
-    # @param closure [Pin::Closure]
+    # @param closure [Pin::Callable]
     # @param parameter_names [Array<String>]
     # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
     # @return [Array<Pin::Parameter>]
@@ -92,7 +92,7 @@ module Solargraph
     end
 
     # @param method_type [RBS::MethodType]
-    # @param closure [Pin::Closure]
+    # @param closure [Pin::Callable]
     # @param parameter_names [Array<String>]
     # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
     # @return [Pin::Signature]
