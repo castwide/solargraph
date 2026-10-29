@@ -204,13 +204,13 @@ module Solargraph
           end
 
           element_types = items.map do |type|
-            # @sg-ignore https://github.com/apiology/solargraph/pull/390
+            # @sg-ignore flat_map(&:items) is typed as a bare Array
             if type.tuple?
-              # @sg-ignore https://github.com/apiology/solargraph/pull/390
+              # @sg-ignore flat_map(&:items) is typed as a bare Array
               type.all_params[index]
-            # @sg-ignore https://github.com/apiology/solargraph/pull/390
+            # @sg-ignore flat_map(&:items) is typed as a bare Array
             elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
-              # @sg-ignore https://github.com/apiology/solargraph/pull/390
+              # @sg-ignore flat_map(&:items) is typed as a bare Array
               type.all_params.first
             end
           end.compact
