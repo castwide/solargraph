@@ -188,7 +188,7 @@ module Solargraph
         unless @mass_assignment.nil?
           mass_node, index = @mass_assignment
           types = return_types_from_node(mass_node, api_map)
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1461
+          # @sg-ignore Destructuring a union of tuples types each position from its first tuple
           return adjust_type api_map, rest_capture_type(api_map, types, index) if index.is_a?(::Range)
 
           types.map! do |type|
