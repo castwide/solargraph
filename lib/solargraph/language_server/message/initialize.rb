@@ -47,8 +47,8 @@ module Solargraph
                                                                                              'foldingRange')
           result[:capabilities].merge! static_highlights unless dynamic_registration_for?('textDocument',
                                                                                           'documentHighlight')
-          # @todo Temporarily disabled
-          # result[:capabilities].merge! static_code_action unless dynamic_registration_for?('textDocument', 'codeAction')
+          result[:capabilities].merge! static_code_action unless dynamic_registration_for?('textDocument', 'codeAction')
+          result[:capabilities].merge! static_code_lens unless dynamic_registration_for?('textDocument', 'codeLens')
           set_result result
         end
 
@@ -77,8 +77,18 @@ module Solargraph
         # @return [Hash{Symbol => BasicObject}]
         def static_code_action
           {
-            codeActionProvider: true,
-            codeActionKinds: ['quickfix']
+            codeActionProvider: {
+              codeActionKinds: [TextDocument::CodeAction::KIND]
+            }
+          }
+        end
+
+        # @return [Hash{Symbol => BasicObject}]
+        def static_code_lens
+          {
+            codeLensProvider: {
+              resolveProvider: false
+            }
           }
         end
 

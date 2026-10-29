@@ -98,6 +98,11 @@ module Solargraph
       @conventions_environ ||= Environ.new
     end
 
+    # @return [Array<CodeLens>]
+    def convention_code_lenses
+      conventions_environ.code_lenses
+    end
+
     # all pins except Solargraph::Pin::Reference::Reference
     #
     # @return [Array<Pin::Base>]
