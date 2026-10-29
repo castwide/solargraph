@@ -69,10 +69,11 @@ module Solargraph
       #
       # @todo 4: Missed nil violation
       #
-      # pending code fixes (283):
+      # pending code fixes (297):
       #
       # @todo 281: Need to add nil check here
       # @todo 22: Translate to something flow sensitive typing understands
+      # @todo 14: Array#fetch without a block takes its block overload's generic<T>
       # @todo 4: flat_map(&:items) is typed as a bare Array
       # @todo 3: Need a downcast here
       # @todo 1: Destructuring a union of tuples types each position from its first tuple

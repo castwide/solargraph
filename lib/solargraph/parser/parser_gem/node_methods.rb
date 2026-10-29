@@ -50,6 +50,7 @@ module Solargraph
           when :nil
             'nil'
           when :const_pattern, :match_as
+            # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
             pattern_type_name(node.children.fetch(0))
           when :match_alt
             alternatives = node.children

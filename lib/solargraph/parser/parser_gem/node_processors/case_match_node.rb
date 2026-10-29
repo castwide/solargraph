@@ -22,10 +22,12 @@ module Solargraph
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_case_match(node)
             subject = node.children.fetch(0)
+            # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
             NodeProcessor.process(subject, region, pins, locals, ivars)
             # Only `subject => pattern` raises instead of failing, so
             # only its captures are always bound
             @nilable = node.type != :match_pattern
+            # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
             return add_captures(node.children.fetch(1), subject) unless node.type == :case_match
 
             clauses = node.children.drop(1).compact
@@ -84,17 +86,22 @@ module Solargraph
           def add_as_capture pattern, subject
             inner = pattern.children.fetch(0)
             var = pattern.children.fetch(1)
+            # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
             type_name = pattern_type_name(inner)
             if type_name.nil?
+              # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
               add_capture(var, assignment: subject)
             elsif subject
               # The subject narrowed to the pattern, as `in Foo` narrows the subject itself
+              # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
               add_capture(var, assignment: subject, intersection_return_type: ComplexType.parse(type_name))
             else
               # Undeclared and narrowed, so a value constant pattern leaves it unknown
+              # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
               add_capture(var, return_type: ComplexType::UNDEFINED,
                                intersection_return_type: ComplexType.parse(type_name))
             end
+            # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
             add_captures(inner, subject)
           end
 
