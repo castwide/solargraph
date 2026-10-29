@@ -27,7 +27,7 @@ module Solargraph
         # @param method_pin [Pin::Method]
         # @return [Macro]
         def from_directive directive, method_pin
-          macro_name = directive.tag.name.empty? ? method_pin.path.downcase : directive.tag.name
+          macro_name = directive.tag.name.to_s.empty? ? method_pin.path.downcase : directive.tag.name
           method_object = method_object_from_pin(method_pin)
           code = directive.tag.text.to_s.gsub(/\n(?!@!|\s)/, "\n  ")
           macro_object = YARD::CodeObjects::MacroObject.create(macro_name.to_s, code, method_object)
