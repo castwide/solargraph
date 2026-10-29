@@ -51,7 +51,7 @@ module Solargraph
     # @param name [String] the plugin's require path
     # @return [void]
     def add_plugin name
-      # @sg-ignore Unresolved call to name on Gem::BasicSpecification, Hash{String => Gem::BasicSpecification}
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1415
       spec = Gem.loaded_specs.each_value.find { |s| s.name == name || s.contains_requirable_file?(name) }
       plugins[spec&.name || name] = spec&.version&.to_s
       plugin_requires.push name unless plugin_requires.include?(name)
@@ -67,13 +67,13 @@ module Solargraph
       return if name.nil?
       file = Object.const_source_location(name)&.first
       return if file.nil?
-      # @sg-ignore each_value block param is typed as the Hash pair, not the value
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1415
       spec = Gem.loaded_specs.each_value.find { |s| file.start_with?(File.join(s.full_gem_path, '')) }
-      # @sg-ignore each_value block param is typed as the Hash pair, not the value
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1415
       return if spec.nil? || spec.name == 'solargraph'
-      # @sg-ignore each_value block param is typed as the Hash pair, not the value
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1415
       plugins[spec.name] = spec.version.to_s
-      # @sg-ignore each_value block param is typed as the Hash pair, not the value
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1415
       plugin_requires.push spec.name unless plugin_requires.include?(spec.name)
     end
 
