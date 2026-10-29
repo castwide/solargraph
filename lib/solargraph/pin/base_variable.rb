@@ -188,7 +188,8 @@ module Solargraph
         unless @mass_assignment.nil?
           mass_node, index = @mass_assignment
           types = return_types_from_node(mass_node, api_map)
-          return adjust_type api_map, rest_capture_type(api_map, types) if index.is_a?(::Range)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1461
+          return adjust_type api_map, rest_capture_type(api_map, types, index) if index.is_a?(::Range)
 
           types.map! do |type|
             if type.tuple?
@@ -208,18 +209,19 @@ module Solargraph
 
       # The Array bound by a `*rest` capture in an array pattern, of the
       # subject's deconstructed element types, e.g. `Array<String>` from
-      # `[a, *rest]` on an `Array<String>` subject.  Tuples do not
-      # resolve by position (TypeMethods#tuple? is always false), so a
-      # tuple subject gives the union of its element types.  Plain
+      # `[a, *rest]` on an `Array<String>` subject, or `Array<Integer>`
+      # from `[s, *rest]` on an `Array(String, Integer)` tuple.  Plain
       # `::Array` when the element type is unknown.
       #
       # @param api_map [ApiMap]
       # @param types [::Array<ComplexType>] the subject's types
+      # @param range [::Range<Integer>] subject positions the rest covers
       # @return [ComplexType]
-      def rest_capture_type api_map, types
+      def rest_capture_type api_map, types, range
         elements = types.flat_map do |type|
           type = deconstructed_type(api_map, type)
-          next [] unless ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+          next type.all_params[range] || [] if type.tuple?
+          next [] unless type.rooted_name == '::Array'
 
           type.all_params
         end

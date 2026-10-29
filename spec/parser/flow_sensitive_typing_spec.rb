@@ -1130,7 +1130,7 @@ end
   end
 
   it 'types tuple-index captures by position' do
-    pending 'ComplexType::TypeMethods#tuple? returns false, so mass assignment reads every index as the first'
+    pending 'https://github.com/castwide/solargraph/pull/1461'
 
     source = Solargraph::Source.load_string(%(
       # @param t [Array(String, Integer)]
@@ -1267,7 +1267,9 @@ end
     expect(api_map.clip_at('test.rb', [9, 10]).infer.to_s).to eq('Array<String>')
   end
 
-  it 'types rest captures from a tuple subject as an Array of its element types' do
+  it 'types rest captures from a tuple subject as an Array of the remaining element types' do
+    pending 'https://github.com/castwide/solargraph/pull/1461'
+
     source = Solargraph::Source.load_string(%(
       # @param t [Array(String, Integer)]
       def m(t)
@@ -1276,7 +1278,7 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [4, 8]).infer.to_s).to eq('Array<String, Integer>')
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.to_s).to eq('Array<Integer>')
   end
 
   it 'types rest captures from the return type of the subject deconstruct method' do
