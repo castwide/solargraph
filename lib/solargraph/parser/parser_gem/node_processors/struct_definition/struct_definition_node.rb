@@ -76,6 +76,7 @@ module Solargraph
 
               return false if keyword_init_param.nil?
 
+              # rubocop:disable-next Lint/BooleanSymbol
               keyword_init_param.children[0].children[1].type == :true
             end
 
@@ -97,7 +98,7 @@ module Solargraph
             # @sg-ignore Need to add nil check here
             # @return [Array<Parser::AST::Node>]
             def struct_attribute_nodes
-              struct_node.children[2..-1]
+              struct_node.children[2..]
             end
           end
         end
