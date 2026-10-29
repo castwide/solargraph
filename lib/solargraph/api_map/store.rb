@@ -32,7 +32,7 @@ module Solargraph
 
         # @todo Fix this map
         @fqns_pins_map = nil
-        # @sg-ignore https://github.com/apiology/solargraph/pull/386
+        # @sg-ignore Block call is typed as the blockless overload's Enumerator
         return catalog(pinsets) if changed.zero?
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1395

@@ -82,7 +82,7 @@ module Solargraph
     # @yieldparam [UniqueType]
     # @yieldreturn [UniqueType]
     # @return [Array<UniqueType>]
-    # @sg-ignore https://github.com/apiology/solargraph/pull/112
+    # @sg-ignore Forwarded &block return type ignores @yieldreturn
     def map &block
       @items.map(&block)
     end

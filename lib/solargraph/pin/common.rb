@@ -57,7 +57,7 @@ module Solargraph
       end
 
       # @return [ComplexType, ComplexType::UniqueType]
-      # @sg-ignore https://github.com/apiology/solargraph/pull/190
+      # @sg-ignore Mixin @type ivar declarations are not read
       def binder
         @binder || context
       end

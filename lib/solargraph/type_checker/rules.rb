@@ -69,25 +69,26 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (546):
+      # pending code fixes (560):
       #
       # @todo 141: Need to add nil check here
       # @todo 66: node.children[] relies on grammar-guaranteed arity
       # @todo 56: https://github.com/castwide/solargraph/pull/1245
-      # @todo 50: Array#first/#last relies on non-empty invariant
+      # @todo 51: Array#first/#last relies on non-empty invariant
       # @todo 33: pin.closure relies on closure always resolved
       # @todo 30: Range.from_node result assumed always present
       # @todo 26: Translate to something flow sensitive typing understands
-      # @todo 23: Hash#[] relies on key always being present
+      # @todo 24: Hash#[] relies on key always being present
       # @todo 22: String/Array Range slice relies on valid bounds
       # @todo 19: pin.location relies on location always resolved
       # @todo 20: Need a downcast here
-      # @todo 12: MatchData relies on regex always matching
+      # @todo 15: MatchData relies on regex always matching
       # @todo 12: Array#[] integer index relies on fixed arity
       # @todo 7: Missing @return tag
+      # @todo 6: Array literals infer bare Array without element types
       # @todo 5: Unresolved call to join on Array<String>, nil
       # @todo 3: Unresolved call to start_with? on Array, nil
-      # @todo 3: Array literals infer bare Array without element types
+      # @todo 3: Truthiness guards leak Boolean into ivar types
       # @todo 3: Yielded tuples are not destructured into block params
       # @todo 2: probably nil false alarm
       # @todo 1: Unresolved call to ==
@@ -103,6 +104,9 @@ module Solargraph
       # @todo 1: Unresolved call to name
       # @todo 1: Solargraph::Plugin::ActiveSupport#classmethod_pins return type could not be inferred
       # @todo 1: Solargraph::Plugin::ActiveSupport#attribute_pins return type could not be inferred
+      # @todo 1: Block call is typed as the blockless overload's Enumerator
+      # @todo 1: Forwarded &block return type ignores @yieldreturn
+      # @todo 1: Mixin @type ivar declarations are not read
       #
       # flow sensitive typing could handle (165):
       #
