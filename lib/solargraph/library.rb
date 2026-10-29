@@ -190,7 +190,7 @@ module Solargraph
         # @type [MatchData, nil]
         rgt = source.code[offset..]&.match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
-          # @sg-ignore MatchData relies on regex always matching
+          # @sg-ignore https://github.com/apiology/solargraph/pull/193
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag

@@ -75,7 +75,7 @@ module Solargraph
       #
       # @param api_map [ApiMap]
       # @return [Pin::Method, nil]
-      # @sg-ignore Truthiness guards leak Boolean into ivar types
+      # @sg-ignore https://github.com/apiology/solargraph/pull/178
       def resolve_method api_map
         return if @resolved_method
 

@@ -15,7 +15,7 @@ module Solargraph
       # may be the root level namespace, or it may not yet be
       # qualified
       # @return [Solargraph::Pin::Closure, nil]
-      # @sg-ignore Truthiness guards leak Boolean into ivar types
+      # @sg-ignore https://github.com/apiology/solargraph/pull/178
       attr_reader :closure
 
       # @param type [::Symbol] :class or :module

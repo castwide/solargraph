@@ -790,7 +790,7 @@ module Solargraph
         source = sources.find(uri)
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
-        # @sg-ignore Array#first/#last relies on non-empty invariant
+        # @sg-ignore https://github.com/apiology/solargraph/pull/175
         return change if diffs.empty? || diffs.length > 1 || diffs.first.length > 1
         # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top

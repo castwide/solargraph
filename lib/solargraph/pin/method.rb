@@ -469,7 +469,7 @@ module Solargraph
 
       protected
 
-      # @sg-ignore Truthiness guards leak Boolean into ivar types
+      # @sg-ignore https://github.com/apiology/solargraph/pull/178
       attr_writer :block, :signature_help, :documentation, :return_type
 
       # @return [Boolean]
