@@ -1619,5 +1619,17 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message))
         .to eq ['Declared type String does not match inferred type String, nil for variable x']
     end
+
+    it 'types method parameters from inline rbs signatures' do
+      checker = type_checker(%(
+        class Foo
+          #: (String) -> Integer
+          def bar(baz)
+            baz.size
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end
