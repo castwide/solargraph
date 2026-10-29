@@ -1233,6 +1233,79 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       expect(infer_at(code, [9, 10])).to eq('Integer, nil')
     end
 
+    it 'stops narrowing once a key may have been removed through the ivar of an attr_reader' do
+      code = %(
+        class Foo
+          # @return [Hash{String => Integer}]
+          attr_reader :table
+
+          # @param k [String]
+          def foo k
+            return 0 unless table.key?(k)
+            a = table[k]
+            @table.delete(k)
+            b = table[k]
+            a
+            b
+          end
+        end
+      )
+      expect(infer_at(code, [11, 12])).to eq('Integer')
+      expect(infer_at(code, [12, 12])).to eq('Integer, nil')
+    end
+
+    it 'stops narrowing once a key may have been removed through self' do
+      code = %(
+        class Foo
+          # @return [Hash{String => Integer}]
+          attr_reader :table
+
+          # @param k [String]
+          def foo k
+            return 0 unless table.key?(k)
+            self.table.delete(k)
+            v = table[k]
+            v
+          end
+        end
+      )
+      expect(infer_at(code, [10, 12])).to eq('Integer, nil')
+    end
+
+    it 'stops narrowing once a key may have been removed with &.' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          h&.delete(k)
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [7, 10])).to eq('Integer, nil')
+    end
+
+    it 'keeps narrowing after a key is removed from another Hash' do
+      code = %(
+        class Foo
+          # @return [Hash{String => Integer}]
+          attr_reader :table
+
+          # @param k [String]
+          # @param other [Hash{String => Integer}]
+          def foo k, other
+            return 0 unless table.key?(k)
+            @other.delete(k)
+            other&.delete(k)
+            v = table[k]
+            v
+          end
+        end
+      )
+      expect(infer_at(code, [12, 12])).to eq('Integer')
+    end
+
     it 'stops narrowing once the keys may have been rewritten' do
       code = %(
         # @param h [Hash{String => Integer}]

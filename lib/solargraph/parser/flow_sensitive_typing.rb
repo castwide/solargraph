@@ -653,7 +653,11 @@ module Solargraph
           words = write_receiver(node, [])
           collect_writes(body, words, writes) if words
         end
-        collect_key_removals(body, receiver, writes)
+        hash_words = write_receiver(receiver, [])
+        # without a name for the receiver, removals can't be ruled out
+        return [] if hash_words.nil?
+
+        collect_key_removals(body, hash_words, writes)
         presences.map do |presence|
           cut = writes.select { |pos| presence.include?(pos) }.min
           cut ? Range.new(presence.start, cut) : presence
@@ -661,15 +665,17 @@ module Solargraph
       end
 
       # @param node [Parser::AST::Node]
-      # @param hash [Parser::AST::Node] e.g. 'h' for 'h.delete(k)'
+      # @param words [::Array<String>] the Hash, as #write_receiver names
+      #   it, e.g. ['self', 'table'] for 'table', 'self.table' or '@table'
       # @param writes [Array<Position>] start positions found so far
       # @return [void]
-      def collect_key_removals node, hash, writes
-        if node.type == :send && node.children[0] == hash && KEY_REMOVERS.include?(node.children[1])
+      def collect_key_removals node, words, writes
+        if %i[send csend].include?(node.type) && KEY_REMOVERS.include?(node.children[1]) &&
+           write_receiver(node.children[0], words) == words
           writes << get_node_start_position(node)
         end
         node.children.each do |child|
-          collect_key_removals(child, hash, writes) if child.is_a?(::Parser::AST::Node)
+          collect_key_removals(child, words, writes) if child.is_a?(::Parser::AST::Node)
         end
       end
 
