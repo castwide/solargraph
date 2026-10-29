@@ -636,6 +636,17 @@ describe Solargraph::ApiMap do
     expect(@api_map.super_and_sub?('Foo', 'Bar')).to be(false)
   end
 
+  it 'distinguishes modules from classes and unknown namespaces' do
+    source = Solargraph::Source.load_string(%(
+      module Foo; end
+      class Bar; end
+    ))
+    @api_map.map source
+    expect(@api_map.module?('Foo')).to be(true)
+    expect(@api_map.module?('Bar')).to be(false)
+    expect(@api_map.module?('Baz')).to be(false)
+  end
+
   it 'adds prepended methods to the ancestor tree' do
     source = Solargraph::Source.load_string(%(
       module Prepended
