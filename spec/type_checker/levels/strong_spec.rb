@@ -1619,5 +1619,15 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message))
         .to eq ['Declared type String does not match inferred type String, nil for variable x']
     end
+
+    it 'resolves calls on class variables in a namespace body' do
+      checker = type_checker(%(
+        module Foo
+          @@bar = 'bar'
+          @@bar.upcase
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end
