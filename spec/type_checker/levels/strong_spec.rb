@@ -728,6 +728,25 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'does not crash resolving a generic Hash value to a union' do
+      checker = type_checker(%(
+        # @generic T
+        class Box
+          # @return [Hash<Symbol, generic<T>>]
+          def to_h
+            {}
+          end
+        end
+
+        # @param box [Box<String, nil>]
+        # @return [Array<Symbol>]
+        def keys_of box
+          box.to_h.keys
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'does not complain on select { is_a? } pattern' do
       checker = type_checker(%(
         # @param arr [Enumerable<Object>}
