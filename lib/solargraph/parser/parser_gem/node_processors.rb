@@ -31,6 +31,9 @@ module Solargraph
         autoload :WhileNode,     'solargraph/parser/parser_gem/node_processors/while_node'
         autoload :AndNode,       'solargraph/parser/parser_gem/node_processors/and_node'
         autoload :OrNode,        'solargraph/parser/parser_gem/node_processors/or_node'
+        autoload :ClassDefinition, 'solargraph/parser/parser_gem/node_processors/class_definition'
+        autoload :StructDefinition, 'solargraph/parser/parser_gem/node_processors/struct_definition'
+        autoload :DataDefinition,  'solargraph/parser/parser_gem/node_processors/data_definition'
       end
     end
 
@@ -44,8 +47,8 @@ module Solargraph
       register :defs,         ParserGem::NodeProcessors::DefsNode
       register :if,           ParserGem::NodeProcessors::IfNode
       register :send,         ParserGem::NodeProcessors::SendNode
-      register :class,        Convention::StructDefinition::NodeProcessors::StructNode
-      register :class,        Convention::DataDefinition::NodeProcessors::DataNode
+      register :class,        ParserGem::NodeProcessors::StructDefinition::StructNode
+      register :class,        ParserGem::NodeProcessors::DataDefinition::DataNode
       register :class,        ParserGem::NodeProcessors::NamespaceNode
       register :module,       ParserGem::NodeProcessors::NamespaceNode
       register :sclass,       ParserGem::NodeProcessors::SclassNode
@@ -53,9 +56,9 @@ module Solargraph
       register :cvasgn,       ParserGem::NodeProcessors::CvasgnNode
       register :lvasgn,       ParserGem::NodeProcessors::LvasgnNode
       register :gvasgn,       ParserGem::NodeProcessors::GvasgnNode
-      register :casgn,        Convention::StructDefinition::NodeProcessors::StructNode
-      register :casgn,        Convention::DataDefinition::NodeProcessors::DataNode
-      register :casgn,        Convention::ClassDefinition::NodeProcessors::ClassNode
+      register :casgn,        ParserGem::NodeProcessors::StructDefinition::StructNode
+      register :casgn,        ParserGem::NodeProcessors::DataDefinition::DataNode
+      register :casgn,        ParserGem::NodeProcessors::ClassDefinition::ClassNode
       register :casgn,        ParserGem::NodeProcessors::CasgnNode
       register :masgn,        ParserGem::NodeProcessors::MasgnNode
       register :alias,        ParserGem::NodeProcessors::AliasNode
