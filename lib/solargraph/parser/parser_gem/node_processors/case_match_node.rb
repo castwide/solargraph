@@ -85,10 +85,13 @@ module Solargraph
           def add_as_capture pattern, subject
             pattern => [:match_as, ::Parser::AST::Node => inner, ::Parser::AST::Node => var]
             type_name = pattern_type_name(inner)
-            if type_name
-              add_capture(var, comments: "@type [#{type_name}]")
-            else
+            if type_name.nil?
               add_capture(var, assignment: subject)
+            elsif subject
+              # The subject narrowed to the pattern, as `in Foo` narrows the subject itself
+              add_capture(var, assignment: subject, intersection_return_type: ComplexType.parse(type_name))
+            else
+              add_capture(var, return_type: ComplexType.parse(type_name))
             end
             add_captures(inner, subject)
           end
@@ -120,7 +123,7 @@ module Solargraph
           # @param range [::Range<Integer>] subject positions the rest covers
           # @return [void]
           def add_rest_capture rest_var, subject, range
-            return add_capture(rest_var, comments: '@type [::Array]') if subject.nil?
+            return add_capture(rest_var, return_type: ComplexType.parse('::Array')) if subject.nil?
 
             add_capture(rest_var, mass_assignment: [subject, range])
           end
@@ -141,9 +144,10 @@ module Solargraph
           # @param var [Parser::AST::Node] a match_var node
           # @param assignment [Parser::AST::Node, nil]
           # @param mass_assignment [::Array(Parser::AST::Node, Integer), ::Array(Parser::AST::Node, ::Range<Integer>), nil]
-          # @param comments [String, nil]
+          # @param return_type [ComplexType, nil]
+          # @param intersection_return_type [ComplexType, nil]
           # @return [void]
-          def add_capture var, assignment: nil, mass_assignment: nil, comments: nil
+          def add_capture var, assignment: nil, mass_assignment: nil, return_type: nil, intersection_return_type: nil
             closure_location = region.closure.location
             # Captures outlive the match, like any local assignment
             presence = Range.new(get_node_start_position(var), closure_location.range.ending) if closure_location
@@ -153,7 +157,8 @@ module Solargraph
               name: var.children.fetch(0).to_s,
               assignment: assignment,
               mass_assignment: mass_assignment,
-              comments: comments,
+              return_type: return_type,
+              intersection_return_type: intersection_return_type,
               presence: presence,
               source: :parser
             )

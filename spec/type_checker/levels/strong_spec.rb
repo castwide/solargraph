@@ -47,6 +47,29 @@ describe Solargraph::TypeChecker do
         .to eq(['Wrong argument type for Foo#takes_int: i expected Integer, received String, Integer'])
     end
 
+    it 'types a capture of a value constant pattern as the subject' do
+      checker = type_checker(%(
+        class Foo
+          PATTERN = /abc/
+
+          # @param i [Integer]
+          # @return [void]
+          def takes_int i; end
+
+          # @param x [String, Integer]
+          # @return [void]
+          def check x
+            case x
+            in PATTERN => f
+              takes_int(f)
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Wrong argument type for Foo#takes_int: i expected Integer, received String, Integer'])
+    end
+
     it 'does not flag attributes whose declared type already allows nil' do
       checker = type_checker(%(
         class Foo
