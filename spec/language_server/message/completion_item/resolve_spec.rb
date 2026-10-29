@@ -71,7 +71,7 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
     )
     resolve = described_class.new(host, { 'params' => JSON.parse(JSON.generate(params)) })
     resolve.process
-    stringify = ->(obj) {
+    stringify = lambda { |obj|
       case obj
       when Hash then obj.transform_keys(&:to_s).transform_values { |v| stringify.call(v) }
       when Array then obj.map { |v| stringify.call(v) }
