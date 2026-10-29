@@ -1077,6 +1077,43 @@ end
     end
   end
 
+  it 'narrows the subject to nil and to a union with nil' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [String, Integer, nil]
+      def m(x)
+        case x
+        in nil
+          x
+        in Integer | nil
+          x
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('nil')
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Integer, nil')
+  end
+
+  it 'leaves the subject unnarrowed by a value constant pattern' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        PATTERN = /abc/
+
+        # @param x [String, Integer]
+        def m(x)
+          case x
+          in PATTERN => f
+            x
+            f
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [8, 12]).infer.to_s).to eq('String, Integer')
+    expect(api_map.clip_at('test.rb', [9, 12]).infer.to_s).to eq('String, Integer')
+  end
+
   it 'types an alternative capture as the union' do
     source = Solargraph::Source.load_string(%(
       # @param x [String, Integer, Symbol]
