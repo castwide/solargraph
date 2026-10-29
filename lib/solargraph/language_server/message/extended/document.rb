@@ -14,7 +14,7 @@ module Solargraph
             )
           rescue StandardError => e
             Solargraph.logger.warn "Error processing document: [#{e.class}] #{e.message}"
-            # @sg-ignore Unresolved call to join on Array<String>, nil
+            # @sg-ignore https://github.com/apiology/solargraph/pull/108
             Solargraph.logger.debug e.backtrace.join("\n")
           end
         end

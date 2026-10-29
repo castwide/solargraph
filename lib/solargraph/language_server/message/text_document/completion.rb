@@ -38,7 +38,7 @@ module Solargraph
             end
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
-            # @sg-ignore Unresolved call to join on Array<String>, nil
+            # @sg-ignore https://github.com/apiology/solargraph/pull/108
             Logging.logger.warn e.backtrace.join("\n")
             set_result empty_result
           end

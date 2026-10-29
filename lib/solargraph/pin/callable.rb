@@ -148,7 +148,7 @@ module Solargraph
         callable = super(generics_to_resolve, return_type_context, resolved_generic_values: resolved_generic_values)
         callable.parameters = callable.parameters.each_with_index.map do |param, i|
           if arg_types.nil?
-            # @sg-ignore Yielded tuples are not destructured into block params
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1461
             param.dup
           else
             # @sg-ignore https://github.com/castwide/solargraph/pull/1461

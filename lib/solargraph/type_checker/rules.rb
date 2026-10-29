@@ -69,7 +69,7 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (546):
+      # pending code fixes (539):
       #
       # @todo 141: Need to add nil check here
       # @todo 66: node.children[] relies on grammar-guaranteed arity
@@ -85,11 +85,10 @@ module Solargraph
       # @todo 12: MatchData relies on regex always matching
       # @todo 12: Array#[] integer index relies on fixed arity
       # @todo 7: Missing @return tag
-      # @todo 5: Unresolved call to join on Array<String>, nil
       # @todo 3: Unresolved call to start_with? on Array, nil
       # @todo 3: Array literals infer bare Array without element types
-      # @todo 3: Yielded tuples are not destructured into block params
       # @todo 2: probably nil false alarm
+      # @todo 1: Yielded tuples are not destructured into block params
       # @todo 1: Unresolved call to ==
       # @todo 1: Unresolved call to gsub on Array, nil
       # @todo 1: Unresolved call to end_with? on Array, nil

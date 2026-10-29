@@ -124,7 +124,7 @@ module Solargraph
         parts = name.split('::')
         first = nil
         parts.each.with_index do |nam, idx|
-          # @sg-ignore Yielded tuples are not destructured into block params
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1467
           resolved, remainder = complex_resolve(nam, base, idx != parts.length - 1)
           first ||= remainder
           if resolved
