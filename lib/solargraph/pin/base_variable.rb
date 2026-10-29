@@ -195,18 +195,29 @@ module Solargraph
           # @sg-ignore Destructuring a union of tuples types each position from its first tuple
           return adjust_type api_map, rest_capture_type(api_map, types, index) if index.is_a?(::Range)
 
-          types.map! do |type|
-            type = deconstructed_type(api_map, type) if @deconstruct
+          # Each member of a union subject, e.g. `Array<String>, Box`
+          items = types.flat_map(&:items)
+          if @deconstruct
+            items = deconstructed_items(api_map, items)
+            # A member whose elements are unknown leaves the capture unknown
+            return ComplexType::UNDEFINED if items.any?(&:undefined?)
+          end
+
+          element_types = items.map do |type|
+            # @sg-ignore https://github.com/apiology/solargraph/pull/390
             if type.tuple?
+              # @sg-ignore https://github.com/apiology/solargraph/pull/390
               type.all_params[index]
+            # @sg-ignore https://github.com/apiology/solargraph/pull/390
             elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+              # @sg-ignore https://github.com/apiology/solargraph/pull/390
               type.all_params.first
             end
-          end.compact!
+          end.compact
 
-          return ComplexType::UNDEFINED if types.empty?
+          return ComplexType::UNDEFINED if element_types.empty?
 
-          return adjust_type api_map, ComplexType.new(types.uniq).qualify(api_map, *gates)
+          return adjust_type api_map, ComplexType.new(element_types.uniq).qualify(api_map, *gates)
         end
 
         ComplexType::UNDEFINED
@@ -223,8 +234,10 @@ module Solargraph
       # @param range [::Range<Integer>] subject positions the rest covers
       # @return [ComplexType]
       def rest_capture_type api_map, types, range
-        elements = types.flat_map do |type|
-          type = deconstructed_type(api_map, type)
+        items = deconstructed_items(api_map, types.flat_map(&:items))
+        return ComplexType.parse('::Array') if items.any?(&:undefined?)
+
+        elements = items.flat_map do |type|
           next type.all_params[range] || [] if type.tuple?
           next [] unless type.rooted_name == '::Array'
 
@@ -237,20 +250,22 @@ module Solargraph
         ComplexType.new([array_type]).qualify(api_map, *gates)
       end
 
-      # What an array pattern matches against: the type itself if it is
-      # already an Array, else the return type of its `deconstruct`
-      # method.
+      # What an array pattern matches against, for each member of a
+      # subject: the member itself if it is already an Array, else the
+      # return type of its `deconstruct` method.
       #
       # @param api_map [ApiMap]
-      # @param type [ComplexType]
-      # @return [ComplexType, ComplexType::UniqueType]
-      def deconstructed_type api_map, type
-        return type if type.rooted_name == '::Array'
+      # @param items [::Array<ComplexType::UniqueType>]
+      # @return [::Array<ComplexType::UniqueType>]
+      def deconstructed_items api_map, items
+        items.flat_map do |type|
+          next [type] if type.rooted_name == '::Array'
 
-        deconstruct = api_map.get_method_stack(type.rooted_tag, 'deconstruct').first
-        return type if deconstruct.nil?
+          deconstruct = api_map.get_method_stack(type.rooted_tag, 'deconstruct').first
+          next [type] if deconstruct.nil?
 
-        deconstruct.typify(api_map).self_to_type(type)
+          deconstruct.typify(api_map).self_to_type(type).items
+        end
       end
 
       # @param other [Object]
@@ -374,10 +389,9 @@ module Solargraph
 
         gates = closure&.gates || ['']
         intersection.items.any? do |unique_type|
-          gates.any? do |gate|
-            path = [gate, unique_type.name].reject(&:empty?).join('::')
-            api_map.get_path_pins(path).any?(Pin::Constant)
-          end
+          # Resolved as a constant reference is, through superclasses and mixins
+          path = api_map.resolve(unique_type.name, gates)
+          !path.nil? && api_map.get_path_pins(path).any?(Pin::Constant)
         end
       end
 

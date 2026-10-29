@@ -91,7 +91,9 @@ module Solargraph
               # The subject narrowed to the pattern, as `in Foo` narrows the subject itself
               add_capture(var, assignment: subject, intersection_return_type: ComplexType.parse(type_name))
             else
-              add_capture(var, return_type: ComplexType.parse(type_name))
+              # Undeclared and narrowed, so a value constant pattern leaves it unknown
+              add_capture(var, return_type: ComplexType::UNDEFINED,
+                               intersection_return_type: ComplexType.parse(type_name))
             end
             add_captures(inner, subject)
           end
@@ -144,7 +146,7 @@ module Solargraph
           # @param type [ComplexType, nil]
           # @return [ComplexType, nil]
           def with_nil type
-            return nil if type.nil?
+            return type if type.nil? || type.undefined?
 
             ComplexType.new(type.items + ComplexType::NIL.items)
           end

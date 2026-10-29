@@ -70,6 +70,31 @@ describe Solargraph::TypeChecker do
         .to eq(['Wrong argument type for Foo#takes_int: i expected Integer, received String, Integer, nil'])
     end
 
+    it 'does not narrow a case/in subject to an inherited value constant' do
+      checker = type_checker(%(
+        class Base
+          PAT = /abc/
+        end
+
+        class Sub < Base
+          # @param i [Integer]
+          # @return [void]
+          def takes_int i; end
+
+          # @param x [String, Integer]
+          # @return [void]
+          def check x
+            case x
+            in PAT
+              takes_int(x)
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Wrong argument type for Sub#takes_int: i expected Integer, received String, Integer'])
+    end
+
     it 'does not flag attributes whose declared type already allows nil' do
       checker = type_checker(%(
         class Foo

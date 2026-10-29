@@ -487,6 +487,9 @@ module Solargraph
       # @return [void]
       def process_in_pattern pin, in_pattern
         pattern = in_pattern.children.fetch(0)
+        # `in Pt(x:)` on subject x rebinds x, so x is no longer the subject
+        return if binds_name?(pattern, pin.name)
+
         type_name = pattern_type_name(pattern)
         guard_and_body = in_pattern.children.drop(1).compact
         return if type_name.nil? || guard_and_body.empty?
@@ -495,6 +498,15 @@ module Solargraph
         presence = Range.new(Position.new(before_loc.line, before_loc.column),
                              get_node_end_position(guard_and_body.fetch(-1)))
         process_facts({ pin => [{ type: ComplexType.parse(type_name) }] }, [presence])
+      end
+
+      # @param pattern [Parser::AST::Node]
+      # @param name [String]
+      # @return [Boolean] true if the pattern captures into a variable named name
+      def binds_name? pattern, name
+        return true if pattern.type == :match_var && pattern.children.fetch(0).to_s == name
+
+        pattern.children.any? { |child| child.is_a?(::Parser::AST::Node) && binds_name?(child, name) }
       end
 
       # @param clause_node [Parser::AST::Node, nil]

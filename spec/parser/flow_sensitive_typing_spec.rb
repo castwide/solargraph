@@ -1363,6 +1363,83 @@ end
     expect(api_map.clip_at('test.rb', [9, 8]).infer.to_s).to eq('undefined')
   end
 
+  it 'does not narrow a subject that the pattern rebinds' do
+    source = Solargraph::Source.load_string(%(
+      class Pt
+        # @return [Array<String>]
+        def deconstruct; end
+      end
+
+      # @param x [Pt, Integer]
+      def m(x)
+        case x
+        in Pt[x]
+          x
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    # x is now the capture, not a Pt; the capture itself is not typed yet
+    expect(api_map.clip_at('test.rb', [10, 10]).infer.to_s).not_to eq('Pt')
+  end
+
+  it 'types index and rest captures from every member of a union subject' do
+    source = Solargraph::Source.load_string(%(
+      class Box
+        # @return [Array<Integer>]
+        def deconstruct; end
+      end
+
+      class Untyped
+        def deconstruct; end
+      end
+
+      # @param x [Array<String>, Box]
+      # @param y [Array<String>, Untyped]
+      def m(x, y)
+        x => [a, *rest]
+        a
+        rest
+        y => [b, *more]
+        b
+        more
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [14, 8]).infer.to_s).to eq('String, Integer')
+    expect(api_map.clip_at('test.rb', [15, 8]).infer.to_s).to eq('Array<String, Integer>')
+    expect(api_map.clip_at('test.rb', [17, 8]).infer.to_s).to eq('undefined')
+    expect(api_map.clip_at('test.rb', [18, 8]).infer.to_s).to eq('Array')
+  end
+
+  it 'types a multiple assignment from every member of a union' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Array<String>, Array<Integer>]
+      def m(x)
+        c, d = x
+        c
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.to_s).to eq('String, Integer')
+  end
+
+  it 'leaves a nested capture of a value constant pattern unknown' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        PAT = /abc/
+      end
+
+      # @param x [Array<String>]
+      def m(x)
+        x => [Base::PAT => h]
+        h
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [8, 8]).infer.to_s).to eq('undefined')
+  end
+
   it 'types rest captures from the return type of the subject deconstruct method' do
     source = Solargraph::Source.load_string(%(
       class Pair
