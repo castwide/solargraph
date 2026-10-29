@@ -15,6 +15,10 @@ module Solargraph
         transform_keys! compare_by_identity
       ].freeze
 
+      # String and Array methods without a '!' that change a key in place,
+      # so that it may no longer match the entry stored under it
+      KEY_MUTATORS = %i[<< []= concat prepend insert replace clear push append unshift setbyte force_encoding].freeze
+
       # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::KeyLookup>]
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
@@ -635,8 +639,9 @@ module Solargraph
       end
 
       # Ends each presence of the 'h[k]' fact from a 'h.key?(k)' guard at
-      # the first write to 'h' or 'k', e.g. 'h = other', or call that can
-      # remove a key from 'h', e.g. 'h.delete(k)'.
+      # the first write to 'h' or 'k', e.g. 'h = other', call that can
+      # remove a key from 'h', e.g. 'h.delete(k)', or call that can change
+      # 'k' in place, e.g. 'k << x'.
       #
       # @param presences [Array<Range>]
       # @param receiver [Parser::AST::Node] e.g. 'h'
@@ -657,25 +662,35 @@ module Solargraph
         # without a name for the receiver, removals can't be ruled out
         return [] if hash_words.nil?
 
-        collect_key_removals(body, hash_words, writes)
+        collect_calls(body, hash_words, writes) { |name| KEY_REMOVERS.include?(name) }
+        key_words = write_receiver(key, [])
+        if key_words
+          collect_calls(body, key_words, writes) { |name| name.end_with?('!') || KEY_MUTATORS.include?(name) }
+        end
         presences.map do |presence|
           cut = writes.select { |pos| presence.include?(pos) }.min
           cut ? Range.new(presence.start, cut) : presence
         end
       end
 
+      # Finds calls on a receiver whose method names the block accepts,
+      # e.g. 'delete' in 'h.delete(k)'
+      #
       # @param node [Parser::AST::Node]
-      # @param words [::Array<String>] the Hash, as #write_receiver names
-      #   it, e.g. ['self', 'table'] for 'table', 'self.table' or '@table'
+      # @param words [::Array<String>] the receiver, as #write_receiver
+      #   names it, e.g. ['self', 'table'] for 'table', 'self.table' or
+      #   '@table'
       # @param writes [Array<Position>] start positions found so far
+      # @yieldparam name [Symbol] the method called
+      # @yieldreturn [Boolean]
       # @return [void]
-      def collect_key_removals node, words, writes
-        if %i[send csend].include?(node.type) && KEY_REMOVERS.include?(node.children[1]) &&
+      def collect_calls node, words, writes, &matches
+        if %i[send csend].include?(node.type) && matches.call(node.children[1]) &&
            write_receiver(node.children[0], words) == words
           writes << get_node_start_position(node)
         end
         node.children.each do |child|
-          collect_key_removals(child, words, writes) if child.is_a?(::Parser::AST::Node)
+          collect_calls(child, words, writes, &matches) if child.is_a?(::Parser::AST::Node)
         end
       end
 

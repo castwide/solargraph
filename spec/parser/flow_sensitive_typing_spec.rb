@@ -1306,6 +1306,42 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       expect(infer_at(code, [12, 12])).to eq('Integer')
     end
 
+    it 'stops narrowing once the key may have been changed in place' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @param j [String]
+        def foo h, k, j
+          return 0 unless h.key?(k) && h.key?(j)
+          a = h[k]
+          k << 'x'
+          j.upcase!
+          b = h[k]
+          c = h[j]
+          a
+          b
+          c
+        end
+      )
+      expect(infer_at(code, [11, 10])).to eq('Integer')
+      expect(infer_at(code, [12, 10])).to eq('Integer, nil')
+      expect(infer_at(code, [13, 10])).to eq('Integer, nil')
+    end
+
+    it 'keeps narrowing after a call that copies the key' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          k.upcase
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [7, 10])).to eq('Integer')
+    end
+
     it 'stops narrowing once the keys may have been rewritten' do
       code = %(
         # @param h [Hash{String => Integer}]
