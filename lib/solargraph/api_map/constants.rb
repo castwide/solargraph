@@ -108,6 +108,7 @@ module Solargraph
       # @return [String, nil]
       def resolve_and_cache name, gates
         in_process.add [name, gates]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1451
         cached_resolve[[name, gates]] = resolve_uncached(name, gates)
       ensure
         in_process.delete [name, gates]
