@@ -288,6 +288,13 @@ module Solargraph
       #
       # @return [void]
       def process_pattern_match node, true_presences
+        # `a && (x in PAT)` wraps the match in a one-child begin
+        while node.type == :begin && node.children.length == 1
+          inner = node.children.fetch(0)
+          break unless inner.is_a?(::Parser::AST::Node)
+
+          node = inner
+        end
         return unless node.type == :match_pattern_p
 
         pattern = node.children.fetch(1)

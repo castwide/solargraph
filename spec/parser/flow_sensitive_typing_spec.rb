@@ -1149,6 +1149,21 @@ end
     expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String')
   end
 
+  it 'narrows captures of a parenthesized `in` on the right of && in its true branch' do
+    source = Solargraph::Source.load_string(%(
+      class Foo; end
+      # @param a [Boolean]
+      # @param x [Array<Object>]
+      def m(a, x)
+        if a && (x in [_, Foo => y])
+          y
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('Foo')
+  end
+
   it 'types an alternative capture as the union' do
     source = Solargraph::Source.load_string(%(
       # @param x [String, Integer, Symbol]
