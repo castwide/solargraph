@@ -319,7 +319,8 @@ module Solargraph
         return unless pin
 
         if isa_type_name.nil?
-          instance_type = class_variable_instance_type(isa_node.children[2], isa_position)
+          return unless isa_node.children[2] in ::Parser::AST::Node => arg_node
+          instance_type = class_variable_instance_type(arg_node, isa_position)
           return if instance_type.nil?
 
           # A false result says nothing about the variable's declared
@@ -345,13 +346,15 @@ module Solargraph
       # The instance type a variable argument to is_a? guarantees,
       # from the variable's declared Class<X> type
       #
-      # @param arg_node [Parser::AST::Node, nil]
+      # @param arg_node [Parser::AST::Node]
       # @param position [Position]
       #
       # @return [ComplexType, nil]
       def class_variable_instance_type arg_node, position
-        return if arg_node.nil? || !%i[lvar ivar].include?(arg_node.type)
-        class_pin = find_var(arg_node.children[0].to_s, position)
+        return unless %i[lvar ivar].include?(arg_node.type)
+        variable_name = arg_node.children[0]
+        return unless variable_name.is_a?(Symbol)
+        class_pin = find_var(variable_name.to_s, position)
         return if class_pin.nil?
         class_type = class_pin.return_type
         return if class_type.nil? || class_type.undefined?
