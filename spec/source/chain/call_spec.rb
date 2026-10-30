@@ -14,6 +14,19 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  it 'recognizes that the count overload of a core method is not nilable' do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String>]
+      arr = []
+      arr.first(1)
+    ))
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map(nil).locals)
+    expect(type.rooted_tags).to eq('::Array<::String>')
+  end
+
   it 'recognizes core methods that return self' do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
@@ -44,6 +57,26 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 14))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map(nil).locals)
     expect(type.tag).to eq('Integer')
+  end
+
+  it 'resolves super passed as an argument to the superclass method' do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def my_method
+          1.5
+        end
+      end
+      class Bar < Foo
+        def my_method
+          456 + super
+        end
+      end
+      Bar.new.my_method))
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 14))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map(nil).locals)
+    expect(type.tag).to eq('Float')
   end
 
   it 'infers return types based on yield call and @yieldreturn' do
