@@ -90,15 +90,20 @@ module Solargraph
       #
       # @param inc [Pin::Reference::Include]
       # @param visited [Set<String>]
+      # @param result [Array<String>] paths found so far
       # @return [Array<String>]
-      def nested_include_paths inc, visited = Set.new
+      def nested_include_paths inc, visited = Set.new, result = []
         path = resolve_reference(inc)
-        return [] if path.nil? || !visited.add?(path)
+        return result if path.nil? || !visited.add?(path)
 
-        include_pins_by_namespace.fetch(path, []).flat_map do |nested|
+        (include_pins_by_namespace[path] || []).each do |nested|
           nested_path = resolve_reference(nested)
-          nested_path.nil? ? [] : [nested_path, *nested_include_paths(nested, visited)]
+          next if nested_path.nil?
+
+          result.push nested_path
+          nested_include_paths(nested, visited, result)
         end
+        result
       end
 
       # Resolve a mixin's module name lexically from its namespace.
