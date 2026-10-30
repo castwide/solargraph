@@ -74,6 +74,7 @@ module Solargraph
                 struct_def_param in [:hash, [:pair, [_, :keyword_init, *], _], *]
               end
 
+              # rubocop:disable-next Lint/BooleanSymbol
               keyword_init_param in [:hash, [:pair, _, [:true, *]], *]
             end
 
