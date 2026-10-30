@@ -42,7 +42,7 @@ module Solargraph
       # @param other_loc [Location]
       def visible_at? other_closure, other_loc
         return false if presence && location&.filename != other_loc.filename
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         return false if presence && !presence.include?(other_loc.range.start)
 
         visible_in_closure?(other_closure)
