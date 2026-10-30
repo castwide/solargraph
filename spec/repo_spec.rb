@@ -76,5 +76,11 @@ describe Solargraph::Repo do
       allow(Open3).to receive(:capture3).and_return(['{"metagems":{},"groups":{}}', '', status])
       expect { described_class.new(directory) }.to raise_error(TypeError)
     end
+
+    it 'raises TypeError when the bundle reports groups that are not a hash' do
+      status = instance_double(Process::Status, success?: true)
+      allow(Open3).to receive(:capture3).and_return(['{"metagems":[],"groups":[]}', '', status])
+      expect { described_class.new(directory) }.to raise_error(TypeError)
+    end
   end
 end
