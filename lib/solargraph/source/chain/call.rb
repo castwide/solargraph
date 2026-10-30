@@ -67,7 +67,8 @@ module Solargraph
               pin = Pin::DuckMethod.new(name: word, source: :chain, explicit: false)
             else
               ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+              visibility = visibility_for(api_map, context, name_pin)
+              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope, visibility: visibility)
               pin = stack.first
             end
             if pin.nil?
@@ -91,6 +92,25 @@ module Solargraph
         end
 
         private
+
+        # A receiverless call reaches private/protected regardless of self; a call
+        # with a receiver only reaches them from its namespace or a subclass, per ApiMap#get_complex_type_methods.
+        #
+        # @param api_map [ApiMap]
+        # @param context [ComplexType::UniqueType] the receiver's type
+        # @param name_pin [Pin::Base]
+        # @return [::Array<Symbol>]
+        def visibility_for api_map, context, name_pin
+          return %i[private protected public] if head?
+          # void and generic<T> have no ancestors; ApiMap#get_methods gives them Kernel's public methods only when private is asked.
+          return %i[private protected public] if context.void? || context.generic?
+
+          from = name_pin.context.namespace
+          to = context.namespace
+          return %i[private protected public] if to == from || api_map.super_and_sub?(to, from)
+
+          [:public]
+        end
 
         # Checks whether a single overload signature matches the call's
         # arguments/block and, if so, resolves its return type. Threaded
