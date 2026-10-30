@@ -7,6 +7,12 @@ module Solargraph
         # completionItem/resolve message handler
         #
         class Resolve < Base
+          # Properties that must not be changed during completionItem/resolve
+          # according to the LSP specification.
+          #
+          # @see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
+          IMMUTABLE_FIELDS = %i[label kind sortText filterText insertText textEdit data].freeze
+
           def process
             pins = host.locate_pins(params)
             set_result merge(pins)
@@ -17,11 +23,11 @@ module Solargraph
           # @param pins [Array<Pin::Base>]
           # @return [Hash]
           def merge pins
-            return params if pins.empty?
+            original = params.transform_keys(&:to_sym)
+            return original if pins.empty?
             docs = pins
                    .reject { |pin| pin.documentation.empty? && pin.return_type.undefined? }
-            result = params
-                     .transform_keys(&:to_sym)
+            result = original
                      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
                      #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
                      .merge(pins.first.resolve_completion_item)
@@ -29,6 +35,7 @@ module Solargraph
             # @sg-ignore https://github.com/castwide/solargraph/pull/1258
             #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
             result[:detail] = pins.first.detail
+            IMMUTABLE_FIELDS.each { |field| result[field] = original[field] }
             result
           end
 

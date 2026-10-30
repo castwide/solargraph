@@ -1,0 +1,76 @@
+# frozen_string_literal: true
+
+module Solargraph
+  module Parser
+    module ParserGem
+      module NodeProcessors
+        module DataDefinition
+          # A node wrapper for a Data definition via const assignment.
+          # @example
+          #   MyData = Data.new(:bar, :baz) do
+          #     def foo
+          #     end
+          #   end
+          class DataAssignmentNode < DataDefintionNode
+            class << self
+              # @example
+              # s(:casgn, nil, :Foo,
+              #   s(:block,
+              #     s(:send,
+              #       s(:const, nil, :Data), :define,
+              #       s(:sym, :bar),
+              #       s(:sym, :baz)),
+              #     s(:args),
+              #     s(:def, :foo,
+              #       s(:args),
+              #       s(:send, nil, :bar))))
+              # @param node [::Parser::AST::Node]
+              def match? node
+                return false unless node&.type == :casgn
+                return false if node.children[2].nil?
+
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                data_node = if node.children[2].type == :block
+                              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                              node.children[2].children[0]
+                            else
+                              node.children[2]
+                            end
+
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                data_definition_node?(data_node)
+              end
+            end
+
+            def class_name
+              if node.children[0]
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                #   also needs https://github.com/castwide/solargraph/pull/1416
+                Parser::NodeMethods.unpack_name(node.children[0]) + "::#{node.children[1]}"
+              else
+                node.children[1].to_s
+              end
+            end
+
+            private
+
+            # @return [Parser::AST::Node]
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
+            def data_node
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
+              if node.children[2].type == :block
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                #   also needs https://github.com/castwide/solargraph/pull/1416
+                node.children[2].children[0]
+              else
+                node.children[2]
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end

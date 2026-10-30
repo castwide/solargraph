@@ -498,7 +498,7 @@ module Solargraph
           )
           result.concat(library.locate_pins(location).select { |pin| pin.name == params['label'] })
         end
-        if params['data']['path']
+        if params['data']['path'] && !params['data']['path'].empty?
           result.concat library.path_pins(params['data']['path'])
           # @todo This exception is necessary because `Library#path_pins` does
           #   not perform a namespace method query, so the implicit `.new` pin
