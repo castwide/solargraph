@@ -807,7 +807,10 @@ module Solargraph
       #
       # @return [void]
       def sync_return_type_tag
-        rooted_tags = @return_type.items.map(&:rooted_tag)
+        type = @return_type
+        return if type.nil?
+
+        rooted_tags = type.items.map(&:rooted_tag)
         # Replace rather than assign #types on the tag in place: a proxy holds
         # a duplicated docstring whose tag objects the original still shares.
         # Carry the first description over, so replacing the tag does not drop

@@ -131,8 +131,9 @@ describe Solargraph::Pin::Method do
     # Base#combine_with chooses a docstring, which forces #return_type
     # (and its docstring sync) on both sides first.
     return_type = Solargraph::ComplexType.try_parse('String').force_rooted
-    sig1 = Solargraph::Pin::Signature.new(return_type: return_type)
-    sig2 = Solargraph::Pin::Signature.new(return_type: return_type)
+    method = described_class.new(name: 'bar', closure: Solargraph::Pin::ROOT_PIN)
+    sig1 = Solargraph::Pin::Signature.new(return_type: return_type, closure: method)
+    sig2 = Solargraph::Pin::Signature.new(return_type: return_type, closure: method)
     pin1 = described_class.new(name: 'bar', signatures: [sig1])
     pin2 = described_class.new(name: 'bar', signatures: [sig2])
     combined = pin1.combine_with(pin2)
