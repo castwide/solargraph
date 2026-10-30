@@ -19,6 +19,8 @@ module Solargraph
         Concrete.new(new_base, *new_params)
       end
 
+      # @param type [Type, nil]
+      # @return [Hash]
       def extract_generics type
         return {} unless any_generic? && type.is_a?(Concrete)
 
@@ -40,6 +42,7 @@ module Solargraph
         base.resolved? && params.all?(&:resolved?)
       end
 
+      # @return [Symbol]
       def scope
         %w[Class Module].include?(base.to_s) ? :class : :instance
       end
@@ -180,6 +183,7 @@ module Solargraph
         "#{base.to_s_for_complex_type}#{params_to_s_for_complex_type}"
       end
 
+      # @return [Array<Path, Token, Type>]
       def all
         [base] + params
       end
@@ -210,11 +214,13 @@ module Solargraph
         members.first if members.length == 1
       end
 
+      # @return [String]
       def params_to_s
         return '' if params.empty?
         "#{brackets.first}#{params.join(', ')}#{brackets.last}"
       end
 
+      # @return [String]
       def params_to_s_for_complex_type
         return '' if @params.empty?
         "<#{params.map(&:to_s_for_complex_type).join(', ')}>"

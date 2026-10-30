@@ -584,4 +584,20 @@ describe Solargraph::Source::Chain do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.to_s).to eq('String, Integer, Symbol, Float, Range, Hash, Array, Proc, nil')
   end
+
+  it 'defines and infers nothing when a link before the last is undefined' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          nope_nothing.baz
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 24))
+    expect(chain.links.map(&:word)).to eq(%w[nope_nothing baz])
+    bar_pin = api_map.get_path_pins('Foo#bar').first
+    expect(chain.define(api_map, bar_pin, [])).to be_empty
+    expect(chain.infer(api_map, bar_pin, [])).to be_undefined
+  end
 end
