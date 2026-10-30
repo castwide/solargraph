@@ -94,6 +94,101 @@ describe Solargraph::RbsMap::Conversions do
       end
     end
 
+    context 'with %a{pure} methods' do
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            %a{pure}
+            def bar: () -> String?
+
+            def baz: () -> String?
+
+            %a{pure}
+            def self.qux: () -> String?
+
+            alias quux bar
+          end
+        RBS
+      end
+
+      it 'marks an annotated instance method pure' do
+        expect(api_map.get_method_stack('Foo', 'bar').first).to be_pure
+      end
+
+      it 'leaves an unannotated method impure' do
+        expect(api_map.get_method_stack('Foo', 'baz').first).not_to be_pure
+      end
+
+      it 'marks an annotated singleton method pure' do
+        expect(api_map.get_method_stack('Foo', 'qux', scope: :class).first).to be_pure
+      end
+
+      it 'carries purity to an alias of a pure method' do
+        expect(api_map.get_method_stack('Foo', 'quux').first).to be_pure
+      end
+    end
+
+    context 'with annotations on overloads' do
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            def bar: %a{pure} () -> String | %a{pure} (Integer) -> String
+
+            def baz: %a{pure} () -> String | (Integer) -> String
+          end
+        RBS
+      end
+
+      it 'keeps an annotation that every overload has' do
+        expect(api_map.get_method_stack('Foo', 'bar').first).to be_pure
+      end
+
+      it 'drops an annotation that only some overloads have' do
+        expect(api_map.get_method_stack('Foo', 'baz').first).not_to be_pure
+      end
+    end
+
+    context 'with a reopen that only adds annotations' do
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            def bar: () -> String | (Integer) -> String
+          end
+
+          class Foo
+            %a{pure}
+            %a{example}
+            def bar: ...
+          end
+        RBS
+      end
+
+      it 'adds the annotations to the one method pin and keeps its signatures' do
+        pins = api_map.get_path_pins('Foo#bar')
+        expect(pins.length).to eq(1)
+        expect(pins.first.annotations).to eq(Set['pure', 'example'])
+        expect(pins.first.signatures.length).to eq(2)
+      end
+    end
+
+    context 'with RBS that annotates a core method' do
+      let(:rbs) do
+        <<~RBS
+          class Array[unchecked out E]
+            %a{example}
+            def sample: ...
+          end
+        RBS
+      end
+
+      it 'adds the annotation to the core method and keeps its signatures' do
+        pins = api_map.get_path_pins('Array#sample')
+        expect(pins.length).to eq(1)
+        expect(pins.first.annotations).to include('example')
+        expect(pins.first.signatures.length).to be > 1
+      end
+    end
+
     context 'with a module reopened under a differently spelled type parameter' do
       subject(:method_pin) { api_map.get_method_stack('StringBox', 'declared_second').first }
 

@@ -1199,6 +1199,261 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
+    it 'reports a generic used in @yieldparam without being declared' do
+      checker = type_checker(%(
+        class Store
+          # @yieldparam [generic<Elem>]
+          # @return [void]
+          def foos; end
+        end
+
+        class Bar
+          # @param store [Store]
+          # @return [void]
+          def run store
+            store.foos do |pin|
+              next if pin.path.nil? || pin.path.empty?
+              pin.path.upcase
+            end
+          end
+        end
+      ))
+      pending('Type checking should complain when a type parameter is used without being declared')
+
+      expect(checker.problems).not_to be_empty
+      expect(checker.problems.map(&:message)).to include(a_string_matching(/Elem/))
+    end
+
+    it 'accepts a local copied from a .nil?-guarded bare accessor as a non-nil argument' do
+      checker = type_checker(%(
+        class Repro
+          # @return [Array<Hash>, nil]
+          attr_reader :steps
+
+          # @param steps [Array<Hash>]
+          # @return [void]
+          def consume(steps); end
+
+          # @return [void]
+          def unwrap
+            return nil if steps.nil?
+
+            steps_list = steps
+            consume(steps_list)
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'accepts a local copied from a bare accessor guarded by a non-nil return as a non-nil argument' do
+      checker = type_checker(%(
+        class Repro
+          # @return [Array<Hash>, nil]
+          attr_reader :substeps
+
+          # @param substeps [Array<Hash>]
+          # @return [void]
+          def consume(substeps); end
+
+          # @return [void]
+          def extract
+            return ['', nil] if substeps.nil?
+
+            steps_list = substeps
+            consume(steps_list)
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a .nil?-guarded attribute call chain in a module_function method' do
+      checker = type_checker(%(
+        class Tag
+          # @return [Array<String>, nil]
+          attr_reader :types
+        end
+
+        module Directive
+          module_function
+
+          # @param tag [Tag]
+          # @return [String, nil]
+          def type_string tag
+            t = tag.types.nil? ? nil : tag.types.join
+            t
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a .nil?-guarded call chain as the last expression of a module_function method' do
+      checker = type_checker(%(
+        class Tag
+          # @return [Array<String>, nil]
+          attr_reader :types
+        end
+
+        module Directive
+          module_function
+
+          # @param tag [Tag]
+          # @return [String, nil]
+          def type_string tag
+            x = 1
+            tag.types.nil? ? nil : tag.types.join
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a call chain after a return guard in a module_function method' do
+      checker = type_checker(%(
+        class Tag
+          # @return [Array<String>, nil]
+          attr_reader :types
+        end
+
+        module Directive
+          module_function
+
+          # @param tag [Tag]
+          # @return [String, nil]
+          def type_string tag
+            return nil if tag.types.nil?
+            tag.types.join
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a call chain across || in a module_function method' do
+      checker = type_checker(%(
+        class Tag
+          # @return [Array<String>, nil]
+          attr_reader :types
+        end
+
+        module Directive
+          module_function
+
+          # @param tag [Tag]
+          # @return [String, nil]
+          def type_string tag
+            t = tag.types.nil? || tag.types.empty? ? nil : tag.types.join
+            t
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a call chain in a method named by module_function' do
+      checker = type_checker(%(
+        class Tag
+          # @return [Array<String>, nil]
+          attr_reader :types
+        end
+
+        module Directive
+          # @param tag [Tag]
+          # @return [String, nil]
+          def type_string tag
+            return nil if tag.types.nil?
+            tag.types.join
+          end
+          module_function :type_string
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a repeated index with a local variable argument, also through an assignment' do
+      checker = type_checker(%(
+        class Repro
+          # @param cp [Array<Array<Integer>>, nil]
+          # @param i [Integer]
+          # @return [void]
+          def direct cp, i
+            cp[i].map { |n| n } if cp && cp[i]
+          end
+
+          # @param cp [Array<Array<Integer>>, nil]
+          # @param i [Integer]
+          # @return [void]
+          def assigned cp, i
+            return unless cp && cp[i]
+
+            type_arg = cp[i]
+            type_arg.map { |n| n }
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'ends index narrowing in a block whose parameter shadows the argument or receiver' do
+      checker = type_checker(%(
+        class Repro
+          # @param cp [Array<Array<Integer>>]
+          # @param i [Integer]
+          # @return [void]
+          def argument cp, i
+            return unless cp[i]
+
+            [1].each do |i|
+              cp[i].map { |n| n + i }
+            end
+          end
+
+          # @param cp [Array<Array<Integer>>]
+          # @param cps [Array<Array<Array<Integer>>>]
+          # @return [void]
+          def receiver cp, cps
+            return unless cp[0]
+
+            cps.each do |cp|
+              cp[0].map { |n| n }
+            end
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to map on Array<Integer>, nil'] * 2)
+    end
+
+    it 'ends index narrowing at a loop that changes the argument after the read' do
+      checker = type_checker(%(
+        class Repro
+          # @param cp [Array<Array<Integer>>]
+          # @param i [Integer]
+          # @return [void]
+          def advance cp, i
+            return unless cp[i]
+
+            while i < 3
+              cp[i].map { |n| n }
+              i += 1
+            end
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to map on Array<Integer>, nil'])
+    end
+
     it 'resolves the operators TrueClass and FalseClass share on Boolean' do
       checker = type_checker(%(
         class Foo

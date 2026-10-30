@@ -1001,6 +1001,7 @@ module Solargraph
         visibility: original.visibility,
         signatures: original.signatures.map(&:clone).freeze,
         attribute: original.attribute?,
+        annotations: original.annotations,
         generics: original.generics.clone,
         return_type: original.return_type,
         source: :resolve_method_alias

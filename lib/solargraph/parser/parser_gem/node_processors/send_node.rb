@@ -81,10 +81,8 @@ module Solargraph
           def symbol_word subject
             return nil unless subject.is_a?(::Parser::AST::Node)
 
-            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             return nil unless %i[sym str].include?(subject.type)
 
-            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             subject.children.first.to_s
           end
 
@@ -415,6 +413,9 @@ module Solargraph
                   node: ref.node,
                   source: :parser
                 )
+                # the body's narrowings landed on ref
+                mm.share_downcast_vars(ref)
+                cm.share_downcast_vars(ref)
                 pins.push mm, cm
                 ivars.select { |pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path }.each do |ivar|
                   ivars.delete ivar
