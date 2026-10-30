@@ -208,8 +208,13 @@ module Solargraph
             # @sg-ignore flow sensitive typing should handle is_a? and next
             # @param ol [Pin::Signature]
             sorted_overloads.each do |ol|
+              previous_signature_pin = new_signature_pin
               type, new_signature_pin = match_overload_type(ol, p, api_map, name_pin, locals, type, new_signature_pin)
               break if type.defined?
+              # The first overload that matches the call, block or no
+              # block, describes it even when its return type is
+              # unknown, e.g. Array#[] on an Array of unknown elements
+              break if ol.block? == with_block? && !new_signature_pin.equal?(previous_signature_pin)
             end
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?

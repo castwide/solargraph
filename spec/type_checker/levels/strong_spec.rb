@@ -24,6 +24,20 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('does not match inferred type')
     end
 
+    it 'leaves an index into an Array of unknown elements uninferred' do
+      checker = type_checker(%(
+        class Foo
+          # @param list [Array]
+          # @return [Integer]
+          def first_of list
+            list[0]
+          end
+        end
+      ))
+      # Array#[] matches `(int) -> Elem`, not the `(range[int]) -> Array[Elem]?` overload
+      expect(checker.problems.map(&:message)).to eq(['Foo#first_of return type could not be inferred'])
+    end
+
     it 'does not flag attributes whose declared type already allows nil' do
       checker = type_checker(%(
         class Foo
