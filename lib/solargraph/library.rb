@@ -474,22 +474,38 @@ module Solargraph
     end
 
     def mapped?
-      (workspace.filenames - source_map_hash.keys).empty?
+      (workspace.filenames - source_map_hash.keys - mapping_failures.to_a).empty?
+    end
+
+    # The names of files that failed to map. Failed files are treated as
+    # mapped so a workspace can finish loading. They can be mapped again if
+    # they're modified.
+    #
+    # @return [Set<String, nil>]
+    def mapping_failures
+      @mapping_failures ||= Set.new
     end
 
     # @return [SourceMap, Boolean]
     def next_map
       return false if mapped?
-      src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
-      if src
-        Logging.logger.debug "Mapping #{src.filename}"
-        # @sg-ignore OK if src.filename is nil
-        source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        # @sg-ignore OK if src.filename is nil
-        source_map_hash[src.filename]
-      else
-        false
-      end
+      src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) && !mapping_failures.include?(s.filename) }
+      return false if src.nil?
+      Logging.logger.debug "Mapping #{src.filename}"
+      # @sg-ignore OK if src.filename is nil
+      source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+      # @sg-ignore OK if src.filename is nil
+      source_map_hash[src.filename]
+    rescue StandardError => e
+      # A file that can't be mapped is skipped instead of interrupting the
+      # entire workspace. Without this, a single bad file would keep the
+      # library from ever finishing its mapping pass, and any progress
+      # notification for the workspace would hang indefinitely.
+      filename = src.filename
+      mapping_failures.add filename
+      Logging.logger.warn "Failed to map #{filename}: [#{e.class}] #{e.message}"
+      Logging.logger.warn e.backtrace.join("\n")
+      retry
     end
 
     # @return [self]
@@ -578,6 +594,7 @@ module Solargraph
       return unless @current == source || workspace.has_file?(source.filename)
       # @sg-ignore OK if source.filename is nil
       source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
+      mapping_failures.delete source.filename
     end
 
     # @return [Set<Gem::Specification>]
@@ -615,6 +632,14 @@ module Solargraph
         end_cache_progress
         catalog
         sync_catalog
+      rescue StandardError => e
+        logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
+        logger.warn e
+      ensure
+        # The progress notification has to be closed even if caching failed.
+        # Clients have no way to dismiss a notification that never receives an
+        # end.
+        end_cache_progress
       end
     end
 

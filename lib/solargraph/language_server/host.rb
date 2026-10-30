@@ -878,15 +878,29 @@ module Solargraph
       def sync_library_map library
         total = library.workspace.sources.length
         progress = Progress.new('Mapping workspace')
-        progress.begin "0/#{total} files", 0
-        progress.send self
-        while library.next_map
-          pct = ((library.source_map_hash.keys.length.to_f / total) * 100).to_i
-          progress.report "#{library.source_map_hash.keys.length}/#{total} files", pct
+        begin
+          progress.begin "0/#{total} files", 0
+          progress.send self
+          while library.next_map
+            mapped = library.source_map_hash.length
+            # The workspace can change while it's being mapped, e.g., when the
+            # user opens a file that wasn't included in the original scan. The
+            # progress should never report more than 100%.
+            total = mapped if mapped > total
+            # @sg-ignore Wrong argument type for Integer#/: arg_0 expected BigDecimal, received Integer
+            pct = total.zero? ? 100 : ((mapped * 100) / total).clamp(0, 100)
+            progress.report "#{mapped}/#{total} files", pct
+            progress.send self
+          end
+        rescue StandardError => e
+          # Errors must not leave the client with an open progress
+          # notification. The failure is logged and reported as complete.
+          logger.warn "Error while mapping workspace: [#{e.class}] #{e.message}"
+          logger.warn e.backtrace.join("\n")
+        ensure
+          progress.finish 'done'
           progress.send self
         end
-        progress.finish 'done'
-        progress.send self
       end
     end
   end

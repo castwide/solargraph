@@ -11,6 +11,12 @@ module Solargraph
       CREATED = :created
       FINISHED = :finished
 
+      # The number of seconds an idle notification can go without an update
+      # before it's refreshed. Some hosts dismiss progress notifications that
+      # haven't been updated recently.
+      #
+      KEEP_ALIVE_INTERVAL = 10
+
       # @return [String]
       attr_reader :uuid
 
@@ -43,21 +49,23 @@ module Solargraph
       def begin message, percentage
         @kind = 'begin'
         @message = message
-        @percentage = percentage
+        @percentage = clamp_percentage percentage
       end
 
       # @param message [String]
       # @param percentage [Integer]
       # @return [void]
       def report message, percentage
+        return if finished?
         @kind = 'report'
         @message = message
-        @percentage = percentage
+        @percentage = clamp_percentage percentage
       end
 
       # @param message [String]
       # @return [void]
       def finish message
+        return false if finished?
         @kind = 'end'
         @message = message
         @percentage = 100
@@ -67,13 +75,16 @@ module Solargraph
       # @param host [Solargraph::LanguageServer::Host]
       # @return [void]
       def send host
-        return unless host.client_supports_progress? && !finished?
-
-        message = build
-        create(host)
-        host.send_notification '$/progress', message
-        @status = FINISHED if kind == 'end'
-        keep_alive host
+        return unless host.client_supports_progress?
+        mutex.synchronize do
+          return if finished?
+          message = build
+          create host
+          host.send_notification '$/progress', message
+          @last = Time.now
+          @status = FINISHED if kind == 'end'
+          start_keep_alive host unless finished?
+        end
       end
 
       def created?
@@ -120,18 +131,45 @@ module Solargraph
         end
       end
 
+      # Keep idle notifications alive. Some hosts, including VS Code, stop
+      # responding to progress notifications that haven't been updated for a
+      # while, so a long-running job has to refresh its notification until it
+      # either reports again or finishes.
+      #
+      # The thread is only created once and exits as soon as the progress is
+      # finished or the host shuts down, so a completed notification can never
+      # be resurrected.
+      #
       # @param host [Host]
       # @return [void]
-      def keep_alive host
-        mutex.synchronize { @last = Time.now }
-        @keep_alive ||= Thread.new do
-          until finished?
-            sleep 10
-            break if finished?
-            next if mutex.synchronize { Time.now - @last < 10 }
-            send host
+      def start_keep_alive host
+        return if @keep_alive
+        @keep_alive = Thread.new do
+          loop do
+            sleep KEEP_ALIVE_INTERVAL
+            break if finished? || host.stopped?
+            next if mutex.synchronize { elapsed < KEEP_ALIVE_INTERVAL }
+            begin
+              send host
+            rescue StandardError
+              break
+            end
           end
         end
+      end
+
+      # The number of seconds since the last notification was sent.
+      #
+      # @return [Float]
+      def elapsed
+        (Time.now - (@last ||= Time.now)).to_f
+      end
+
+      # @param percentage [Integer, nil]
+      # @return [Integer]
+      def clamp_percentage percentage
+        return 0 if percentage.nil?
+        percentage.to_i.clamp 0, 100
       end
 
       # @return [Thread::Mutex]
