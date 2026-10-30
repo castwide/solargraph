@@ -70,7 +70,6 @@ module Solargraph
             subtypes.concat subs
           end
         end
-        # @sg-ignore Need to add nil check here
         new(name, key_types, subtypes, rooted: rooted, parameters_type: parameters_type)
       end
 
