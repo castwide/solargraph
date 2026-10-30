@@ -122,6 +122,52 @@ describe Solargraph::LanguageServer::Host do
     expect(app2_map).not_to include('Folder1App')
   end
 
+  it 'finishes mapping when a source file raises an error' do
+    Dir.mktmpdir do |dir|
+      3.times { |i| File.write File.join(dir, "test#{i}.rb"), "class Test#{i}\nend\n" }
+      host = described_class.new
+      host.client_capabilities = { 'window' => { 'workDoneProgress' => true } }
+      allow(Solargraph::SourceMap).to receive(:map).and_wrap_original do |original, src|
+        raise 'mapping failed' if src.filename.end_with? 'test1.rb'
+        original.call src
+      end
+      library = Solargraph::Library.new Solargraph::Workspace.new(dir, nil, {})
+      host.libraries.push library
+      expect { host.send :sync_library_map, library }.not_to raise_error
+      output = host.flush
+      expect(output).to include('window/workDoneProgress/create')
+      expect(output).to include(%("kind":"end"))
+      expect(library.mapped?).to be true
+    end
+  end
+
+  it 'never reports mapping progress over 100 percent' do
+    host = described_class.new
+    host.client_capabilities = { 'window' => { 'workDoneProgress' => true } }
+    library = instance_double Solargraph::Library
+    workspace = instance_double Solargraph::Workspace
+    source_map_hash = {}
+    allow(library).to receive_messages(
+      workspace: workspace,
+      source_map_hash: source_map_hash
+    )
+    # The workspace is scanned before mapping begins, but files can still be
+    # added while the mapping pass is running.
+    allow(workspace).to receive(:sources).and_return [1]
+    mapped = 0
+    allow(library).to receive(:next_map) do
+      mapped += 1
+      source_map_hash["test#{mapped}.rb"] = mapped
+      mapped <= 4
+    end
+    host.send :sync_library_map, library
+    output = host.flush
+    percentages = output.scan(/"percentage":(\d+)/).flatten.map(&:to_i)
+    expect(percentages).not_to be_empty
+    expect(percentages.all? { |pct| pct.between? 0, 100 }).to be true
+    expect(output).to include(%("kind":"end"))
+  end
+
   it "sends a library's progress to the client" do
     host = described_class.new
     host.client_capabilities = { 'window' => { 'workDoneProgress' => true } }
