@@ -64,8 +64,8 @@ module Solargraph
           # @return [Boolean]
           def implicit_it_parameter?
             args = node.children[1]
-            return false unless Parser.is_ast_node?(args)
-            # @sg-ignore flow sensitive typing needs to narrow through a predicate method like Parser.is_ast_node?
+            return false unless args.is_a?(::Parser::AST::Node)
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             return false unless args.type == :args && args.children.empty?
             return false if shadowed_it_local?
             references_it?(node.children[2])
@@ -89,15 +89,15 @@ module Solargraph
           # @param subject [BasicObject, nil]
           # @return [Boolean]
           def references_it? subject
-            return false unless Parser.is_ast_node?(subject)
-            # @sg-ignore flow sensitive typing needs to narrow through a predicate method like Parser.is_ast_node?
+            return false unless subject.is_a?(::Parser::AST::Node)
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             return true if subject.type == :lvar && subject.children[0] == :it
-            # @sg-ignore flow sensitive typing needs to narrow through a predicate method like Parser.is_ast_node?
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             children = if %i[block numblock].include?(subject.type)
-                         # @sg-ignore flow sensitive typing needs to narrow through a predicate method like Parser.is_ast_node?
+                         # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                          subject.children[0..1]
                        else
-                         # @sg-ignore flow sensitive typing needs to narrow through a predicate method like Parser.is_ast_node?
+                         # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                          subject.children
                        end
             children.any? { |child| references_it?(child) }
