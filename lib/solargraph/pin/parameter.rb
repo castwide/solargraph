@@ -174,7 +174,6 @@ module Solargraph
                     end
       end
 
-      # @sg-ignore super always sets @return_type to something
       # @return [ComplexType]
       def return_type
         if @return_type.nil?
