@@ -40,10 +40,16 @@ module Solargraph
                 process_private_constant
               elsif method_name == :alias_method && node.children[2] && node.children[2] && node.children.fetch(2).type == :sym && node.children[3] && node.children.fetch(3).type == :sym
                 process_alias_method
+              elsif %i[def_delegator def_delegators].include?(method_name) && extends_forwardable?
+                process_def_delegators
               elsif method_name == :private_class_method && node.children[2].is_a?(AST::Node)
                 # Processing a private class can potentially handle children on its own
                 return if process_private_class_method
               end
+            elsif %i[include extend prepend].include?(method_name) && Parser.is_ast_node?(node.children[0]) && node.children[0].type == :const
+              process_qualified_mixin method_name
+            elsif included_hook_parameter?(node.children[0])
+              process_included_hook_mixin method_name
             elsif method_name == :require && node.children[0].to_s == '(const nil :Bundler)'
               pins.push Pin::Reference::Require.new(
                 Solargraph::Location.new(region.filename,
@@ -54,6 +60,91 @@ module Solargraph
           end
 
           private
+
+          # True when the enclosing namespace extends Forwardable, which is
+          # what makes def_delegator and def_delegators available there.
+          # Matched by name only, so a same-named local module would fool this.
+          #
+          # @return [Boolean]
+          def extends_forwardable?
+            pins.any? do |pin|
+              pin.is_a?(Pin::Reference::Extend) &&
+                pin.closure == region.closure &&
+                ['Forwardable', '::Forwardable'].include?(pin.name)
+            end
+          end
+
+          # The word behind a symbol or string node, e.g. :@records or "size".
+          #
+          # @param subject [Object]
+          # @return [String, nil]
+          def symbol_word subject
+            return nil unless subject.is_a?(::Parser::AST::Node)
+
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+            return nil unless %i[sym str].include?(subject.type)
+
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+            subject.children.first.to_s
+          end
+
+          # Forwardable's def_delegator/def_delegators define real methods
+          # whose behavior - including return type - comes from the method
+          # they forward to. Map them to DelegatedMethod pins, which resolve
+          # the receiver and the forwarded method lazily.
+          #
+          # @return [void]
+          def process_def_delegators
+            receiver_word = symbol_word(node.children[2])
+            return if receiver_word.nil?
+
+            receiver_chain = delegation_receiver_chain(receiver_word)
+            if node.children[1] == :def_delegator
+              receiver_method_name = symbol_word(node.children[3])
+              return if receiver_method_name.nil?
+
+              name = symbol_word(node.children[4]) || receiver_method_name
+              push_delegated_method(name, receiver_method_name, receiver_chain)
+            else
+              (node.children[3..] || []).each do |method_node|
+                word = symbol_word(method_node)
+                next if word.nil?
+
+                push_delegated_method(word, word, receiver_chain)
+              end
+            end
+          end
+
+          # @param word [String] the delegation target, e.g. "@records" or "records"
+          # @return [Source::Chain]
+          def delegation_receiver_chain word
+            link = if word.start_with?('@@')
+                     Source::Chain::ClassVariable.new(word)
+                   elsif word.start_with?('@')
+                     Source::Chain::InstanceVariable.new(word, node, get_node_location(node))
+                   else
+                     Source::Chain::Call.new(word, get_node_location(node))
+                   end
+            Source::Chain.new([link])
+          end
+
+          # @param name [String]
+          # @param receiver_method_name [String]
+          # @param receiver_chain [Source::Chain]
+          # @return [void]
+          def push_delegated_method name, receiver_method_name, receiver_chain
+            pins.push Solargraph::Pin::DelegatedMethod.new(
+              location: get_node_location(node),
+              closure: region.closure,
+              name: name,
+              receiver: receiver_chain,
+              receiver_method_name: receiver_method_name,
+              scope: region.scope || :instance,
+              visibility: region.visibility,
+              comments: comments_for(node),
+              source: :parser
+            )
+          end
 
           # @return [void]
           def process_visibility
@@ -126,6 +217,20 @@ module Solargraph
             end
           end
 
+          # @param options [Hash{String => AST::Node}]
+          # @param name [String]
+          # @param default [Boolean]
+          # @return [Boolean]
+          def boolean_option options, name, default
+            value = options[name]
+            return default unless Parser.is_ast_node?(value)
+            # rubocop:disable Lint/BooleanSymbol -- these are AST node types
+            return true if value.type == :true
+            return false if value.type == :false
+            # rubocop:enable Lint/BooleanSymbol
+            default
+          end
+
           # @return [void]
           def process_include
             return unless node.children[2].is_a?(AST::Node) && node.children.fetch(2).type == :const
@@ -155,6 +260,42 @@ module Solargraph
             end
           end
 
+          # Process mixins called on an explicit receiver, e.g.,
+          # +Object.prepend(self)+ in ActiveSupport or
+          # +Integer.prepend ActiveSupport::NumericWithFormat+. Without this,
+          # gems that extend core classes this way lose every method they
+          # share with Object, Module, Integer, etc.
+          #
+          # @param keyword [::Symbol] one of :include, :extend, :prepend
+          # @return [void]
+          def process_qualified_mixin keyword
+            reference_class = {
+              include: Pin::Reference::Include,
+              extend: Pin::Reference::Extend,
+              prepend: Pin::Reference::Prepend
+            }[keyword]
+            return if reference_class.nil?
+            receiver = node.children[0]
+            target = unpack_name(receiver)
+            return if target.nil? || target.empty?
+            closure = Pin::Namespace.new(location: get_node_location(receiver), name: target, source: :parser)
+            node.children[2..].each do |arg|
+              next unless Parser.is_ast_node?(arg)
+              name = if arg.type == :self
+                       region.closure&.full_context&.namespace
+                     elsif arg.type == :const
+                       unpack_name(arg)
+                     end
+              next if name.nil? || name.empty?
+              pins.push reference_class.new(
+                location: get_node_location(arg),
+                closure: closure,
+                name: name,
+                source: :parser
+              )
+            end
+          end
+
           # @return [void]
           def process_extend
             node.children.drop(2).each do |i|
@@ -174,6 +315,50 @@ module Solargraph
                   source: :parser
                 )
               end
+            end
+          end
+
+          # @param receiver [::Parser::AST::Node, nil]
+          # @return [Boolean] whether receiver is the parameter of a module's
+          #   +self.included(base)+ hook
+          def included_hook_parameter? receiver
+            hook = region.closure
+            return false if receiver.nil? || receiver.type != :lvar
+            return false unless hook.is_a?(Pin::Method) && hook.scope == :class && hook.name == 'included'
+            hook.parameters.first&.name == receiver.children[0].to_s
+          end
+
+          # Map +base.extend ClassMethods+, +base.send(:include, Helpers)+
+          # and similar calls in a +self.included(base)+ hook, which apply to
+          # every class that includes the hook's module
+          #
+          # @param method_name [::Symbol]
+          # @return [void]
+          def process_included_hook_mixin method_name
+            args = node.children[2..] || []
+            if %i[send public_send].include?(method_name)
+              keyword = args.first
+              return unless Parser.is_ast_node?(keyword) && keyword.type == :sym
+              method_name = keyword.children[0]
+              args = args.drop(1)
+            end
+            return unless %i[include extend prepend].include?(method_name)
+            hook = region.closure
+            args.each do |arg|
+              next unless Parser.is_ast_node?(arg)
+              name = if arg.type == :self
+                       hook.namespace
+                     elsif arg.type == :const
+                       unpack_name(arg)
+                     end
+              next if name.nil? || name.empty?
+              pins.push Pin::Reference::IncludedMixin.new(
+                location: get_node_location(arg),
+                closure: hook.closure,
+                name: name,
+                keyword: method_name,
+                source: :parser
+              )
             end
           end
 
