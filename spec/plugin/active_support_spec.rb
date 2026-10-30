@@ -67,6 +67,40 @@ describe Solargraph::Plugin::ActiveSupport do
           expect(pins.map(&:path)).to include('GemExample::ClassMethods#bar')
         end
       end
+
+      context 'when an included module includes another' do
+        let(:source) do
+          Solargraph::Source.load_string(%(
+            module Support
+              module Callbacks
+                module ClassMethods
+                  def set_callback; end
+                end
+              end
+            end
+
+            module Job
+              module Callbacks
+                include Support::Callbacks
+
+                module ClassMethods
+                  def before_perform; end
+                end
+              end
+
+              class Base
+                include Callbacks
+              end
+            end
+          ), 'test.rb')
+        end
+
+        it 'adds extend references for the nested include' do
+          pins = api_map.get_methods('Job::Base', scope: :class)
+          expect(pins.map(&:path)).to include('Job::Callbacks::ClassMethods#before_perform',
+                                              'Support::Callbacks::ClassMethods#set_callback')
+        end
+      end
     end
 
     context 'without the activesupport gem' do

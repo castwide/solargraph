@@ -19,6 +19,7 @@ module Solargraph
         @external_pins = external_pins
       end
 
+      # @return [Array<Pin::Base>]
       def pins
         @pins ||= source_maps.flat_map(&:pins)
       end

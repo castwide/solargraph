@@ -13,10 +13,58 @@ module Solargraph
 
       private
 
+      # @return [Array<Pin::Reference::Extend>]
       def classmethod_pins
-        (pins_by_class(Pin::Reference::Include) + external_pins.grep(Pin::Reference::Include)).map do |inc|
-          Pin::Reference::Extend.new(name: "#{inc.name}::ClassMethods", closure: inc.closure)
+        include_pins.flat_map do |inc|
+          nested = nested_include_paths(inc).uniq.select { |path| namespace_paths.include?("#{path}::ClassMethods") }
+          ["#{inc.name}::ClassMethods", *nested.map { |path| "::#{path}::ClassMethods" }].map do |name|
+            Pin::Reference::Extend.new(name: name, closure: inc.closure)
+          end
         end
+      end
+
+      # @return [Array<Pin::Reference::Include>]
+      def include_pins
+        @include_pins ||= (panel.pins + panel.external_pins).grep(Pin::Reference::Include)
+      end
+
+      # @return [Hash{String => Array<Pin::Reference::Include>}]
+      def include_pins_by_namespace
+        @include_pins_by_namespace ||= include_pins.group_by { |inc| inc.closure&.path.to_s }
+      end
+
+      # @return [Set<String>]
+      def namespace_paths
+        @namespace_paths ||= (panel.pins + panel.external_pins).grep(Pin::Namespace).to_set(&:path)
+      end
+
+      # Paths of the modules that an included module includes, at any
+      # depth. A concern's dependencies extend the includer with their
+      # ClassMethods too.
+      #
+      # @param inc [Pin::Reference::Include]
+      # @param visited [Set<String>]
+      # @return [Array<String>]
+      def nested_include_paths inc, visited = Set.new
+        path = resolve_include(inc)
+        return [] if path.nil? || !visited.add?(path)
+
+        include_pins_by_namespace.fetch(path, []).flat_map do |nested|
+          nested_path = resolve_include(nested)
+          nested_path.nil? ? [] : [nested_path, *nested_include_paths(nested, visited)]
+        end
+      end
+
+      # Resolve an include's module name lexically from its namespace.
+      #
+      # @param inc [Pin::Reference::Include]
+      # @return [String, nil]
+      def resolve_include inc
+        return inc.name.delete_prefix('::') if inc.name.start_with?('::')
+
+        parts = inc.closure&.path.to_s.split('::')
+        candidates = parts.length.downto(0).map { |len| [*parts.first(len), inc.name].join('::') }
+        candidates.find { |candidate| namespace_paths.include?(candidate) }
       end
 
       def attribute_pins
