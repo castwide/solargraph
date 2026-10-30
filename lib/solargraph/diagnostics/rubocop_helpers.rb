@@ -60,6 +60,7 @@ module Solargraph
       # @return [String]
       def redirect_stdout
         redir = StringIO.new
+        # @sg-ignore https://github.com/soutaro/steep/issues/549
         $stdout = redir
         yield if block_given?
         $stdout = STDOUT

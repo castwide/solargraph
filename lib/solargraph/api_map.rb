@@ -420,6 +420,24 @@ module Solargraph
       store.pins_by_class(Pin::GlobalVariable)
     end
 
+    # Pins that declare the type of a global variable, from the highest
+    # rank that declares one: core (core RBS and Solargraph's core fills),
+    # then non-core RBS (stdlib, gem and RBS collection signatures) and
+    # YARD tags in gem source as equals, whose types are unioned, then the
+    # workspace. Assignments neither widen nor narrow the declared type.
+    # An `untyped` declaration counts as none, so a concrete type of a
+    # lower rank beats it, and without one the assignments decide.
+    #
+    # @param name [String]
+    # @return [Array<Solargraph::Pin::GlobalVariable>]
+    def get_declared_global_variable_pins name
+      declared = get_global_variable_pins.select do |pin|
+        pin.name == name && pin.docstring.has_tag?('type') && !pin.typify(self).undefined?
+      end
+      top_rank = declared.map { |pin| declaration_rank(pin) }.min
+      declared.select { |pin| declaration_rank(pin) == top_rank }
+    end
+
     # @return [Enumerable<Solargraph::Pin::Block>]
     def get_block_pins
       store.pins_by_class(Pin::Block)
@@ -802,6 +820,21 @@ module Solargraph
     end
 
     private
+
+    # @param pin [Pin::GlobalVariable]
+    # @return [Integer] 0 for core, 1 for non-core RBS and gem source,
+    #   2 for the workspace
+    def declaration_rank pin
+      return 0 if core_global_variable_pins.any? { |core_pin| core_pin.equal?(pin) }
+      filename = pin.location&.filename
+      return 1 if filename.nil? || !bundled?(filename)
+      2
+    end
+
+    # @return [Array<Pin::GlobalVariable>]
+    def core_global_variable_pins
+      @core_global_variable_pins ||= core_pins.grep(Pin::GlobalVariable)
+    end
 
     # A hash of source maps with filename keys.
     #
