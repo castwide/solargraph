@@ -206,12 +206,11 @@ module Solargraph
         #     s(:send, nil, :c)))
         # [4] pry(main)>
         conditional_node = until_node.children[0]
-        return if conditional_node.nil?
+        return unless conditional_node.is_a?(::Parser::AST::Node)
 
-        # @type [Parser::AST::Node, nil]
         do_clause = until_node.children[1]
 
-        unless do_clause.nil?
+        if do_clause.is_a?(::Parser::AST::Node)
           #
           # The do clause runs only while the condition is false, so
           # the condition's false facts hold throughout it.  Nothing
