@@ -56,7 +56,7 @@ module Solargraph
           inferred
         end
 
-        Typeset.new(inferred)
+        Union.new(inferred)
       end
 
       # @return [Typeset]

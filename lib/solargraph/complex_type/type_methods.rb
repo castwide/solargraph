@@ -213,7 +213,7 @@ module Solargraph
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param context [String] The namespace from which to resolve names
-      # @return [self, ComplexType, UniqueType] The generated ComplexType
+      # @return [self, Type] The generated ComplexType
       def qualify api_map, context = ''
         transform do |t|
           next t if t.name == GENERIC_TAG_NAME
@@ -226,15 +226,6 @@ module Solargraph
           end
           t.recreate(new_name: fqns, make_rooted: true)
         end
-      end
-
-      # @yieldparam [UniqueType]
-      # @return [void]
-      # @overload each_unique_type()
-      #   @return [Enumerator<UniqueType>]
-      def each_unique_type &block
-        return enum_for(__method__) unless block_given?
-        yield self
       end
     end
   end

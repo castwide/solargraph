@@ -15,12 +15,12 @@ module Solargraph
       def expand named_values
         return self unless named_values[name]
         if name == 'self' && named_values[name].is_a?(Typedef::Typeset)
-          Typedef::Typeset.new(named_values[name].types.map do |type|
+          Typedef::Union.new(named_values[name].types.map do |type|
             if %w[Class Module].include?(type.base.name)
               if type.params.empty?
-                Typeset::UNDEFINED
+                Union::UNDEFINED
               else
-                Typedef::Typeset.new(type.params)
+                Typedef::Union.new(type.params)
               end
             else
               Typedef.tokenize(type)
@@ -47,8 +47,24 @@ module Solargraph
         name.start_with?('generic<')
       end
 
+      # Concrete#any_generic? recurses into base/params, which may be a Token.
+      # Token is a leaf with no sub-elements to distinguish any from all,
+      # so this is just #generic? under the name Concrete's recursion expects.
+      alias any_generic? generic?
+
+      # @todo Token has no way to tell whether a generic placeholder like
+      #   generic<T> has actually been rooted to a real namespace. Treating
+      #   every Token as rooted keeps Concrete#rooted? from raising on params
+      #   that are Tokens (e.g. a bare generic placeholder), matching how
+      #   the older ComplexType::UniqueType system treats its own generic
+      #   tag as always rooted.
+      def rooted?
+        true
+      end
+
+      # @return [Hash]
       def extract_generics token
-        return unless generic?
+        return {} unless generic?
         { name => token }
       end
 

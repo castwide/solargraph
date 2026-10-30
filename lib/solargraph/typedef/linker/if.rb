@@ -8,7 +8,7 @@ module Solargraph
         def resolve
           types = link.chains
                       .flat_map { |chain| Dictionary.new(api_map, source_map, chain, closure: receiver).infer }
-          [Pin::ProxyType.anonymous(Typeset.new(types).to_complex_type, closure: receiver)]
+          [Pin::ProxyType.anonymous(Union.new(types).to_complex_type, closure: receiver)]
         end
       end
     end
