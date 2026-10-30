@@ -35,11 +35,13 @@ module Solargraph
       #   Between 2 pins, the one with the higher priority gets chosen. If the priorities are equal, they are combined.
       attr_reader :combine_priority
 
-      # Why this pin is abstract, when that came from something other than a
-      # YARD @abstract tag. nil when it did not.
+      # Why this pin is abstract, whether an RBS interface or a YARD
+      # @abstract tag said so. nil when the pin is not abstract.
       #
       # @return [String, nil]
-      attr_reader :abstract
+      def abstract
+        @abstract || docstring.tag(:abstract)&.text
+      end
 
       def presence_certain?
         true
@@ -54,7 +56,7 @@ module Solargraph
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
-      # @param abstract [::String, nil] See attr_reader for abstract
+      # @param abstract [::String, nil] Why this pin is abstract; nil when it is not
       def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '',
                      docstring: nil, directives: nil, combine_priority: nil, abstract: nil
         @location = location
