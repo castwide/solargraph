@@ -73,8 +73,8 @@ module Solargraph
           return if @processed_children
           @processed_children = true
           node.children.each do |child|
-            next unless Parser.is_ast_node?(child)
-            NodeProcessor.process(child, subregion, pins, locals, ivars)
+            next unless child in ::Parser::AST::Node => child_node
+            NodeProcessor.process(child_node, subregion, pins, locals, ivars)
           end
         end
 

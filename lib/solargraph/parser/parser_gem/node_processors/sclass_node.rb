@@ -7,7 +7,9 @@ module Solargraph
         class SclassNode < Parser::NodeProcessor::Base
           # @sg-ignore @override is adding, not overriding
           def process
-            sclass = node.children[0]
+            # s(:sclass, target, body) - target is s(:self), s(:casgn, ...) or s(:const, ...)
+            node => [:sclass, ::Parser::AST::Node => sclass, *]
+
             # @todo Changing Parser::AST::Node to AST::Node below will
             #   cause type errors at strong level because the combined
             #   pin for AST::Node#children has return type
@@ -17,18 +19,22 @@ module Solargraph
             #   types to "A<T>" if the "A" comes from YARD, with the
             #   rationale that folks tend to be less formal with types in
             #   YARD.
-            if sclass.is_a?(::Parser::AST::Node) && sclass.type == :self
+            case sclass
+            in ::Parser::AST::Node[:self, *]
               closure = region.closure
-            elsif sclass.is_a?(::Parser::AST::Node) && sclass.type == :casgn
+            in ::Parser::AST::Node[:casgn, ::Parser::AST::Node | nil => scope, Symbol => const_name, *]
               names = [region.closure.namespace, region.closure.name]
-              if sclass.children[0].nil? && names.last != sclass.children[1].to_s
-                names << sclass.children[1].to_s
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              if scope.nil? && names.last != const_name.to_s
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                names << const_name.to_s
               else
-                names.push NodeMethods.unpack_name(sclass.children[0]), sclass.children[1].to_s
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                names.push NodeMethods.unpack_name(scope), const_name.to_s
               end
               name = names.reject(&:empty?).join('::')
               closure = Solargraph::Pin::Namespace.new(name: name, location: region.closure.location, source: :parser)
-            elsif sclass.is_a?(::Parser::AST::Node) && sclass.type == :const
+            in ::Parser::AST::Node[:const, *]
               names = [region.closure.namespace, region.closure.name]
               also = NodeMethods.unpack_name(sclass)
               names << also if also != region.closure.name
