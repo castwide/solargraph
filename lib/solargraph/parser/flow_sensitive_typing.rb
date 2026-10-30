@@ -588,6 +588,8 @@ module Solargraph
         return false unless declared
 
         literal = literal_type.first
+        return false unless literal
+
         declared.items.include?(literal) &&
           declared.items.one? { |t| t.non_literal_name == literal.non_literal_name }
       end
