@@ -495,7 +495,7 @@ module Solargraph
           )
           result.concat(library.locate_pins(location).select { |pin| pin.name == params['label'] })
         end
-        if params['data']['path']
+        if params['data']['path'] && !params['data']['path'].empty?
           result.concat library.path_pins(params['data']['path'])
           # @todo This exception is necessary because `Library#path_pins` does
           #   not perform a namespace method query, so the implicit `.new` pin
@@ -706,6 +706,15 @@ module Solargraph
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
+      # The Library observer callback that sends a library's progress to
+      # the client.
+      #
+      # @param progress [Solargraph::LanguageServer::Progress, nil]
+      # @return [void]
+      def update progress
+        progress&.send(self)
+      end
+
       private
 
       # @return [Array<Integer>]
@@ -736,7 +745,6 @@ module Solargraph
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
-        # @sg-ignore flow sensitive typing needs to handle constants
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
