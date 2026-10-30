@@ -42,12 +42,12 @@ module Solargraph
       #
       # @return [Pin::Signature, nil]
       def combine_blocks other
-        return other.block if block.nil? ||
-                              (!other.block.nil? && block.parameters.length < other.block.parameters.length)
-        return block if other.block.nil? || (block.parameters.length > other.block.parameters.length)
+        mine = block
+        theirs = other.block
+        return theirs if mine.nil? || (!theirs.nil? && mine.parameters.length < theirs.parameters.length)
+        return mine if theirs.nil? || (mine.parameters.length > theirs.parameters.length)
         # RBS closes a block over its method, YARD over its signature; those cannot be combined
-        return block.combine_with(other.block) if block.arity == other.block.arity &&
-                                                  block.closure&.name == other.block.closure&.name
+        return mine.combine_with(theirs) if mine.arity == theirs.arity && mine.closure&.name == theirs.closure&.name
 
         # @type [Pin::Signature, nil]
         choose_pin_attr(other, :block)

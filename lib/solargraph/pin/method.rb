@@ -295,7 +295,8 @@ module Solargraph
         type = see_reference(api_map) || typify_from_super(api_map)
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
-          qualified = type.qualify(api_map, *(closure&.gates || ['']))
+          # @sg-ignore Need to add nil check here
+          qualified = type.qualify(api_map, *closure.gates)
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
@@ -542,8 +543,10 @@ module Solargraph
       # @param sig2 [Pin::Signature]
       # @return [Boolean]
       def combinable_by_block_informativeness? sig1, sig2
-        return false if sig1.block.nil? || sig2.block.nil?
-        return false if sig1.block.parameters.length == sig2.block.parameters.length
+        block1 = sig1.block
+        block2 = sig2.block
+        return false if block1.nil? || block2.nil?
+        return false if block1.parameters.length == block2.parameters.length
         sig1.type_arity[0..-2] == sig2.type_arity[0..-2]
       end
 
