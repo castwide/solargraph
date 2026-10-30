@@ -282,13 +282,10 @@ module Solargraph
       end
 
       # @param isa_node [Parser::AST::Node]
-      # @return [Array(String, String), nil]
+      # @return [Array(String, String), Array(nil, String), nil] Type name
+      #   (nil if the argument is not a constant), then variable name
       def parse_isa isa_node
-        call_type_name, variable_name = parse_call(isa_node, :is_a?)
-
-        return unless call_type_name
-
-        [call_type_name, variable_name]
+        parse_call(isa_node, :is_a?)
       end
 
       # @param variable_name [String]
@@ -321,6 +318,18 @@ module Solargraph
         pin = find_var(variable_name, isa_position)
         return unless pin
 
+        if isa_type_name.nil?
+          return unless isa_node.children[2] in ::Parser::AST::Node => arg_node
+          instance_type = class_variable_instance_type(arg_node, isa_position)
+          return if instance_type.nil?
+
+          # A false result says nothing about the variable's declared
+          # class (the value may be a subclass), so only narrow the
+          # true branch
+          process_facts({ pin => [{ type: instance_type }] }, true_presences)
+          return
+        end
+
         # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
         if_true = {}
         if_true[pin] ||= []
@@ -332,6 +341,26 @@ module Solargraph
         if_false[pin] ||= []
         if_false[pin] << { not_type: ComplexType.parse(isa_type_name) }
         process_facts(if_false, false_presences)
+      end
+
+      # The instance type a variable argument to is_a? guarantees,
+      # from the variable's declared Class<X> type
+      #
+      # @param arg_node [Parser::AST::Node]
+      # @param position [Position]
+      #
+      # @return [ComplexType, nil]
+      def class_variable_instance_type arg_node, position
+        return unless %i[lvar ivar].include?(arg_node.type)
+        variable_name = arg_node.children[0]
+        return unless variable_name.is_a?(Symbol)
+        class_pin = find_var(variable_name.to_s, position)
+        return if class_pin.nil?
+        class_type = class_pin.return_type
+        return if class_type.nil? || class_type.undefined?
+        class_items = class_type.items
+        return unless class_items.all? { |item| item.name == 'Class' && item.subtypes.length == 1 }
+        ComplexType.new(class_items.flat_map { |item| item.subtypes.flat_map(&:items) })
       end
 
       # @param nilp_node [Parser::AST::Node]
