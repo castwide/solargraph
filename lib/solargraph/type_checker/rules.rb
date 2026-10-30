@@ -69,11 +69,13 @@ module Solargraph
       #
       # @todo 4: Missed nil violation
       #
-      # pending code fixes (277):
+      # pending code fixes (282):
       #
       # @todo 281: Need to add nil check here
       # @todo 22: Translate to something flow sensitive typing understands
+      # @todo 4: https://github.com/apiology/solargraph/pull/406
       # @todo 3: Need a downcast here
+      # @todo 2: https://github.com/castwide/solargraph/pull/1259
       #
       # flow sensitive typing could handle (99):
       #

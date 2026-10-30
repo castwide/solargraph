@@ -38,6 +38,30 @@ module Solargraph
           parts
         end
 
+        # The type a value has when it matches a pattern made only of
+        # constants, e.g. `Foo`, `Foo(x:)` or `Foo | Bar => f`.
+        #
+        # @param node [Parser::AST::Node]
+        # @return [String, nil] nil when the pattern is not a constant check
+        def pattern_type_name node
+          case node.type
+          when :const
+            unpack_name(node)
+          when :nil
+            'nil'
+          when :const_pattern, :match_as
+            inner = node.children.fetch(0)
+            pattern_type_name(inner) if inner.is_a?(::Parser::AST::Node)
+          when :match_alt
+            names = node.children.map do |alternative|
+              next nil unless alternative.is_a?(::Parser::AST::Node)
+
+              pattern_type_name(alternative)
+            end
+            names.join(', ') unless names.include?(nil)
+          end
+        end
+
         # @param node [Parser::AST::Node, nil]
         # @return [String, nil]
         def infer_literal_node_type node
@@ -533,12 +557,30 @@ module Solargraph
                     result.concat reduce_to_value_nodes([cc])
                   end
                 end
+              elsif node.type == :case_match
+                result.concat from_case_match(node)
               elsif node.type == :resbody
                 result.concat reduce_to_value_nodes([node.children[2]])
               else
                 result.push node
               end
               result
+            end
+
+            # @param node [Parser::AST::Node] (case_match SUBJECT IN_PATTERN... ELSE)
+            # @return [Array<Parser::AST::Node>]
+            def from_case_match node
+              # No else adds no nil: an unmatched case/in raises NoMatchingPatternError
+              clauses = node.children.drop(1).compact
+              clauses.flat_map do |clause|
+                next [] unless clause.is_a?(::Parser::AST::Node)
+
+                body = clause.type == :in_pattern ? clause.children[2] : clause
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+                next [NIL_NODE] unless body.is_a?(::Parser::AST::Node) && body.type != :empty_else
+
+                reduce_to_value_nodes([body])
+              end
             end
 
             # Treat parent as as a begin block and use the last node's
