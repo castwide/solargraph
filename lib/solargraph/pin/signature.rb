@@ -16,7 +16,7 @@ module Solargraph
         @identity ||= "signature#{object_id}"
       end
 
-      # @ sg-ignore need boolish support for ? methods
+      # @return [Boolean, nil]
       def dodgy_return_type_source?
         super || closure&.dodgy_return_type_source?
       end
@@ -30,28 +30,29 @@ module Solargraph
       end
 
       def typify api_map
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         if return_type.defined?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1393
           qualified = return_type.qualify(api_map, closure.namespace)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           logger.debug { "Signature#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
         return ComplexType::UNDEFINED if closure.nil?
         return ComplexType::UNDEFINED unless closure.is_a?(Pin::Method)
-        # @sg-ignore need is_a? support
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
         # @type [Array<Pin::Method>]
         method_stack = closure.rest_of_stack api_map
         logger.debug { "Signature#typify(self=#{self}) - method_stack: #{method_stack}" }
         method_stack.each do |pin|
           sig = pin.signatures.find { |s| s.arity == arity }
           next unless sig
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           next if sig.return_type.undefined?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1393
           qualified = sig.return_type.qualify(api_map, closure.namespace)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           logger.debug { "Signature#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end

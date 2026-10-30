@@ -17,9 +17,9 @@ module Solargraph
                 containerName: pin.namespace,
                 kind: pin.symbol_kind,
                 location: {
-                  # @sg-ignore Need to add nil check here
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1399
                   uri: file_to_uri(pin.best_location.filename),
-                  # @sg-ignore Need to add nil check here
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1399
                   range: pin.best_location.range.to_hash
                 },
                 deprecated: pin.deprecated?

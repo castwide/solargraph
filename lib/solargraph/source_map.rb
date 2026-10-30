@@ -83,12 +83,15 @@ module Solargraph
       pins_by_class(Pin::Reference::Require)
     end
 
+    # @param method_names [Array<Symbol, String>]
+    # @return [Array<Call>]
     def calls *method_names
       symbolized = method_names.map(&:to_sym)
       node_map.find_by_type(:send).select { |node| node.children[0].nil? && symbolized.include?(node.children[1].to_sym) }
               .map { |node| Call.new(self, Parser.chain(node), locate_namespace_pin(node.loc.line, node.loc.column)) }
     end
 
+    # @return [Source::NodeMap]
     def node_map
       @node_map ||= Source::NodeMap.new(source.node)
     end
@@ -103,6 +106,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def document_symbols
       @document_symbols ||= (pins + convention_pins).select do |pin|
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         pin.path && !pin.path.empty?
       end
     end
@@ -120,7 +124,7 @@ module Solargraph
     end
 
     # @param path [String]
-    # @return [Pin::Base]
+    # @return [Pin::Base, nil]
     def first_pin path
       pins.select { |p| p.path == path }.first
     end
@@ -135,10 +139,15 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Method,Pin::Namespace]
+    # @sg-ignore Need better generic inference here
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method
     end
 
+    # @param line [Integer]
+    # @param character [Integer]
+    # @return [Pin::Namespace, Pin::Singleton]
+    # @sg-ignore Need better generic inference here
     def locate_namespace_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Singleton
     end
@@ -146,6 +155,7 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Closure]
+    # @sg-ignore Need better generic inference here
     def locate_closure_pin line, character
       _locate_pin line, character, Pin::Closure
     end
@@ -169,11 +179,10 @@ module Solargraph
 
     # @return [Array<Parser::AST::Node>]
     def method_call_nodes
-      # @sg-ignore node expected Parser::AST::Node, received Parser::AST::Node, nil
       @method_call_nodes ||= Solargraph::Parser::ParserGem::NodeMethods.call_nodes_from(source.node)
     end
 
-    # @param macro_method_names [Array<String>]
+    # @param macro_method_names [Set<String>]
     # @return [Array<Parser::AST::Node>]
     def macro_method_candidates macro_method_names
       return @macro_method_candidates if @macro_method_names == macro_method_names
@@ -212,7 +221,7 @@ module Solargraph
 
     private
 
-    # @return [Hash{Class, Pin::Base => Array<Pin::Base>}]
+    # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
     def pin_class_hash
       # @todo Need to support generic resolution in classify and transform_values
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
@@ -224,7 +233,7 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Base>]
-    # @return [Array<Pin::Base>]
+    # @return [void]
     def convention_pins= pins
       # unmemoizing the document_symbols in case it was called from any of conventions
       @document_symbols = nil
@@ -245,9 +254,9 @@ module Solargraph
         next if pin.is_a?(Pin::Method) && !pin.body?
         found = pin if (klasses.empty? || klasses.any? do |kls|
           pin.is_a?(kls)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1399
         end) && pin.location.range.contain?(position)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1399
         break if pin.location.range.start.line > line
       end
       # Assuming the root pin is always valid

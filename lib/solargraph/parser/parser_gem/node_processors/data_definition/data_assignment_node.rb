@@ -29,18 +29,23 @@ module Solargraph
                 return false unless node&.type == :casgn
                 return false if node.children[2].nil?
 
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                 data_node = if node.children[2].type == :block
+                              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                               node.children[2].children[0]
                             else
                               node.children[2]
                             end
 
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                 data_definition_node?(data_node)
               end
             end
 
             def class_name
               if node.children[0]
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                #   also needs https://github.com/castwide/solargraph/pull/1416
                 Parser::NodeMethods.unpack_name(node.children[0]) + "::#{node.children[1]}"
               else
                 node.children[1].to_s
@@ -50,8 +55,14 @@ module Solargraph
             private
 
             # @return [Parser::AST::Node]
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             def data_node
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
               if node.children[2].type == :block
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                #   also needs https://github.com/castwide/solargraph/pull/1416
                 node.children[2].children[0]
               else
                 node.children[2]

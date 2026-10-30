@@ -10,6 +10,8 @@ task :console do
   sh 'pry -I lib -r solargraph.rb'
 end
 
+# `vernier` is an optional dependency typecheck needs; CI adds it before every run, so do the same locally:
+#   echo "gem 'vernier', '>1.0', '<2'" >> .Gemfile && bundle install
 desc 'Run the type checker'
 task typecheck: [:typecheck_strong]
 
@@ -61,14 +63,16 @@ def undercover
     Open3.capture2e(cmd)
   end
   puts output
+  # @sg-ignore https://github.com/castwide/solargraph/pull/1439
   $stdout.flush
   status
 rescue StandardError => e
   warn "hit error: #{e.message}"
-  # @sg-ignore Need to add nil check here
+  # @sg-ignore https://github.com/apiology/solargraph/pull/176
   warn "Backtrace:\n#{e.backtrace.join("\n")}"
   warn "output: #{output}"
   puts 'Flushing'
+  # @sg-ignore https://github.com/castwide/solargraph/pull/1439
   $stdout.flush
   raise
 end
@@ -125,6 +129,7 @@ def simplecov_collate
 rescue StandardError => e
   puts "Simplecov collate failed: #{e.message}"
 ensure
+  # @sg-ignore https://github.com/castwide/solargraph/pull/1439
   $stdout.flush
 end
 

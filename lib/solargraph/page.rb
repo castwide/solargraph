@@ -71,7 +71,7 @@ module Solargraph
     # @param template [String]
     # @param layout [Boolean]
     # @param locals [Hash]
-    # @sg-ignore
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     # @return [String]
     def render template, layout: true, locals: {}
       # @type [String]
