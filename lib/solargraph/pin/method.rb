@@ -544,9 +544,9 @@ module Solargraph
       # @return [String]
       def parameter_bullets params, tags, indent
         params.each_with_index.map do |param, index|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1461
           line = "#{indent}* #{param.name}"
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1461
           line += " [#{escape_brackets(param.return_type.rooted_tags)}]" if param.return_type.defined?
           line + " #{parameter_tag(param, tags, index)&.text}"
         end.join("\n")
