@@ -312,20 +312,21 @@ module Solargraph
         yield self
       end
 
-      # The first pin of the method stack for +word+ on this type, or
-      # nil when the method does not resolve.
+      # Every definition of +method_name+ on this type, of any visibility,
+      # highest precedence first; empty when the method does not resolve.
       #
-      # @param word [String]
       # @param api_map [ApiMap]
-      # @return [::Array<Pin::Base>, nil]
-      def method_stack_pins word, api_map
+      # @param method_name [String]
+      # @return [::Array<Pin::Method>]
+      def reachable_method_stack api_map, method_name
         # explicit: false skips arity checking; the duck type
         # only tells us the method exists, not its signature
-        return [Pin::DuckMethod.new(name: word, source: :chain, explicit: false)] if duck_type? && name[1..] == word
+        if duck_type? && name[1..] == method_name
+          return [Pin::DuckMethod.new(name: method_name, source: :chain, explicit: false)]
+        end
 
         ns_tag = namespace == '' ? '' : namespace_type.tag
-        stack = api_map.get_method_stack(ns_tag, word, scope: scope)
-        stack.first.nil? ? nil : [stack.first]
+        api_map.get_method_stack(ns_tag, method_name, scope: scope)
       end
 
       # Yields this type and its definitions of +word+, and returns what
@@ -339,32 +340,30 @@ module Solargraph
       # @yieldreturn [ComplexType]
       # @return [ComplexType]
       def call_type word, api_map
-        pins = method_stack_pins(word, api_map)
-        return ComplexType::UNDEFINED if pins.nil?
+        # A call dispatches to the highest-precedence definition only
+        pins = reachable_method_stack(api_map, word).first(1)
+        return ComplexType::UNDEFINED if pins.empty?
 
         yield self, pins
       end
 
-      # The methods reachable on a value of this type, from +context+. A
-      # duck type contributes the one method it names, over everything on
-      # Object; a type with no methods to offer contributes none.
+      # Every method reachable on a value of this type, of any visibility.
+      # A duck type contributes the one method it names, over everything
+      # public on Object; a type with no methods to offer contributes none.
       #
       # The namespace is not qualified here, since that can confuse similar
       # names, e.g., `Foo` vs. `Other::Foo`.
       #
       # @param api_map [ApiMap]
-      # @param context [String] Fully qualified namespace the type is referenced from
-      # @param internal [Boolean] True to include private methods
-      # @return [Array<Pin::Base>]
-      def candidate_methods_from api_map, context, internal
+      # @return [Array<Pin::Method>]
+      def reachable_methods api_map
         if duck_type?
           return [Pin::DuckMethod.new(name: to_s[1..], source: :api_map)] +
                  api_map.get_methods('Object')
         end
         return [] if undefined? || void?
 
-        api_map.get_methods(tag, scope: scope,
-                                 visibility: api_map.visibility_for(namespace, context, internal))
+        api_map.get_methods(tag, scope: scope, visibility: %i[public protected private])
       end
 
       def hash

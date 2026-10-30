@@ -19,6 +19,21 @@ describe Solargraph::ComplexType do
       expect([yielded, result.rooted_tags]).to eq([[['::String', ['String#upcase']]], '::Symbol'])
     end
 
+    it 'yields only the highest-precedence definition' do
+      api_map.map Solargraph::Source.load_string(%(
+        class Sup
+          def foo; end
+        end
+        class Sub < Sup
+          def foo; end
+        end
+      ), 'test.rb')
+      type = described_class.parse('::Sub').items.first
+      yielded = []
+      type.call_type('foo', api_map) { |_receiver, pins| yielded.concat(pins.map(&:path)) }
+      expect(yielded).to eq(['Sub#foo'])
+    end
+
     it 'answers undefined without yielding when the type does not resolve the method' do
       type = described_class.parse('::String').items.first
       expect(type.call_type('frobnicate', api_map) { raise 'yielded' }).to be_undefined

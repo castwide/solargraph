@@ -55,7 +55,7 @@ describe Solargraph::Type do
   let(:fallback_owners) { [described_class, Object, Kernel, BasicObject] }
 
   it 'declares methods' do
-    expect(contract).to include(:candidate_methods_from, :method_stack_pins, :call_type, :qualify_parts,
+    expect(contract).to include(:reachable_methods, :reachable_method_stack, :call_type, :qualify_parts,
                                 :order_nil_last, :any_generic?)
   end
 

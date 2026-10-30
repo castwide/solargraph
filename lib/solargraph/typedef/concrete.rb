@@ -117,17 +117,16 @@ module Solargraph
         yield self
       end
 
-      # The first pin of the method stack for +word+ on this type, or nil
-      # when the method does not resolve.
+      # Every definition of +method_name+ on this type, of any visibility,
+      # highest precedence first; empty when the method does not resolve.
       #
-      # @param word [String]
       # @param api_map [ApiMap]
-      # @return [Array<Pin::Base>, nil]
-      def method_stack_pins word, api_map
+      # @param method_name [String]
+      # @return [Array<Pin::Method>]
+      def reachable_method_stack api_map, method_name
         receiver = class_object_of || self
-        stack = api_map.get_method_stack(receiver.base.to_s, word,
-                                         scope: receiver.equal?(self) ? :instance : :class)
-        stack.first.nil? ? nil : [stack.first]
+        api_map.get_method_stack(receiver.base.to_s, method_name,
+                                 scope: receiver.equal?(self) ? :instance : :class)
       end
 
       # Yields this type and its definitions of +word+, and returns what
@@ -141,27 +140,26 @@ module Solargraph
       # @yieldreturn [Type]
       # @return [Type]
       def call_type word, api_map
-        pins = method_stack_pins(word, api_map)
-        return Union::UNDEFINED if pins.nil?
+        # A call dispatches to the highest-precedence definition only
+        pins = reachable_method_stack(api_map, word).first(1)
+        return Union::UNDEFINED if pins.empty?
 
         yield self, pins
       end
 
-      # The methods reachable on a value of this type, from +context+:
+      # Every method reachable on a value of this type, of any visibility:
       # the class methods of Foo for Class[Foo], otherwise the instance
       # methods of this type.
       #
       # @param api_map [ApiMap]
-      # @param context [String] Fully qualified namespace the type is referenced from
-      # @param internal [Boolean] True to include private methods
-      # @return [Array<Pin::Base>]
-      def candidate_methods_from api_map, context, internal
+      # @return [Array<Pin::Method>]
+      def reachable_methods api_map
         return [] if undefined? || to_s == 'void'
 
         receiver = class_object_of || self
         api_map.get_methods(receiver.base.to_s,
                             scope: receiver.equal?(self) ? :instance : :class,
-                            visibility: api_map.visibility_for(receiver.base.to_s, context, internal))
+                            visibility: %i[public protected private])
       end
 
       def to_s

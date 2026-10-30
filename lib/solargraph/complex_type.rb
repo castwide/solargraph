@@ -273,23 +273,22 @@ module Solargraph
       ComplexType.new(parts) unless parts.any?(&:nil?)
     end
 
-    # Pins for calling +word+ on each alternative of this union, or nil
-    # when a member does not resolve it and ApiMap#loose_unions is off.
+    # The method stacks for +method_name+ of each alternative of this
+    # union, concatenated, so precedence orders each alternative's run;
+    # empty when a member does not resolve it and ApiMap#loose_unions is
+    # off.
     #
-    # @param word [String]
     # @param api_map [ApiMap]
-    # @return [Array<Pin::Base>, nil]
-    def method_stack_pins word, api_map
-      pin_groups = @items.map { |item| item.method_stack_pins(word, api_map) }
-      return nil if !api_map.loose_unions && pin_groups.any?(&:nil?)
-
-      found = pin_groups.compact
-      return nil if found.empty?
+    # @param method_name [String]
+    # @return [Array<Pin::Method>]
+    def reachable_method_stack api_map, method_name
+      stacks = @items.map { |item| item.reachable_method_stack(api_map, method_name) }
+      return [] if !api_map.loose_unions && stacks.any?(&:empty?)
 
       # Dedup on path *and* return type: alternatives can share a
       # path (e.g. same generic method on different instantiations).
       # @param p [Pin::Base]
-      found.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
+      stacks.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
     end
 
     # The union of what a call to +word+ returns on each alternative that
@@ -304,7 +303,7 @@ module Solargraph
     # @yieldreturn [ComplexType]
     # @return [ComplexType]
     def call_type word, api_map, &block
-      resolving = @items.reject { |item| item.method_stack_pins(word, api_map).nil? }
+      resolving = @items.reject { |item| item.reachable_method_stack(api_map, word).empty? }
       return ComplexType::UNDEFINED if resolving.empty?
       return ComplexType::UNDEFINED if !api_map.loose_unions && resolving.length < @items.length
 
@@ -316,8 +315,8 @@ module Solargraph
       results.length > 1 ? combined.order_nil_last : combined
     end
 
-    # The methods that might be reachable on a value of this union, from
-    # +context+.
+    # The methods that might be reachable on a value of this union, of any
+    # visibility.
     #
     # Pooled, not intersected: a value is only one member, so what is
     # certainly callable is what they all provide. Both callers want the
@@ -325,11 +324,9 @@ module Solargraph
     # whether a pin might belong here.
     #
     # @param api_map [ApiMap]
-    # @param context [String] Fully qualified namespace the type is referenced from
-    # @param internal [Boolean] True to include private methods
-    # @return [Array<Pin::Base>]
-    def candidate_methods_from api_map, context, internal
-      @items.flat_map { |item| item.candidate_methods_from(api_map, context, internal) }.uniq
+    # @return [Array<Pin::Method>]
+    def reachable_methods api_map
+      @items.flat_map { |item| item.reachable_methods(api_map) }.uniq
     end
 
     # @return [String]

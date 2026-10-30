@@ -41,21 +41,19 @@ module Solargraph
         types.map(&:to_s_for_complex_type).join(', ').to_s
       end
 
-      # Pins for calling +word+ on each member, or nil when a member does
+      # The method stacks for +method_name+ of each member, concatenated,
+      # so precedence orders each member's run; empty when a member does
       # not resolve it and ApiMap#loose_unions is off.
       #
-      # @param word [String]
       # @param api_map [ApiMap]
-      # @return [Array<Pin::Base>, nil]
-      def method_stack_pins word, api_map
-        pin_groups = types.map { |type| type.method_stack_pins(word, api_map) }
-        return nil if !api_map.loose_unions && pin_groups.any?(&:nil?)
-
-        found = pin_groups.compact
-        return nil if found.empty?
+      # @param method_name [String]
+      # @return [Array<Pin::Method>]
+      def reachable_method_stack api_map, method_name
+        stacks = types.map { |type| type.reachable_method_stack(api_map, method_name) }
+        return [] if !api_map.loose_unions && stacks.any?(&:empty?)
 
         # @param pin [Pin::Base]
-        found.flatten.uniq { |pin| [pin.path, pin.return_type.rooted_tags] }
+        stacks.flatten.uniq { |pin| [pin.path, pin.return_type.rooted_tags] }
       end
 
       # The union of what a call to +word+ returns on each member that
@@ -70,7 +68,7 @@ module Solargraph
       # @yieldreturn [Type]
       # @return [Type]
       def call_type word, api_map, &block
-        resolving = types.reject { |type| type.method_stack_pins(word, api_map).nil? }
+        resolving = types.reject { |type| type.reachable_method_stack(api_map, word).empty? }
         return UNDEFINED if resolving.empty?
         return UNDEFINED if !api_map.loose_unions && resolving.length < types.length
 

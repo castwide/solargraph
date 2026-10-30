@@ -151,7 +151,7 @@ module Solargraph
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           next unless node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
           match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
-            closure.return_type.candidate_methods_from(self, '', false).include?(pin)
+            closure.return_type.reachable_methods(self).include?(pin)
           end
           next unless match
           match.macros.each do |macro|
@@ -512,20 +512,24 @@ module Solargraph
       end
     end
 
-    # Which visibilities the methods of +namespace+ may have to be reachable
-    # from +context+. Protected methods are reachable when the context is the
-    # namespace or related to it by inheritance, and private ones too when
-    # +internal+ is true. Needs the ancestry, so it belongs here rather than
-    # on the type.
+    # Whether a call made from +context+ may use +pin+, per Ruby's rules:
+    # public always; protected when +context+ is the namespace that
+    # defines the method or has it as an ancestor; private only when the
+    # receiver is self, written or implicit. Needs the ancestry, so it
+    # belongs here rather than on the type.
     #
-    # @param namespace [String] Fully qualified namespace of the type
-    # @param context [String] Fully qualified namespace the type is referenced from
-    # @param internal [Boolean] True to include private methods
-    # @return [Array<Symbol>]
-    def visibility_for namespace, context, internal
-      return [:public] unless namespace == context || super_and_sub?(namespace, context)
+    # @example In `class Sub2 < Sup`, `Sub.new.prot` may call a protected
+    #   Sup#prot, because Sub2 descends from Sup.
+    #
+    # @param pin [Pin::Method]
+    # @param context [String] Fully qualified namespace the call is made from
+    # @param self_receiver [Boolean] True when the receiver is self
+    # @return [Boolean]
+    def callable_from? pin, context, self_receiver:
+      return true if pin.visibility == :public
+      return self_receiver if pin.visibility == :private
 
-      internal ? %i[public protected private] : %i[public protected]
+      pin.namespace == context || store.get_ancestors(context).include?(pin.namespace)
     end
 
     # Get a stack of method pins for a method name in a potentially

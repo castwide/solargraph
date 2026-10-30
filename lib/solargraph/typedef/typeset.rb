@@ -112,11 +112,9 @@ module Solargraph
       # intersection's value is all of them at once.
       #
       # @param api_map [ApiMap]
-      # @param context [String] Fully qualified namespace the type is referenced from
-      # @param internal [Boolean] True to include private methods
-      # @return [Array<Pin::Base>]
-      def candidate_methods_from api_map, context, internal
-        types.flat_map { |type| type.candidate_methods_from(api_map, context, internal) }.uniq
+      # @return [Array<Pin::Method>]
+      def reachable_methods api_map
+        types.flat_map { |type| type.reachable_methods(api_map) }.uniq
       end
 
       def undefined?

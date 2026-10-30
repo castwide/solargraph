@@ -105,20 +105,17 @@ module Solargraph
     # @!method defined?
     #   @return [Boolean]
 
-    # @!method candidate_methods_from(api_map, context, internal)
-    #   The methods that might be reachable on a value of this type, from
-    #   +context+.
+    # @!method reachable_methods(api_map)
+    #   Every method a value of this type responds to, of any visibility.
     #   @param api_map [ApiMap]
-    #   @param context [String] Fully qualified namespace the type is referenced from
-    #   @param internal [Boolean] True to include private methods
-    #   @return [Array<Pin::Base>]
+    #   @return [Array<Pin::Method>]
 
-    # @!method method_stack_pins(word, api_map)
-    #   The pins for calling +word+ on a value of this type, or nil when
-    #   the type does not resolve it.
-    #   @param word [String]
+    # @!method reachable_method_stack(api_map, method_name)
+    #   Every definition of +method_name+ reachable on a value of this
+    #   type, of any visibility, highest precedence first.
     #   @param api_map [ApiMap]
-    #   @return [Array<Pin::Base>, nil]
+    #   @param method_name [String]
+    #   @return [Array<Pin::Method>]
 
     # @!method call_type(word, api_map, &result)
     #   The type a call to +word+ on a value of this type evaluates to.

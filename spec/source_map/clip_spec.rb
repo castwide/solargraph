@@ -619,6 +619,33 @@ describe Solargraph::SourceMap::Clip do
     expect(paths3).not_to include('Foo#priv_method')
   end
 
+  it 'completes private methods on self and protected methods by their defining class' do
+    source = Solargraph::Source.load_string(%(
+      class Sup
+        protected
+        def prot_method; end
+        private
+        def priv_method; end
+      end
+      class Sub < Sup; end
+      class Sub2 < Sup
+        def bar
+          self._
+          Sub.new._
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    self_paths = api_map.clip_at('test.rb', Solargraph::Position.new(10, 15)).complete.pins.map(&:path)
+    expect(self_paths).to include('Sup#prot_method', 'Sup#priv_method')
+
+    sibling_paths = api_map.clip_at('test.rb', Solargraph::Position.new(11, 18)).complete.pins.map(&:path)
+    expect(sibling_paths).to include('Sup#prot_method')
+    expect(sibling_paths).not_to include('Sup#priv_method')
+  end
+
   it 'processes @yieldreceiver tags in completions' do
     source = Solargraph::Source.load_string(%(
       class Par

@@ -17,7 +17,7 @@ describe Solargraph::Pin::DuckMethod do
   # The one place these are built: a duck-type tag reaches ApiMap via its
   # parsed ComplexType, not via the source that declared it.
   let(:duck_new) do
-    Solargraph::ComplexType.parse('#new').candidate_methods_from(api_map, '', false)
+    Solargraph::ComplexType.parse('#new').reachable_methods(api_map)
                            .grep(described_class).first
   end
 
