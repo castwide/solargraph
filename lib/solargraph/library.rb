@@ -594,46 +594,28 @@ module Solargraph
 
       pending = api_map.unloaded_gems.length - cache_errors.length - 1
 
-      if Yardoc.processing?(spec)
-        logger.info "Enqueuing cache of #{spec.name} #{spec.version} (already being processed)"
-        queued_gemspec_cache.push(spec)
-        return if pending - queued_gemspec_cache.length < 1
+      logger.info "Caching #{spec.name} #{spec.version}"
+      Thread.new do
+        report_cache_progress spec.name, pending
 
-        # Try the next cacheable gemspec. This method is always called
-        # from inside sync_catalog's mutex (either directly or via this
-        # same recursive call), so recursing through sync_catalog here
-        # would try to re-lock a mutex this thread already holds and
-        # deadlock (https://github.com/castwide/solargraph/issues/1111).
-        cache_next_gemspec
-      else
-        logger.info "Caching #{spec.name} #{spec.version}"
-        Thread.new do
-          report_cache_progress spec.name, pending
-
-          cmd = [workspace.command_path, 'cache', spec.name]
-          cmd.push('--directory', workspace.directory) if workspace.directory
-          begin
-            _o, e, s = Open3.capture3(*cmd)
-          rescue SystemCallError => e
-            # The command could not start, e.g. Errno::ENOENT - handled below
-          end
-          if s&.success?
-            logger.info "Cached #{spec.name} #{spec.version}"
-          else
-            cache_errors.add spec
-            logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
-            logger.warn e
-          end
-          end_cache_progress
-          catalog
-          sync_catalog
+        cmd = [workspace.command_path, 'cache', spec.name]
+        cmd.push('--directory', workspace.directory) if workspace.directory
+        begin
+          _o, e, s = Open3.capture3(*cmd)
+        rescue SystemCallError => e
+          # The command could not start, e.g. Errno::ENOENT - handled below
         end
+        if s&.success?
+          logger.info "Cached #{spec.name} #{spec.version}"
+        else
+          cache_errors.add spec
+          logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
+          logger.warn e
+        end
+        end_cache_progress
+        catalog
+        sync_catalog
       end
-    end
-
-    # @return [Array<Gem::Specification>]
-    def queued_gemspec_cache
-      @queued_gemspec_cache ||= []
     end
 
     # @param gem_name [String]
