@@ -442,11 +442,15 @@ module Solargraph
           return
         end
 
+        # a synthesized pin needs a closure to belong to
+        enclosing = closure
+        return unless enclosing
+
         true_presences.each do |presence|
           ivars.push(Pin::InstanceVariable.new(
                        name: ivar_name,
-                       closure: closure,
-                       location: closure.location,
+                       closure: enclosing,
+                       location: enclosing.location,
                        return_type: ComplexType.parse('Object'),
                        source: :flow_sensitive_typing,
                        presence: presence
