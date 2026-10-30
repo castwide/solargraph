@@ -58,6 +58,38 @@ describe Solargraph::Library do
     end
   end
 
+  context 'with a require from a gem whose yardoc another process has locked' do
+    let(:metagem) { Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport')) }
+    let(:lock_file) { File.join(Solargraph::Yardoc.path_for(metagem), 'processing') }
+
+    before do
+      Solargraph::Collection::Gem.uncache(metagem)
+      FileUtils.mkdir_p File.dirname(lock_file)
+      FileUtils.touch lock_file
+    end
+
+    after do
+      FileUtils.rm_f lock_file
+    end
+
+    it 'caches the gem anyway' do
+      library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
+                                                              Solargraph::Workspace::Config.new))
+      library.attach Solargraph::Source.load_string(%(
+        require 'backport'
+
+        # @param adapter [Backport::Adapter]
+        def foo(adapter)
+          adapter.remo
+        end
+      ), 'file.rb', 0)
+      Timeout.timeout 60 do
+        sleep 0.25 while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
+        expect(completion.pins.map(&:name)).to include('remote')
+      end
+    end
+  end
+
   context 'with a require from an already-cached external gem' do
     before do
       metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport'))
@@ -661,27 +693,6 @@ describe Solargraph::Library do
           library.definitions_at(bad_file, 0, 0)
         end.to raise_error(Solargraph::FileNotFoundError)
       end
-    end
-  end
-
-  describe '#sync_catalog' do
-    # Regression test for https://github.com/castwide/solargraph/issues/1111
-    #
-    # When the first cacheable gemspec is already being cached by another
-    # process, cache_next_gemspec enqueues it and, if other gemspecs are
-    # still pending, recurses to try the next one. That recursion must not
-    # go back through sync_catalog's own mutex, or it deadlocks with a
-    # ThreadError on the thread that is already inside the mutex.
-    it 'does not deadlock when the next cacheable gemspec is already being processed elsewhere' do
-      library = described_class.new
-      api_map = library.send(:api_map)
-      gemspecs = (1..3).map { |i| instance_double(Gem::Specification, name: "gem_#{i}", version: Gem::Version.new('1.0.0')) }
-      allow(api_map).to receive(:catalog)
-      allow(api_map).to receive_messages(uncached_yard_gemspecs: gemspecs, uncached_rbs_collection_gemspecs: [], uncached_gemspecs: gemspecs, source_maps: [], pins: [])
-      allow(Solargraph::Yardoc).to receive(:processing?).and_return(true)
-
-      library.catalog
-      expect { library.send(:sync_catalog) }.not_to raise_error
     end
   end
 
