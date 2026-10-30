@@ -32,7 +32,7 @@ module Solargraph
               def match? node
                 return false unless node&.type == :class
 
-                data_definition_node?(node.children[1])
+                data_definition_node?(node.children.fetch(1))
               end
 
               private
@@ -43,7 +43,7 @@ module Solargraph
                 return false unless data_node.is_a?(::Parser::AST::Node)
                 return false unless data_node&.type == :send
                 return false unless data_node.children[0]&.type == :const
-                return false unless data_node.children[0].children[1] == :Data
+                return false unless data_node.children.fetch(0).children[1] == :Data
                 return false unless data_node.children[1] == :define
 
                 true
@@ -78,16 +78,14 @@ module Solargraph
             # @return [Parser::AST::Node]
             attr_reader :node
 
-            # @return [Parser::AST::Node, nil]
+            # @return [Parser::AST::Node]
             def data_node
-              node.children[1]
+              node.children.fetch(1)
             end
 
-            # @sg-ignore Need to add nil check here
             # @return [Array<Parser::AST::Node>]
             def data_attribute_nodes
-              # @sg-ignore Need to add nil check here
-              data_node.children[2..]
+              data_node.children.drop(2)
             end
           end
         end
