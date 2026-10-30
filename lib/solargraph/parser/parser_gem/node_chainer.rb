@@ -64,7 +64,7 @@ module Solargraph
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
+              result.push receiver_call(n)
             elsif n.children[0].nil?
               # @sg-ignore Need to add nil check here
               n.children[2..].map do |c|
@@ -194,6 +194,18 @@ module Solargraph
 
           # @sg-ignore Need to add nil check here
           NodeChainer.chain(@parent.children[2], @filename)
+        end
+
+        # @param node [Parser::AST::Node] a :send with a receiver
+        # @return [Chain::Call]
+        def receiver_call node
+          location = Location.from_node(node)
+          # 'h[k]', which a Pin::KeyLookup can prove present
+          if node.children in [::Parser::AST::Node | nil => receiver, :[], ::Parser::AST::Node => key]
+            return Chain::Index.new(receiver, key, location, node_args(node), passed_block(node))
+          end
+
+          Chain::Call.new(node.children[1].to_s, location, node_args(node), passed_block(node))
         end
 
         # @param node [Parser::AST::Node]

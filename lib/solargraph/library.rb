@@ -420,7 +420,6 @@ module Solargraph
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
           # @sg-ignore Hash errors
           repargs[reporter] ||= []
-          # @sg-ignore Hash errors
           repargs[reporter].concat args
         end
       end
