@@ -458,7 +458,6 @@ describe 'YARD type specifier list parsing' do
       end
 
       it 'squashes literal types when simplifying literals of same type' do
-        pending 'Maybe feasible'
         api_map = Solargraph::ApiMap.new
         type = Solargraph::ComplexType.parse('1, 2, 3')
         type = type.qualify(api_map, '')
@@ -818,7 +817,6 @@ describe 'YARD type specifier list parsing' do
     end
 
     it 'recognizes a literal conforms with its type' do
-      pending 'Maybe feasible'
       api_map = Solargraph::ApiMap.new
       ptype = Solargraph::ComplexType.parse('Symbol')
       atype = Solargraph::ComplexType.parse(':foo')
