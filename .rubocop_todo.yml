@@ -148,8 +148,8 @@ Metrics/CyclomaticComplexity:
 Metrics/MethodLength:
   Exclude:
     - 'lib/solargraph/complex_type.rb'
-    - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
+    - 'lib/solargraph/parser/parser_gem/node_processors/struct_definition.rb'
     - 'lib/solargraph/shell.rb'
 
 # Configuration parameters: CountComments, CountAsOne.
