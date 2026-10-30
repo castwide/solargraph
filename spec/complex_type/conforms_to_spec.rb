@@ -26,6 +26,59 @@ describe Solargraph::ComplexType do
     expect(match).to be(true)
   end
 
+  context 'with tuples' do
+    it 'accepts a tuple with matching element positions' do
+      exp = described_class.parse('Array(Integer, String)')
+      inf = described_class.parse('Array(Integer, String)')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'rejects a tuple with swapped element positions' do
+      exp = described_class.parse('Array(Integer, String)')
+      inf = described_class.parse('Array(String, Integer)')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'rejects a tuple with a different length' do
+      exp = described_class.parse('Array(Integer, String)')
+      inf = described_class.parse('Array(Integer, String, String)')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'rejects a tuple with fewer elements than expected' do
+      exp = described_class.parse('Array(Integer, Integer)')
+      inf = described_class.parse('Array(Integer)')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'rejects a list whose element type cannot fill every position' do
+      exp = described_class.parse('Array(Array<Hash>, Hash)')
+      inf = described_class.parse('Array<Hash>')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'accepts a list whose element type fills every position' do
+      exp = described_class.parse('Array(String, String)')
+      inf = described_class.parse('Array<String>')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'lets an unresolved generic element fill only its own position' do
+      exp = described_class.parse('Array(Integer, String)')
+      rules = [:allow_unresolved_generic]
+      expect(described_class.parse('Array(generic<T>, String)').conforms_to?(api_map, exp, :method_call, rules))
+        .to be(true)
+      expect(described_class.parse('Array(generic<T>, Integer)').conforms_to?(api_map, exp, :method_call, rules))
+        .to be(false)
+    end
+  end
+
   it 'allows covariant behavior in parameters of Array' do
     exp = described_class.parse('Array<Object>')
     inf = described_class.parse('Array<Integer>')
@@ -254,5 +307,11 @@ describe Solargraph::ComplexType do
       match = sup.conforms_to?(api_map, sub, :method_call, [:allow_reverse_match])
       expect(match).to be(false)
     end
+  end
+
+  it 'lets unresolved generic element types conform under allow_unresolved_generic' do
+    inf = described_class.parse('Array<generic<T>>')
+    exp = described_class.parse('Array<String>')
+    expect(inf.conforms_to?(api_map, exp, :method_call, [:allow_unresolved_generic])).to be(true)
   end
 end
