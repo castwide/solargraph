@@ -14,7 +14,7 @@ module Solargraph
       private
 
       def classmethod_pins
-        pins_by_class(Pin::Reference::Include).map do |inc|
+        (pins_by_class(Pin::Reference::Include) + external_pins.grep(Pin::Reference::Include)).map do |inc|
           Pin::Reference::Extend.new(name: "#{inc.name}::ClassMethods", closure: inc.closure)
         end
       end

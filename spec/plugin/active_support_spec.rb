@@ -41,6 +41,32 @@ describe Solargraph::Plugin::ActiveSupport do
         pins = api_map.get_methods('Consumer', scope: :class)
         expect(pins.map(&:path)).to include('Example::ClassMethods#foo')
       end
+
+      context 'when the include is in a gem' do
+        let(:gem_pins) do
+          Solargraph::SourceMap.load_string(%(
+            module GemExample
+              module ClassMethods
+                def bar; end
+              end
+            end
+
+            class GemConsumer
+              include GemExample
+            end
+          ), 'gem.rb').pins
+        end
+
+        before do
+          # rubocop:disable-next RSpec/AnyInstance
+          allow_any_instance_of(Solargraph::External).to receive(:pins) { gem_pins.clone }
+        end
+
+        it 'adds extend references' do
+          pins = api_map.get_methods('GemConsumer', scope: :class)
+          expect(pins.map(&:path)).to include('GemExample::ClassMethods#bar')
+        end
+      end
     end
 
     context 'without the activesupport gem' do
