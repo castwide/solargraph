@@ -495,7 +495,7 @@ module Solargraph
           )
           result.concat(library.locate_pins(location).select { |pin| pin.name == params['label'] })
         end
-        if params['data']['path']
+        if params['data']['path'] && !params['data']['path'].empty?
           result.concat library.path_pins(params['data']['path'])
           # @todo This exception is necessary because `Library#path_pins` does
           #   not perform a namespace method query, so the implicit `.new` pin
@@ -705,6 +705,15 @@ module Solargraph
       def client_supports_progress?
         # @sg-ignore missing flow-sensitive typing on hash keys
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
+      end
+
+      # The Library observer callback that sends a library's progress to
+      # the client.
+      #
+      # @param progress [Solargraph::LanguageServer::Progress, nil]
+      # @return [void]
+      def update progress
+        progress&.send(self)
       end
 
       private

@@ -131,6 +131,20 @@ describe Solargraph::LanguageServer::Host do
     expect(app2_map).not_to include('Folder1App')
   end
 
+  it "sends a library's progress to the client" do
+    host = described_class.new
+    host.client_capabilities = { 'window' => { 'workDoneProgress' => true } }
+    progress = Solargraph::LanguageServer::Progress.new('Testing')
+    progress.begin('Started', 0)
+    Dir.mktmpdir do |dir|
+      host.prepare(dir)
+      library = host.libraries.first
+      library.changed
+      library.notify_observers progress
+    end
+    expect(host.flush).to include(%("method":"$/progress","params":{"token":"#{progress.uuid}"))
+  end
+
   it 'stops' do
     host = described_class.new
     host.stop
