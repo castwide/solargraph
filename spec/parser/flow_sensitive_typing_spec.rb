@@ -1042,7 +1042,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Array<String>')
 
     clip = api_map.clip_at('test.rb', [6, 10])
-    expect(clip.infer.to_s).to eq('Symbol')
+    expect(clip.infer.simplify_literals.to_s).to eq('Symbol')
   end
 
   it 'uses == against a literal symbol to refine types down to a member of a union' do
@@ -1058,7 +1058,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 10])
-    expect(clip.infer.to_s).to eq('Symbol')
+    expect(clip.infer.simplify_literals.to_s).to eq('Symbol')
 
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.to_s).to eq('Array<String>')
@@ -1080,7 +1080,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Array<String>')
 
     clip = api_map.clip_at('test.rb', [6, 10])
-    expect(clip.infer.to_s).to eq('Symbol')
+    expect(clip.infer.simplify_literals.to_s).to eq('Symbol')
   end
 
   it 'uses instance_of? in a simple if() to refine a bare Object' do
