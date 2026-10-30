@@ -73,7 +73,7 @@ module Solargraph
               add_array_captures(pattern, subject)
             else
               pattern.children.each do |child|
-                add_captures(child) if Parser.is_ast_node?(child)
+                add_captures(child) if child.is_a?(::Parser::AST::Node)
               end
             end
           end
