@@ -414,7 +414,8 @@ module Solargraph
                   source: :parser
                 )
                 # the body's narrowings landed on ref
-                [mm, cm].each { |copy| copy.share_downcast_vars(ref) }
+                mm.share_downcast_vars(ref)
+                cm.share_downcast_vars(ref)
                 pins.push mm, cm
                 ivars.select { |pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path }.each do |ivar|
                   ivars.delete ivar

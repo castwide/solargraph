@@ -262,7 +262,8 @@ module Solargraph
                                presence: presence)
         path = chain_paths[pin]
         if path
-          closure.add_downcast_var(path, new_pin)
+          # #build_chain_pin only records a path when there is a closure
+          closure&.add_downcast_var(path, new_pin)
         elsif pin.is_a?(Pin::LocalVariable)
           locals.push(new_pin)
         elsif pin.is_a?(Pin::InstanceVariable)
@@ -411,14 +412,16 @@ module Solargraph
         end
       end
 
-      # @param node [Parser::AST::Node, nil] a setter's receiver, e.g.
-      #   'location' in 'location.filename = x'
+      # @param node [Parser::AST::Node, Object, nil] a setter's receiver,
+      #   e.g. 'location' in 'location.filename = x'
       # @param words [::Array<String>] the chain #write_to? checks
       # @return [::Array<String>, nil] the chain `node` reads, e.g. ['pin']
       #   for 'pin', ['self', 'location'] for 'location' or
       #   'self.location', or for '@location' when `words` starts at self
       def write_receiver node, words
-        return ['self'] if node.nil? || node.type == :self
+        return ['self'] if node.nil?
+        return unless node.is_a?(::Parser::AST::Node)
+        return ['self'] if node.type == :self
         # an attr_reader on self reads its same-named instance variable
         return ['self', node.children[0].to_s.delete_prefix('@')] if node.type == :ivar && words.first == 'self'
         return parse_receiver_chain(node) unless node.type == :send && (node.children[2..] || []).empty?
@@ -431,7 +434,7 @@ module Solargraph
       # '@foo.bar.baz' -- a chain of simple, argument-less, blockless
       # calls/variables rooted in a local, ivar, or unresolved name.
       #
-      # @param node [Parser::AST::Node, nil]
+      # @param node [Parser::AST::Node, Object, nil]
       # @return [::Array<String>, nil] Dotted-word chain, e.g. ['pin',
       #   'location'], or nil if `node` doesn't have this shape.
       def parse_receiver_chain node
