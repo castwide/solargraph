@@ -84,9 +84,9 @@ module Solargraph
     end
 
     # @return [Array<String>]
-    # @sg-ignore Define the missing read_rbs_collection_paths
+    # @sg-ignore https://github.com/apiology/solargraph/pull/349
     def rbs_collection_paths
-      # @sg-ignore Define the missing read_rbs_collection_paths
+      # @sg-ignore https://github.com/apiology/solargraph/pull/349
       @rbs_collection_paths ||= read_rbs_collection_paths
     end
 
