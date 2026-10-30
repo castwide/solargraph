@@ -8,7 +8,7 @@ module Solargraph
       class Literal < Link
         attr_reader :word
 
-        # @return [::String, ::Symbol]
+        # @return [::Integer, ::Symbol, Boolean, nil]
         attr_reader :value
 
         # @return [Parser::AST::Node]
