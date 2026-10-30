@@ -25,7 +25,8 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
-      # @param annotations [::Enumerable<::String>] e.g. 'pure' from RBS %a{pure}
+      # @param annotations [::Enumerable<::String>] RBS method annotations
+      #   (not YARD tags), e.g. 'pure' from %a{pure}
       # @param context [ComplexType, ComplexType::UniqueType, nil]
       # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
@@ -387,7 +388,9 @@ module Solargraph
         @attribute
       end
 
-      # The method's annotations, e.g. 'pure' from RBS %a{pure}
+      # The method's RBS method annotations, e.g. 'pure' from %a{pure};
+      # not YARD tags. See
+      # https://github.com/ruby/rbs/blob/master/docs/syntax.md#annotations
       #
       # @return [::Set<::String>]
       def annotations
