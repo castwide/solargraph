@@ -31,6 +31,7 @@ module Solargraph
                   parts += pack_name(n)
                 end
               else
+                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 parts.push n unless n.nil?
               end
             end
