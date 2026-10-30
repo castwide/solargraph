@@ -586,6 +586,10 @@ describe Solargraph::Source::Chain do
   end
 
   it 'defines and infers nothing when a link before the last is undefined' do
+    # Host#configure lowers the shared logger level; run this branch's
+    # debug message regardless of which specs ran first
+    old_level = Solargraph::Logging.logger.level
+    Solargraph::Logging.logger.level = Logger::DEBUG
     source = Solargraph::Source.load_string(%(
       class Foo
         def bar
@@ -599,5 +603,7 @@ describe Solargraph::Source::Chain do
     bar_pin = api_map.get_path_pins('Foo#bar').first
     expect(chain.define(api_map, bar_pin, [])).to be_empty
     expect(chain.infer(api_map, bar_pin, [])).to be_undefined
+  ensure
+    Solargraph::Logging.logger.level = old_level
   end
 end
