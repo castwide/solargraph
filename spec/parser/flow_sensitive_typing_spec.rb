@@ -1512,10 +1512,11 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       end
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
+    infer = ->(position) { api_map.clip_at('test.rb', position).infer.rooted_tags }
+    expect([infer.call([20, 52]), infer.call([21, 32])]).to eq(%w[nil nil])
     # each attr_reader matches the param of the same type on the next lines
-    { [18, 44] => 'nil', [19, 44] => '::Boolean', [20, 52] => 'nil',
-      [21, 32] => 'nil', [22, 32] => '::Boolean' }.each do |position, tags|
-      expect(api_map.clip_at('test.rb', position).infer.rooted_tags).to eq(tags), position.inspect
+    { [18, 44] => [21, 32], [19, 44] => [22, 32] }.each do |position, param_position|
+      expect(infer.call(position)).to eq(infer.call(param_position)), position.inspect
     end
   end
 

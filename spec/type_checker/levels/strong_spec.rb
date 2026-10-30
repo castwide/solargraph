@@ -1419,11 +1419,12 @@ describe Solargraph::TypeChecker do
           end
 
           # @param cp [Array<Array<Integer>>]
+          # @param cps [Array<Array<Array<Integer>>>]
           # @return [void]
-          def receiver cp
+          def receiver cp, cps
             return unless cp[0]
 
-            [cp].each do |cp|
+            cps.each do |cp|
               cp[0].map { |n| n }
             end
           end
