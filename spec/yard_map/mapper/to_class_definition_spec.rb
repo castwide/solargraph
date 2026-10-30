@@ -273,6 +273,9 @@ describe Solargraph::YardMap::Mapper::ToClassDefinition do
   # @return [Array<String>]
   def nodes_reachable_from object, seen = Set.new
     return [] unless seen.add?(object.object_id)
+    # The shared root pin is not one of the emitted pins; other specs may
+    # memoize its docstring.
+    return [] if object.equal?(Solargraph::Pin::ROOT_PIN)
 
     case object
     when Parser::AST::Node, Parser::Source::Buffer, Parser::Source::Map, YARD::Docstring
