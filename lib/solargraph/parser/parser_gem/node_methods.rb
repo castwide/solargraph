@@ -50,10 +50,14 @@ module Solargraph
           when :nil
             'nil'
           when :const_pattern, :match_as
-            pattern_type_name(node.children.fetch(0))
+            inner = node.children.fetch(0)
+            pattern_type_name(inner) if inner.is_a?(::Parser::AST::Node)
           when :match_alt
-            alternatives = node.children
-            names = alternatives.map { |alternative| pattern_type_name(alternative) }
+            names = node.children.map do |alternative|
+              next nil unless alternative.is_a?(::Parser::AST::Node)
+
+              pattern_type_name(alternative)
+            end
             names.join(', ') unless names.include?(nil)
           end
         end
@@ -569,8 +573,11 @@ module Solargraph
               # No else adds no nil: an unmatched case/in raises NoMatchingPatternError
               clauses = node.children.drop(1).compact
               clauses.flat_map do |clause|
+                next [] unless clause.is_a?(::Parser::AST::Node)
+
                 body = clause.type == :in_pattern ? clause.children[2] : clause
-                next [NIL_NODE] if body.nil? || body.type == :empty_else
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+                next [NIL_NODE] unless body.is_a?(::Parser::AST::Node) && body.type != :empty_else
 
                 reduce_to_value_nodes([body])
               end

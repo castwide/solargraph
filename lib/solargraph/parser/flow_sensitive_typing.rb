@@ -205,14 +205,14 @@ module Solargraph
         return unless case_node.type == :case_match
 
         subject = case_node.children.fetch(0)
-        return unless %i[lvar ivar].include?(subject.type)
+        return unless subject.is_a?(::Parser::AST::Node) && %i[lvar ivar].include?(subject.type)
 
         pin = find_var(subject.children.fetch(0).to_s, get_node_start_position(subject))
         return unless pin
 
         clauses = case_node.children.drop(1).compact
         clauses.each do |clause|
-          next unless clause.type == :in_pattern
+          next unless clause.is_a?(::Parser::AST::Node) && clause.type == :in_pattern
 
           process_in_pattern(pin, clause)
         end
@@ -290,7 +290,10 @@ module Solargraph
       def process_pattern_match node, true_presences
         return unless node.type == :match_pattern_p
 
-        capture_vars(node.children.fetch(1)).each do |var|
+        pattern = node.children.fetch(1)
+        return unless pattern.is_a?(::Parser::AST::Node)
+
+        capture_vars(pattern).each do |var|
           # The capture is present from just after its start
           pin = find_var(var.children.fetch(0).to_s, get_node_end_position(var))
           next unless pin
@@ -304,7 +307,11 @@ module Solargraph
       def capture_vars pattern
         return [pattern] if pattern.type == :match_var
 
-        pattern.children.flat_map { |child| child.is_a?(::Parser::AST::Node) ? capture_vars(child) : [] }
+        pattern.children.flat_map do |child|
+          next [] unless child.is_a?(::Parser::AST::Node)
+
+          capture_vars(child)
+        end
       end
 
       # @param call_node [Parser::AST::Node]
@@ -514,6 +521,7 @@ module Solargraph
       # @return [void]
       def process_in_pattern pin, in_pattern
         pattern = in_pattern.children.fetch(0)
+        return unless pattern.is_a?(::Parser::AST::Node)
         # `in Pt(x:)` on subject x rebinds x, so x is no longer the subject
         return if binds_name?(pattern, pin.name)
 
@@ -521,9 +529,13 @@ module Solargraph
         guard_and_body = in_pattern.children.drop(1).compact
         return if type_name.nil? || guard_and_body.empty?
 
-        before_loc = guard_and_body.fetch(0).location.expression.adjust(begin_pos: -1)
+        first_node = guard_and_body.fetch(0)
+        last_node = guard_and_body.fetch(-1)
+        return unless first_node.is_a?(::Parser::AST::Node) && last_node.is_a?(::Parser::AST::Node)
+
+        before_loc = first_node.location.expression.adjust(begin_pos: -1)
         presence = Range.new(Position.new(before_loc.line, before_loc.column),
-                             get_node_end_position(guard_and_body.fetch(-1)))
+                             get_node_end_position(last_node))
         process_facts({ pin => [{ type: ComplexType.parse(type_name) }] }, [presence])
       end
 
@@ -533,7 +545,11 @@ module Solargraph
       def binds_name? pattern, name
         return true if pattern.type == :match_var && pattern.children.fetch(0).to_s == name
 
-        pattern.children.any? { |child| child.is_a?(::Parser::AST::Node) && binds_name?(child, name) }
+        pattern.children.any? do |child|
+          next false unless child.is_a?(::Parser::AST::Node)
+
+          binds_name?(child, name)
+        end
       end
 
       # @param clause_node [Parser::AST::Node, nil]

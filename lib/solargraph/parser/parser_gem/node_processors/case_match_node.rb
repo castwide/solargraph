@@ -22,21 +22,29 @@ module Solargraph
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_case_match(node)
             subject = node.children.fetch(0)
+            return unless subject.is_a?(::Parser::AST::Node)
+
             NodeProcessor.process(subject, region, pins, locals, ivars)
             # Only `subject => pattern` raises instead of failing, so
             # only its captures are always bound
             @nilable = node.type != :match_pattern
-            return add_captures(node.children.fetch(1), subject) unless node.type == :case_match
+            unless node.type == :case_match
+              pattern = node.children.fetch(1)
+              return unless pattern.is_a?(::Parser::AST::Node)
+
+              return add_captures(pattern, subject)
+            end
 
             clauses = node.children.drop(1).compact
             clauses.each do |clause|
+              next unless clause.is_a?(::Parser::AST::Node)
               next process_body(clause) unless clause.type == :in_pattern
 
               pattern, guard, body = clause.children
               # Captures first, so a guard reading one resolves it
-              add_captures(pattern, subject)
-              NodeProcessor.process(guard, region, pins, locals, ivars)
-              process_body(body)
+              add_captures(pattern, subject) if pattern.is_a?(::Parser::AST::Node)
+              NodeProcessor.process(guard, region, pins, locals, ivars) if guard.is_a?(::Parser::AST::Node)
+              process_body(body) if body.is_a?(::Parser::AST::Node)
             end
           end
 
@@ -73,7 +81,9 @@ module Solargraph
               add_array_captures(pattern, subject)
             else
               pattern.children.each do |child|
-                add_captures(child) if child.is_a?(::Parser::AST::Node)
+                next unless child.is_a?(::Parser::AST::Node)
+
+                add_captures(child)
               end
             end
           end
@@ -84,6 +94,8 @@ module Solargraph
           def add_as_capture pattern, subject
             inner = pattern.children.fetch(0)
             var = pattern.children.fetch(1)
+            return unless inner.is_a?(::Parser::AST::Node) && var.is_a?(::Parser::AST::Node)
+
             type_name = pattern_type_name(inner)
             if type_name.nil?
               add_capture(var, assignment: subject)
@@ -104,8 +116,14 @@ module Solargraph
           def add_array_captures pattern, subject
             elements = pattern.children
             # Indexes stop meaning anything after a splat
-            indexed = elements.take_while { |element| element.type != :match_rest }
+            indexed = elements.take_while do |element|
+              next true unless element.is_a?(::Parser::AST::Node)
+
+              element.type != :match_rest
+            end
             elements.each_with_index do |element, index|
+              next unless element.is_a?(::Parser::AST::Node)
+
               if subject && index < indexed.length && element.type == :match_var
                 add_capture(element, mass_assignment: [subject, index], deconstruct: true)
               elsif element in [:match_rest, ::Parser::AST::Node[:match_var, *] => rest_var]
