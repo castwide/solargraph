@@ -60,4 +60,13 @@ describe Solargraph::Repo do
       expect(meta.name).to eq('nokogiri')
     end
   end
+
+  context 'with a gemspec' do
+    let(:directory) { File.join('spec', 'fixtures', 'external_gemspec') }
+    let(:repo) { described_class.new(directory) }
+
+    it 'includes development dependencies' do
+      expect(repo.bundled.map(&:name)).to include('rspec')
+    end
+  end
 end
