@@ -226,8 +226,11 @@ module Solargraph
         # e.g. what follows 'cond && (h[k] ||= v)'
         return unless parent && %i[begin kwbegin].include?(parent.type)
 
+        value = or_asgn_node.children[1]
+        return unless value.is_a?(::Parser::AST::Node)
+
         presence = Range.new(get_node_end_position(or_asgn_node), get_node_end_position(parent))
-        add_key_fact(or_asgn_node, lookup, [presence], value: or_asgn_node.children[1])
+        add_key_fact(or_asgn_node, lookup, [presence], value: value)
       end
 
       class << self
@@ -311,7 +314,9 @@ module Solargraph
         name = target.children[1].to_s
         return false unless wrapped || name.match?(/\A[a-z_]\w*=\z/i)
 
-        receiver_words = write_receiver(target.children[0], words)
+        return false unless target.children in [::Parser::AST::Node | nil => receiver, *]
+
+        receiver_words = write_receiver(receiver, words)
         return false if receiver_words.nil? || receiver_words.length >= words.length
 
         receiver_words == words.first(receiver_words.length) && name.chomp('=') == words[receiver_words.length]
@@ -328,8 +333,9 @@ module Solargraph
         # an attr_reader on self reads its same-named instance variable
         return ['self', node.children[0].to_s.delete_prefix('@')] if node.type == :ivar && words.first == 'self'
         return parse_receiver_chain(node) unless node.type == :send && (node.children[2..] || []).empty?
+        return unless node.children in [::Parser::AST::Node | nil => receiver, *]
 
-        base = write_receiver(node.children[0], words)
+        base = write_receiver(receiver, words)
         base && (base + [node.children[1].to_s])
       end
 
@@ -355,6 +361,7 @@ module Solargraph
         # bare call, e.g. `s(:send, nil, :foo)` - implicit self, so
         # 'foo' could be a local variable or a 0-arg method on self
         return [method_name.to_s] if receiver.nil?
+        return unless receiver.is_a?(::Parser::AST::Node)
 
         base = parse_receiver_chain(receiver)
         return unless base
@@ -686,7 +693,7 @@ module Solargraph
       # @return [void]
       def collect_calls node, words, writes, &matches
         if %i[send csend].include?(node.type) && matches.call(node.children[1]) &&
-           write_receiver(node.children[0], words) == words
+           (node.children in [::Parser::AST::Node | nil => receiver, *]) && write_receiver(receiver, words) == words
           writes << get_node_start_position(node)
         end
         node.children.each do |child|

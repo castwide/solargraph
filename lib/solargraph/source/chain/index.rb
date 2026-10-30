@@ -82,7 +82,8 @@ module Solargraph
             !found.empty?
           when :send
             receiver = node.children[0]
-            return false unless receiver.nil? || stable?(receiver, api_map, name_pin, locals, bindings)
+            return false unless receiver.nil? ||
+                                (receiver.is_a?(::Parser::AST::Node) && stable?(receiver, api_map, name_pin, locals, bindings))
 
             pins = Parser.chain(node).define(api_map, name_pin, locals)
             !pins.empty? && pins.all? { |pin| pin.is_a?(Pin::Method) && pin.attribute? }
