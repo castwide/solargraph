@@ -176,7 +176,7 @@ describe Solargraph::Parser::ParserGem::NodeProcessors::StructDefinition do
     end
   end
 
-  describe Solargraph::Convention::StructDefinition::StructDefintionNode do
+  describe Solargraph::Parser::ParserGem::NodeProcessors::StructDefinition::StructDefintionNode do
     it 'returns the class body from body_node' do
       node = Solargraph::Parser.parse(%(
         class Foo < Struct.new(:bar)
