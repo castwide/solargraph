@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Solargraph::Convention::StructDefinition do
+describe Solargraph::Parser::ParserGem::NodeProcessors::StructDefinition do
   describe 'parsing docs' do
     it 'supports keyword args' do
       source = Solargraph::SourceMap.load_string(%(
@@ -160,14 +160,14 @@ describe Solargraph::Convention::StructDefinition do
 
     it 'returns the class body from a struct definition' do
       node = Solargraph::Parser.parse("class Foo < Struct.new(:bar)\n  def baz; end\nend")
-      body = Solargraph::Convention::StructDefinition::StructDefintionNode.new(node).body_node
+      body = Solargraph::Parser::ParserGem::NodeProcessors::StructDefinition::StructDefintionNode.new(node).body_node
 
       expect(body.type).to eq(:def)
     end
 
     it 'returns the assigned value from a struct assignment' do
       node = Solargraph::Parser.parse("Foo = Struct.new(:bar) do\n  def baz; end\nend")
-      body = Solargraph::Convention::StructDefinition::StructAssignmentNode.new(node).body_node
+      body = Solargraph::Parser::ParserGem::NodeProcessors::StructDefinition::StructAssignmentNode.new(node).body_node
 
       expect(body.type).to eq(:block)
     end
