@@ -81,6 +81,23 @@ describe Solargraph::Shell do
 
         expect(output).to include('Scanned ').and include(' seconds.')
       end
+
+      it 'reports where a failing pin is defined and exits' do
+        location = Solargraph::Location.new('foo.rb', Solargraph::Range.from_to(2, 0, 2, 5))
+        pin = Solargraph::Pin::Method.new(name: 'bar', location: location)
+        allow(pin).to receive(:typify).and_raise(StandardError, 'boom')
+        allow(api_map).to receive(:pins).and_return([pin])
+        exited = false
+        output = capture_both do
+          shell.options = { directory: 'spec/fixtures/workspace' }
+          shell.scan
+        rescue SystemExit
+          exited = true
+        end
+
+        expect(exited).to be(true)
+        expect(output).to include(' at foo.rb:3').and include('boom')
+      end
     end
   end
 

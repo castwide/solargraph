@@ -46,9 +46,9 @@ module Solargraph
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
-          found = api_map.var_at_location(locals, word, name_pin, location) if head?
+          found = head? ? api_map.var_pins_at_location(locals, word, name_pin, location) : []
 
-          return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
+          return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
           binder = name_pin.binder
           # this is a q_call - i.e., foo&.bar - assume result of call
           # will be nil or result as if binder were not nil -
@@ -146,7 +146,6 @@ module Solargraph
           # @todo It shouldn't be necessary to choose either generics or macros
           # @sg-ignore Need to add nil check here
           new_return_type = if new_signature_pin.return_type.defined?
-                              # @sg-ignore Need to add nil check here
                               new_signature_pin.return_type
                             else
                               # @sg-ignore Need to add nil check here
@@ -173,11 +172,10 @@ module Solargraph
           #
           # qualify(), however, happens in the namespace where
           # the docs were written - from the method pin.
-          # @todo Need to add nil check here
-          type = if new_return_type.defined?
-                   with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *pin.gates)
-                 else
+          type = if new_return_type.nil? || !new_return_type.defined?
                    inferr_from_factory_parameters(api_map, pin)
+                 else
+                   with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *pin.gates)
                  end
           type ||= ComplexType::UNDEFINED
           [type, new_signature_pin]
@@ -215,11 +213,9 @@ module Solargraph
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
               result = process_macro(p, api_map, name_pin.context, locals)
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?
               result = process_directive(p, api_map, name_pin.context, locals)
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
               next result unless result.return_type.undefined?
             end
             p
@@ -345,7 +341,6 @@ module Solargraph
         def find_method_pin name_pin
           method_pin = name_pin
           until method_pin.is_a?(Pin::Method)
-            # @sg-ignore Need to support this in flow sensitive typing
             method_pin = method_pin.closure
             return if method_pin.nil?
           end
