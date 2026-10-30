@@ -32,7 +32,7 @@ module Solargraph
     # Get a hash of the range. This representation is suitable for use in
     # the language server protocol.
     #
-    # @return [Hash{Symbol => Position}]
+    # @return [Hash{Symbol => Hash{Symbol => Integer}}]
     def to_hash
       {
         start: start.to_hash,
