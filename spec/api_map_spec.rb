@@ -223,6 +223,24 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to eq(['Bar#meth', 'Foo#meth', 'Mixin#meth'])
   end
 
+  it 'keeps same-named methods in store order in method stacks' do
+    # Each file reopens Foo with one more method, so an unstable sort
+    # by name has other pins to shuffle the same-named ones around
+    pins = %w[Integer Float Symbol String].each_with_index.flat_map do |type, idx|
+      Solargraph::SourceMap.load_string(%(
+        class Foo
+          def other#{idx}; end
+
+          # @return [#{type}]
+          def meth; end
+        end
+      ), "file#{idx}.rb").pins
+    end
+    api_map = described_class.new(pins: pins)
+    stack = api_map.get_method_stack('Foo', 'meth')
+    expect(stack.map { |pin| pin.return_type.to_s }).to eq(%w[Integer Float Symbol String])
+  end
+
   it 'finds symbols' do
     map = Solargraph::SourceMap.load_string('sym = :sym')
     @api_map.index map.pins
