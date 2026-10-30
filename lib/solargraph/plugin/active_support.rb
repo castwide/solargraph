@@ -13,14 +13,60 @@ module Solargraph
 
       private
 
-      # @return [Array<Pin::Reference::Extend>]
+      # @return [Array<Pin::Base>]
       def classmethod_pins
         include_pins.flat_map do |inc|
-          nested = nested_include_paths(inc).uniq.select { |path| namespace_paths.include?("#{path}::ClassMethods") }
-          ["#{inc.name}::ClassMethods", *nested.map { |path| "::#{path}::ClassMethods" }].map do |name|
-            Pin::Reference::Extend.new(name: name, closure: inc.closure)
-          end
+          paths = [resolve_reference(inc), *nested_include_paths(inc)].compact.uniq
+          extends = paths.select { |path| namespace_paths.include?("#{path}::ClassMethods") }
+                         .map { |path| Pin::Reference::Extend.new(name: "::#{path}::ClassMethods", closure: inc.closure) }
+          concerns = paths.select { |path| concern?(path) }
+          extends + concerns.flat_map { |path| concern_class_pins(path, inc.closure) }
         end
+      end
+
+      # The class side of a concern applies to its includer: methods
+      # defined on the concern itself (e.g., in a +class_methods+ block)
+      # and modules it extends (e.g., in an +included+ block).
+      #
+      # @param path [String] the concern's path
+      # @param closure [Pin::Closure, nil] the includer
+      # @return [Array<Pin::Base>]
+      def concern_class_pins path, closure
+        return [] if closure.nil?
+
+        extends = (extend_pins_by_namespace[path] || []).reject { |ext| concern_reference?(ext) }.map do |ext|
+          resolved = resolve_reference(ext)
+          Pin::Reference::Extend.new(name: resolved ? "::#{resolved}" : ext.name, closure: closure)
+        end
+        methods = (class_method_pins_by_namespace[path] || []).map do |meth|
+          meth.dup.tap { |copy| copy.closure = closure }
+        end
+        extends + methods
+      end
+
+      # @param path [String]
+      # @return [Boolean]
+      def concern? path
+        (extend_pins_by_namespace[path] || []).any? { |ext| concern_reference?(ext) }
+      end
+
+      # @param ext [Pin::Reference::Extend]
+      # @return [Boolean]
+      def concern_reference? ext
+        resolve_reference(ext) == 'ActiveSupport::Concern' || ext.name.delete_prefix('::') == 'ActiveSupport::Concern'
+      end
+
+      # @return [Hash{String => Array<Pin::Reference::Extend>}]
+      def extend_pins_by_namespace
+        @extend_pins_by_namespace ||= (panel.pins + panel.external_pins).grep(Pin::Reference::Extend)
+                                                                        .group_by { |ext| ext.closure&.path.to_s }
+      end
+
+      # @return [Hash{String => Array<Pin::Method>}]
+      def class_method_pins_by_namespace
+        @class_method_pins_by_namespace ||= (panel.pins + panel.external_pins)
+                                            .select { |pin| pin.is_a?(Pin::Method) && pin.scope == :class }
+                                            .group_by(&:namespace)
       end
 
       # @return [Array<Pin::Reference::Include>]
@@ -46,24 +92,24 @@ module Solargraph
       # @param visited [Set<String>]
       # @return [Array<String>]
       def nested_include_paths inc, visited = Set.new
-        path = resolve_include(inc)
+        path = resolve_reference(inc)
         return [] if path.nil? || !visited.add?(path)
 
         include_pins_by_namespace.fetch(path, []).flat_map do |nested|
-          nested_path = resolve_include(nested)
+          nested_path = resolve_reference(nested)
           nested_path.nil? ? [] : [nested_path, *nested_include_paths(nested, visited)]
         end
       end
 
-      # Resolve an include's module name lexically from its namespace.
+      # Resolve a mixin's module name lexically from its namespace.
       #
-      # @param inc [Pin::Reference::Include]
+      # @param ref [Pin::Reference]
       # @return [String, nil]
-      def resolve_include inc
-        return inc.name.delete_prefix('::') if inc.name.start_with?('::')
+      def resolve_reference ref
+        return ref.name.delete_prefix('::') if ref.name.start_with?('::')
 
-        parts = inc.closure&.path.to_s.split('::')
-        candidates = parts.length.downto(0).map { |len| [*parts.first(len), inc.name].join('::') }
+        parts = ref.closure&.path.to_s.split('::')
+        candidates = parts.length.downto(0).map { |len| [*parts.first(len), ref.name].join('::') }
         candidates.find { |candidate| namespace_paths.include?(candidate) }
       end
 

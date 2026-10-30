@@ -101,6 +101,63 @@ describe Solargraph::Plugin::ActiveSupport do
                                               'Support::Callbacks::ClassMethods#set_callback')
         end
       end
+
+      context 'when a concern has its own class methods and extends' do
+        let(:source) do
+          Solargraph::Source.load_string(%(
+            module Tracker
+              def direct_descendants; end
+            end
+
+            module Tracked
+              extend ActiveSupport::Concern
+              extend Tracker
+
+              def self.configurations; end
+            end
+
+            module Plain
+              def self.plain_class_method; end
+            end
+
+            class Consumer
+              include Tracked
+              include Plain
+            end
+          ), 'test.rb')
+        end
+
+        it 'adds them to the includer' do
+          names = api_map.get_methods('Consumer', scope: :class).map(&:name)
+          expect(names).to include('configurations', 'direct_descendants')
+        end
+
+        it 'skips class methods of a module that is not a concern' do
+          names = api_map.get_methods('Consumer', scope: :class).map(&:name)
+          expect(names).not_to include('plain_class_method')
+        end
+      end
+
+      context 'when the included module is not defined' do
+        let(:source) do
+          Solargraph::Source.load_string(%(
+            module Outer
+              module ClassMethods
+                def leaked; end
+              end
+
+              class Thing
+                include Helper
+              end
+            end
+          ), 'test.rb')
+        end
+
+        it 'skips the ClassMethods of an enclosing namespace' do
+          names = api_map.get_methods('Outer::Thing', scope: :class).map(&:name)
+          expect(names).not_to include('leaked')
+        end
+      end
     end
 
     context 'without the activesupport gem' do
