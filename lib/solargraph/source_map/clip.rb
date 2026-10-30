@@ -12,8 +12,9 @@ module Solargraph
         @api_map = api_map
         @cursor = cursor
         closure_pin = closure
-        # @sg-ignore Need to add nil check here
-        if closure_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(closure_pin.receiver)&.contain?(cursor.range.start)
+        if closure_pin.is_a?(Pin::Block) && closure_pin.receiver &&
+           # @sg-ignore Range.from_node can return nil for a node with no location, though a real receiver always has one
+           !Solargraph::Range.from_node(closure_pin.receiver)&.contain?(cursor.range.start)
           closure_pin.rebind(api_map)
         end
       end
@@ -170,19 +171,19 @@ module Solargraph
         match = source_map.code[0..(cursor.offset - 1)].match(/[\[<, ]([a-z0-9_:]*)\z/i)
         if match
           # @sg-ignore Need to add nil check here
-          full = match[1]
-          # @sg-ignore Need to add nil check here
+          full = match[1].to_s
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1395
           if full.include?('::')
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1395
             if full.end_with?('::')
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1395
               result.concat api_map.get_constants(full[0..-3], *gates)
             else
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1395
               result.concat api_map.get_constants(full.split('::')[0..-2].join('::'), *gates)
             end
           else
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1395
             result.concat api_map.get_constants('', full.end_with?('::') ? '' : context_pin.full_context.namespace, *gates) # .select { |pin| pin.name.start_with?(full) }
           end
         end

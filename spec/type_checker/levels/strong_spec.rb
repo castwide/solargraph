@@ -1199,6 +1199,24 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
+    it 'does not validate a non-delegating override against its ancestor return tag' do
+      checker = type_checker(%(
+        class Base
+          # @return [Boolean]
+          # @return [void]
+          def process
+            true
+          end
+        end
+
+        class Sub < Base
+          def process
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'resolves the operators TrueClass and FalseClass share on Boolean' do
       checker = type_checker(%(
         class Foo

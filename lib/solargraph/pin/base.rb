@@ -251,7 +251,7 @@ module Solargraph
         results = [self, other].map(&attr).compact
         # true and false are different classes and can't be sorted
 
-        return true if results.any? { |r| [true, false].include?(r) }
+        return results.include?(true) if results.intersect?([true, false])
         return results.first if results.any? { |r| r.is_a? AST::Node }
         results.min
       rescue StandardError
@@ -521,8 +521,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless nearly? other
-        # @sg-ignore Should add more explicit type check on other
-        comments == other.comments && location == other.location
+        other.is_a?(Pin::Base) && comments == other.comments && location == other.location
       end
 
       # The pin's return type.
@@ -538,11 +537,11 @@ module Solargraph
         @docstring ||= Solargraph::Source.parse_docstring('').to_docstring
       end
 
-      # @sg-ignore parse_comments will always set @directives
       # @return [::Array<YARD::Tags::Directive>]
       def directives
         parse_comments unless @directives
-        @directives
+        parsed = @directives
+        parsed.nil? ? raise("parse_comments did not set directives for #{path}") : parsed
       end
 
       # @return [::Array<Solargraph::YardMap::Macro>]
@@ -781,7 +780,7 @@ module Solargraph
       def compare_docstring_tags docstring1, docstring2
         return false if docstring1.tags.length != docstring2.tags.length
         docstring1.tags.each_index do |i|
-          return false unless compare_tags(docstring1.tags[i], docstring2.tags[i])
+          return false unless compare_tags(docstring1.tags.fetch(i), docstring2.tags.fetch(i))
         end
         true
       end
@@ -792,7 +791,7 @@ module Solargraph
       def compare_directives dir1, dir2
         return false if dir1.length != dir2.length
         dir1.each_index do |i|
-          return false unless compare_tags(dir1[i].tag, dir2[i].tag)
+          return false unless compare_tags(dir1.fetch(i).tag, dir2.fetch(i).tag)
         end
         true
       end
