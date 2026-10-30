@@ -1237,7 +1237,7 @@ describe Solargraph::TypeChecker do
       # method whose type is undefined, and with no declared tag there is
       # no variable-validation path to fire instead, so nothing is
       # reported. The boundary is not yet mapped - the six-call chain in
-      # the spec below (xs.first.to_s.no_such.upcase.size, also untagged)
+      # the spec below (xs.fetch(0).to_s.no_such.upcase.size, also untagged)
       # does report "Unresolved call to no_such on String", so something
       # about the receiver decides it, and that difference is unexplained.
       pending <<~REASON
@@ -1280,7 +1280,7 @@ describe Solargraph::TypeChecker do
           def run
             # @type [Array<String>]
             xs = []
-            n = xs.first.to_s.no_such.upcase.size
+            n = xs.fetch(0).to_s.no_such.upcase.size
             n
             nil
           end
@@ -1297,7 +1297,7 @@ describe Solargraph::TypeChecker do
             # @type [Array<String>]
             xs = []
             # @type [Integer]
-            n = xs.first.to_s.no_such.upcase.size
+            n = xs.fetch(0).to_s.no_such.upcase.size
             n
             nil
           end
