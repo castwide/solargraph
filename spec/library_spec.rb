@@ -2,6 +2,7 @@
 
 require 'tmpdir'
 require 'yard'
+require 'timeout'
 
 describe Solargraph::Library do
   it 'does not open created files in the workspace' do
@@ -30,10 +31,11 @@ describe Solargraph::Library do
 
   context 'with a require from a not-yet-cached external gem' do
     before do
-      Solargraph::Shell.new.uncache('backport')
+      metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport'))
+      Solargraph::Collection::Gem.uncache(metagem)
     end
 
-    it 'returns a Completion', time_limit_seconds: 50 do
+    it 'returns a Completion' do
       library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
                                                               Solargraph::Workspace::Config.new))
       library.attach Solargraph::Source.load_string(%(
@@ -44,18 +46,22 @@ describe Solargraph::Library do
           adapter.remo
         end
       ), 'file.rb', 0)
-      # give Solargraph time to cache the gem
-      while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
-        sleep 0.25
+      Timeout.timeout 60 do
+        # give Solargraph time to cache the gem
+        while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
+          expect(library.send(:cache_errors)).to be_empty
+          sleep 0.25
+        end
+        expect(completion).to be_a(Solargraph::SourceMap::Completion)
+        expect(completion.pins.map(&:name)).to include('remote')
       end
-      expect(completion).to be_a(Solargraph::SourceMap::Completion)
-      expect(completion.pins.map(&:name)).to include('remote')
     end
   end
 
   context 'with a require from an already-cached external gem' do
     before do
-      Solargraph::Shell.new.gems('backport')
+      metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport'))
+      Solargraph::Collection::Gem.load(metagem) unless Solargraph::Collection::Gem.cached?(metagem)
     end
 
     it 'returns a Completion' do
@@ -676,6 +682,52 @@ describe Solargraph::Library do
 
       library.catalog
       expect { library.send(:sync_catalog) }.not_to raise_error
+    end
+  end
+
+  describe '#cache_next_gemspec' do
+    let(:library) { described_class.new(Solargraph::Workspace.new(Dir.pwd, Solargraph::Workspace::Config.new)) }
+    let(:metagem) { Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport')) }
+    let(:cache_threads) { [] }
+
+    before do
+      api_map = library.send(:api_map)
+      allow(api_map).to receive(:catalog)
+      allow(api_map).to receive(:unloaded_gems).and_return(Set[metagem])
+      allow(Thread).to receive(:new).and_wrap_original do |original, *args, &block|
+        original.call(*args, &block).tap { |thread| cache_threads.push thread }
+      end
+    end
+
+    # Join the cache threads, stopping after a few in case they respawn
+    # forever.
+    def join_cache_threads
+      5.times do
+        thread = cache_threads.shift
+        break unless thread
+        thread.join
+      end
+    end
+
+    it 'does not retry a gem whose cache command failed' do
+      status = instance_double(Process::Status, success?: false)
+      allow(Open3).to receive(:capture3).and_return(['', 'error', status])
+
+      library.catalog
+      library.send(:sync_catalog)
+      join_cache_threads
+
+      expect(Open3).to have_received(:capture3).once
+    end
+
+    it 'finishes caching when the cache command cannot run' do
+      allow(Open3).to receive(:capture3).and_raise(Errno::ENOENT)
+
+      library.catalog
+      library.send(:sync_catalog)
+      join_cache_threads
+
+      expect(library.cache_progress).to be_nil
     end
   end
 end

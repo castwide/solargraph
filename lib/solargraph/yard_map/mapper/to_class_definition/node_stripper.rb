@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class YardMap
+  module YardMap
     class Mapper
       module ToClassDefinition
         # Copies pins produced by reparsing a gem's source, dropping the parser

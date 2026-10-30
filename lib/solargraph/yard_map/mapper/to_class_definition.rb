@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class YardMap
+  module YardMap
     class Mapper
       # Converts a YARD `ConstantObject` whose value is an anonymous class
       # definition into the pins that definition would have produced if it had
@@ -12,8 +12,9 @@ module Solargraph
       # string in `ConstantObject#value`. That source is reparsed here, wrapped
       # in the constant's original module nesting (so a relative superclass name
       # resolves through the same gates it did in the gem), and mapped with
-      # Solargraph's own parser, where `Convention::ClassDefinition` turns it
-      # into a namespace, a superclass reference, and method pins.
+      # Solargraph's own parser, where
+      # `Parser::ParserGem::NodeProcessors::ClassDefinition` turns it into a
+      # namespace, a superclass reference, and method pins.
       module ToClassDefinition
         extend YardMap::Helpers
 
@@ -38,7 +39,7 @@ module Solargraph
             assignment = "#{code_object.name} = #{value}"
             node = Source.load_string(assignment).node
             return nil if node.nil?
-            return nil unless Convention::ClassDefinition::ClassAssignmentNode.match?(node)
+            return nil unless Parser::ParserGem::NodeProcessors::ClassDefinition::ClassAssignmentNode.match?(node)
 
             location = object_location(code_object, spec)
             source = Source.load_string(nested_source(namespace_names(code_object), assignment), location.filename)
