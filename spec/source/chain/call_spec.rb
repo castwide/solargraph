@@ -919,6 +919,25 @@ describe Solargraph::Source::Chain::Call do
     expect(clip.infer.rooted_tags).to eq('::String, nil')
   end
 
+  it 'infers an operator assignment as the operator return type' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param other [String]
+        # @return [Foo]
+        def +(other)
+          self
+        end
+      end
+      args = Foo.new
+      args += 'str'
+      args
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    pin = api_map.source_map('test.rb').locals.select { |l| l.name == 'args' }.last
+    expect(pin.probe(api_map).rooted_tags).to eq('::Foo')
+  end
+
   it 'infers an explicit []= method call as the method return type' do
     source = Solargraph::Source.load_string(%(
       class Foo

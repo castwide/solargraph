@@ -182,11 +182,14 @@ module Solargraph
         # True for `recv.attr = value` and `recv[key] = value`, which
         # evaluate to `value` whatever the setter returns. An explicit
         # call like `recv.[]=(key, value)` has no `=` operator and
-        # evaluates to the method's return value.
+        # evaluates to the method's return value. The setter name check
+        # excludes the operator send that OpasgnNode synthesizes for
+        # `a += b`, which keeps the op_asgn's `+=` operator location.
         #
         # @param node [Parser::AST::Node]
         def assignment_syntax? node
-          node.loc.respond_to?(:operator) && !node.loc.operator.nil? && node.children.length > 2
+          node.loc.respond_to?(:operator) && !node.loc.operator.nil? && node.children.length > 2 &&
+            node.children[1].to_s.end_with?('=')
         end
 
         # @param node [Parser::AST::Node]
