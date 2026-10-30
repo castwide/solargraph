@@ -195,8 +195,7 @@ describe Solargraph::YardMap::Mapper::ToClassDefinition do
   def api_map_with gem_pins, workspace_code
     workspace = Solargraph::SourceMap.map(Solargraph::Source.load_string(workspace_code, 'stub.rb'))
     api_map = Solargraph::ApiMap.new
-    core = Solargraph::ApiMap.class_variable_get(:@@core_map).pins
-    api_map.send(:store).update(core, gem_pins, [], workspace.pins, [])
+    api_map.send(:store).update(api_map.core_pins, gem_pins, [], workspace.pins, [])
     api_map.send(:cache).clear
     api_map
   end
