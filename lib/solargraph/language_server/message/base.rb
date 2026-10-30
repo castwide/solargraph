@@ -68,9 +68,9 @@ module Solargraph
             jsonrpc: '2.0',
             id: id
           }
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1451
           response[:result] = result unless result.nil?
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1451
           response[:error] = error unless error.nil?
           response[:result] = nil if result.nil? && error.nil?
           json = response.to_json
@@ -88,7 +88,7 @@ module Solargraph
             # https://microsoft.github.io/language-server-protocol/specifications/specification-current/#cancelRequest
             # cancel should send response RequestCancelled
             Solargraph::Logging.logger.info "Cancelled response to ##{id} #{method}"
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1451
             set_result nil
             set_error ErrorCodes::REQUEST_CANCELLED, 'Cancelled by client'
           else
