@@ -424,11 +424,12 @@ module Solargraph
         return unless node.children[0].nil?
 
         arg = node.children[2]
-        return unless arg&.type == :sym
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        return unless arg.is_a?(::Parser::AST::Node) && arg.type == :sym
 
         # @sg-ignore flow sensitive typing needs to handle attrs
         ivar_name = arg.children[0].to_s
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         return unless ivar_name.start_with?('@')
 
         # @sg-ignore Need to add nil check here
@@ -487,16 +488,20 @@ module Solargraph
 
         receiver = op_node.children[0]
         arg = op_node.children[2]
+        # one side is the variable, the other the literal; both are nodes
+        return unless receiver.is_a?(::Parser::AST::Node) && arg.is_a?(::Parser::AST::Node)
 
         # variable on the left, literal on the right: `foo == :bar`
-        if %i[lvar ivar].include?(receiver&.type)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        if %i[lvar ivar].include?(receiver.type)
           literal_type = literal_type_name(arg)
           return unless literal_type
 
           # @sg-ignore flow sensitive typing needs to handle attrs
           [literal_type, receiver.children[0].to_s]
         # literal on the left, variable on the right: `:bar == foo`
-        elsif %i[lvar ivar].include?(arg&.type)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        elsif %i[lvar ivar].include?(arg.type)
           literal_type = literal_type_name(receiver)
           return unless literal_type
 
