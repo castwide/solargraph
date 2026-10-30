@@ -586,13 +586,13 @@ module Solargraph
       # @param other [Pin::Method]
       # @return [Array<Pin::Signature>]
       def combine_signatures other
-        boss = authority_over(other)
-        unless boss.nil?
+        # @type [Pin::Method, nil]
+        winner = higher_priority(other)
+        unless winner.nil?
           # The authoritative side wins every arity it describes; arities it
           # says nothing about survive. That is what makes an @!override a
           # refinement of an RBS signature set rather than a replacement.
-          winner = equal?(boss) ? self : other
-          loser = equal?(boss) ? other : self
+          loser = equal?(winner) ? other : self
           # A bare @return describes no parameters, so it retypes every arity
           return loser.signatures.map { |sig| sig.proxy(winner.return_type) } if retypes_every_arity?(winner, loser)
 

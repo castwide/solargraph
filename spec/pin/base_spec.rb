@@ -131,24 +131,24 @@ describe Solargraph::Pin::Base do
                                   comments: "Original prose.\n@param baz [Integer]\n@return [Integer]")
     end
 
-    let(:boss) do
+    let(:winner) do
       Solargraph::Pin::Method.new(name: 'bar', closure: closure,
                                   comments: '@return [String]', combine_priority: 1)
     end
 
     it 'replaces only the tags the authoritative pin supplies' do
-      combined = base.combine_with(boss)
+      combined = base.combine_with(winner)
       expect(combined.docstring.tag(:return).types).to eq(['String'])
       expect(combined.docstring.tag(:param).name).to eq('baz')
     end
 
     it 'keeps comments and docstring describing the same thing' do
-      combined = base.combine_with(boss)
+      combined = base.combine_with(winner)
       expect(combined.comments).to eq("#{combined.docstring.to_raw}\n")
     end
 
     it 'wins from either side of the combine' do
-      expect(boss.combine_with(base).docstring.tag(:return).types).to eq(['String'])
+      expect(winner.combine_with(base).docstring.tag(:return).types).to eq(['String'])
     end
 
     it 'prefers the higher priority when both pins declare one' do

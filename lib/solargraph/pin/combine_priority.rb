@@ -10,7 +10,7 @@ module Solargraph
     #     combine_priority()
     #     comments()
     #     docstring()
-    module Authority
+    module CombinePriority
       # @!method combine_priority
       #   @return [::Numeric, nil]
 
@@ -30,8 +30,8 @@ module Solargraph
       # @param chosen_comments [String, nil]
       # @return [YARD::Docstring]
       def docstring_for other, chosen_comments
-        boss = authority_over(other)
-        return overlay_docstring(boss, boss.equal?(self) ? other : self) unless boss.nil?
+        winner = higher_priority(other)
+        return overlay_docstring(winner, winner.equal?(self) ? other : self) unless winner.nil?
 
         comments == chosen_comments ? docstring : other.docstring
       end
@@ -40,13 +40,13 @@ module Solargraph
       # supplies replaced by that pin's tags. Tags it says nothing about
       # survive, which is what makes an override a refinement.
       #
-      # @param boss [Pin::Base, Authority]
-      # @param base [Pin::Base, Authority]
+      # @param winner [Pin::Base, CombinePriority]
+      # @param base [Pin::Base, CombinePriority]
       # @return [YARD::Docstring]
-      def overlay_docstring boss, base
+      def overlay_docstring winner, base
         merged = base.docstring.dup
-        boss.docstring.tags.map(&:tag_name).uniq.each { |name| merged.delete_tags(name) }
-        boss.docstring.tags.each { |tag| merged.add_tag(tag) }
+        winner.docstring.tags.map(&:tag_name).uniq.each { |name| merged.delete_tags(name) }
+        winner.docstring.tags.each { |tag| merged.add_tag(tag) }
         merged
       end
 
@@ -55,7 +55,7 @@ module Solargraph
       #
       # @param other [Pin::Base]
       # @return [Pin::Base, nil]
-      def authority_over other
+      def higher_priority other
         mine = combine_priority
         theirs = other.combine_priority
         return nil if mine == theirs
@@ -72,10 +72,10 @@ module Solargraph
       # @param attr [::Symbol]
       # @return [Object, nil]
       def authoritative_value other, attr
-        boss = authority_over(other)
-        return nil if boss.nil?
+        winner = higher_priority(other)
+        return nil if winner.nil?
 
-        value = boss.send(attr)
+        value = winner.send(attr)
         return nil if value.nil?
         return nil if value.respond_to?(:empty?) && value.empty?
 

@@ -9,7 +9,7 @@ module Solargraph
       include Conversions
       include Documenting
       include Abstractable
-      include Authority
+      include CombinePriority
       include Logging
 
       # @return [YARD::CodeObjects::Base]
@@ -103,7 +103,7 @@ module Solargraph
         combined_docstring = docstring_for(other, choose_longer(other, :comments))
         # With an authority the two must agree, or the pin documents one side
         # and renders from the other.
-        combined_comments = if authority_over(other).nil?
+        combined_comments = if higher_priority(other).nil?
                               choose_longer(other, :comments)
                             else
                               "#{combined_docstring.to_raw}\n"
