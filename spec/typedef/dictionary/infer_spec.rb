@@ -652,5 +652,25 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [11, 12]).infer
       expect(typeset.to_s).to eq('Bar')
     end
+
+    it 'resolves Enumerable generics from Array receivers' do
+      code = %(
+        module A
+          class Foo
+            # @param pins [::Enumerable<String>]
+            def inferred_pins pins
+              pins
+              result = pins.map do |p|
+                p
+              end
+              result
+            end
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [9, 14]).infer
+      expect(typeset.to_s).to eq('Array[String]')
+    end
   end
 end
