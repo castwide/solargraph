@@ -1351,4 +1351,47 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [7, 8])
     expect(clip.infer.to_s).to eq('Float')
   end
+
+  it 'narrows an instance variable first assigned in a guarded clause past the if' do
+    source = Solargraph::Source.load_string(%(
+      class Prog; end
+
+      class Foo
+        def start
+          unless @prog
+            @prog = Prog.new
+          end
+          @prog
+        end
+
+        def stop
+          @prog = nil
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.to_s).to eq('Prog')
+  end
+
+  it 'keeps a nil assigned in the guarded clause of an instance variable past the if' do
+    source = Solargraph::Source.load_string(%(
+      class Prog; end
+
+      class Foo
+        # @return [Prog, nil]
+        def make; end
+
+        def start
+          unless @prog
+            @prog = make
+          end
+          @prog
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [11, 10])
+    expect(clip.infer.to_s).to eq('Prog, nil')
+  end
 end

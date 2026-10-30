@@ -202,16 +202,54 @@ module Solargraph
           range = Range.from_node(asgn)
           ivar = asgn.type == :ivasgn
           pins = ivar ? ivars : locals
-          narrowed = pins.any? do |pin|
-            pin.source == :flow_sensitive_typing && pin.name == name && !pin.rejoined &&
-              pin.presence == rest_of_compound_statement
+          unless narrowed?(pins, name, rest_of_compound_statement)
+            # An ivar assigned nowhere earlier in the file had no pin
+            # for the guard to narrow when the if was mapped.  The
+            # clause's own pin stands for the ivar's value, combining
+            # with its assignments elsewhere at the read, so narrow it.
+            next unless ivar
+
+            assert_guard_after_clause(if_node, clause_node, name, rest_of_compound_statement)
+            next unless narrowed?(pins, name, rest_of_compound_statement)
           end
-          next unless narrowed
 
           made = pins.drop(ivar ? ivars_from : locals_from).find do |pin|
             pin.name == name && pin.location&.range == range
           end
           pins.push made.rejoin(rest_of_compound_statement) if made
+        end
+      end
+
+      # True if #process_guarded_reassignment narrowed `name` for the
+      # code after an if, from the end of the if to `rest`'s end
+      #
+      # @param pins [Array<Pin::BaseVariable>]
+      # @param name [String]
+      # @param rest [Range]
+      #
+      # @return [Boolean]
+      def narrowed? pins, name, rest
+        pins.any? do |pin|
+          pin.source == :flow_sensitive_typing && pin.name == name && !pin.rejoined && pin.presence == rest
+        end
+      end
+
+      # #process_guarded_reassignment's narrowing of `name` for the
+      # path that skipped `clause_node`, run once the clause is mapped
+      #
+      # @param if_node [Parser::AST::Node]
+      # @param clause_node [Parser::AST::Node, nil]
+      # @param name [String]
+      # @param rest [Range]
+      #
+      # @return [void]
+      def assert_guard_after_clause if_node, clause_node, name, rest
+        return unless if_node in [:if, ::Parser::AST::Node => conditional_node, *]
+
+        if clause_node.equal?(if_node.children[1])
+          assert_after_guard(conditional_node, [name], [], [rest])
+        else
+          assert_after_guard(conditional_node, [name], [rest], [])
         end
       end
 
