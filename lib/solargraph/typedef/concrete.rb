@@ -130,6 +130,23 @@ module Solargraph
         stack.first.nil? ? nil : [stack.first]
       end
 
+      # Yields this type and its definitions of +word+, and returns what
+      # the block gives; undefined, without yielding, when this type does
+      # not resolve +word+.
+      #
+      # @param word [String]
+      # @param api_map [ApiMap]
+      # @yieldparam receiver [Concrete]
+      # @yieldparam pins [Array<Pin::Base>]
+      # @yieldreturn [Type]
+      # @return [Type]
+      def call_type word, api_map
+        pins = method_stack_pins(word, api_map)
+        return Union::UNDEFINED if pins.nil?
+
+        yield self, pins
+      end
+
       # The methods reachable on a value of this type, from +context+:
       # the class methods of Foo for Class[Foo], otherwise the instance
       # methods of this type.

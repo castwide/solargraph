@@ -58,6 +58,28 @@ module Solargraph
         found.flatten.uniq { |pin| [pin.path, pin.return_type.rooted_tags] }
       end
 
+      # The union of what a call to +word+ returns on each member that
+      # resolves it; undefined if the call is undefined on any of them.
+      # Undefined, without yielding, when no member resolves +word+, or
+      # when one does not and ApiMap#loose_unions is off.
+      #
+      # @param word [String]
+      # @param api_map [ApiMap]
+      # @yieldparam receiver [Concrete]
+      # @yieldparam pins [Array<Pin::Base>]
+      # @yieldreturn [Type]
+      # @return [Type]
+      def call_type word, api_map, &block
+        resolving = types.reject { |type| type.method_stack_pins(word, api_map).nil? }
+        return UNDEFINED if resolving.empty?
+        return UNDEFINED if !api_map.loose_unions && resolving.length < types.length
+
+        results = resolving.map { |type| type.call_type(word, api_map, &block) }
+        return UNDEFINED if results.any?(&:undefined?)
+
+        Union.new(results).order_nil_last
+      end
+
       # @return [ComplexType]
       def to_complex_type
         ComplexType.new(types.map(&:to_complex_type))

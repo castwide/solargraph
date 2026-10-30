@@ -145,4 +145,35 @@ describe Solargraph::Type do
       expect(union(concrete('::String'), concrete('::Integer')).method_stack_pins('frobnicate', api_map)).to be_nil
     end
   end
+
+  describe '#call_type' do
+    it 'yields a concrete type with its pins and answers with the block result' do
+      yielded = []
+      result = concrete('::String').call_type('upcase', api_map) do |receiver, pins|
+        yielded << [receiver.to_s, pins.map(&:path)]
+        concrete('::Symbol')
+      end
+      expect([yielded, result.to_s]).to eq([[['String', ['String#upcase']]], 'Symbol'])
+    end
+
+    it 'answers undefined without yielding when a concrete type does not resolve the method' do
+      expect(concrete('::String').call_type('frobnicate', api_map) { raise 'yielded' }).to be_undefined
+    end
+
+    it 'combines the result for each member of a union' do
+      result = union(concrete('::String'), concrete('::Integer')).call_type('to_s', api_map) { |receiver, _| receiver }
+      expect(result.to_s).to eq('String | Integer')
+    end
+
+    it 'skips a member that does not resolve the method under loose unions' do
+      result = union(concrete('::String'), concrete('::Integer')).call_type('upcase', api_map) { |receiver, _| receiver }
+      expect(result.to_s).to eq('String')
+    end
+
+    it 'answers undefined without yielding when a member does not resolve the method and unions are strict' do
+      strict_map = Solargraph::ApiMap.new(loose_unions: false)
+      result = union(concrete('::String'), concrete('::Integer')).call_type('upcase', strict_map) { raise 'yielded' }
+      expect(result).to be_undefined
+    end
+  end
 end

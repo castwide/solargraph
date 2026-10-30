@@ -120,6 +120,18 @@ module Solargraph
     #   @param api_map [ApiMap]
     #   @return [Array<Pin::Base>, nil]
 
+    # @!method call_type(word, api_map, &result)
+    #   The type a call to +word+ on a value of this type evaluates to.
+    #   Yields each receiver the call can dispatch to with its
+    #   definitions of +word+; the block gives what the call returns on
+    #   that receiver, and this type combines the results.
+    #   @param word [String]
+    #   @param api_map [ApiMap]
+    #   @yieldparam receiver [Type] what +self+ binds to in +pins+
+    #   @yieldparam pins [Array<Pin::Method>]
+    #   @yieldreturn [Type]
+    #   @return [Type]
+
     # @!method qualify_parts(&block)
     #   Rebuilds this type with each named part replaced by what the block
     #   returns for it; nil from the block for any part makes the whole

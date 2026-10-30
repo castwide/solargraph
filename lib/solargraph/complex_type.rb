@@ -97,18 +97,6 @@ module Solargraph
       @items.each(&block)
     end
 
-    # @yieldparam [UniqueType]
-    # @return [void]
-    # @overload each_unique_type()
-    #   @return [Enumerator<UniqueType>]
-    def each_unique_type &block
-      return enum_for(__method__) unless block_given?
-
-      @items.each do |item|
-        item.each_unique_type(&block)
-      end
-    end
-
     # @param new_name [String, nil]
     # @param make_rooted [Boolean, nil]
     # @param new_key_types [Array<ComplexType>, nil]
@@ -302,6 +290,30 @@ module Solargraph
       # path (e.g. same generic method on different instantiations).
       # @param p [Pin::Base]
       found.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
+    end
+
+    # The union of what a call to +word+ returns on each alternative that
+    # resolves it; undefined if the call is undefined on any of them.
+    # Undefined, without yielding, when no member resolves +word+, or
+    # when one does not and ApiMap#loose_unions is off.
+    #
+    # @param word [String]
+    # @param api_map [ApiMap]
+    # @yieldparam receiver [ComplexType::UniqueType]
+    # @yieldparam pins [Array<Pin::Base>]
+    # @yieldreturn [ComplexType]
+    # @return [ComplexType]
+    def call_type word, api_map, &block
+      resolving = @items.reject { |item| item.method_stack_pins(word, api_map).nil? }
+      return ComplexType::UNDEFINED if resolving.empty?
+      return ComplexType::UNDEFINED if !api_map.loose_unions && resolving.length < @items.length
+
+      results = resolving.map { |item| item.call_type(word, api_map, &block) }
+      return ComplexType::UNDEFINED if results.any?(&:undefined?)
+
+      combined = ComplexType.new(results)
+      # Move nil to the end by convention when combining several results
+      results.length > 1 ? combined.order_nil_last : combined
     end
 
     # The methods that might be reachable on a value of this union, from
