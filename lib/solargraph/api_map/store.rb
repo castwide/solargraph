@@ -257,10 +257,10 @@ module Solargraph
 
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
-            # @sg-ignore Array literals infer bare Array without element types
+            # @sg-ignore https://github.com/apiology/solargraph/pull/385
             next if refs.nil?
             # @param ref [String]
-            # @sg-ignore Array literals infer bare Array without element types
+            # @sg-ignore https://github.com/apiology/solargraph/pull/385
             refs.map(&:type).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref

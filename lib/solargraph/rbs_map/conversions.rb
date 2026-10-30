@@ -57,7 +57,7 @@ module Solargraph
         core_aware_environment(loader, fallback: environment).type_alias_decls.each_value do |entry|
           type_alias_decls[entry.decl.name.to_s] = entry.decl
         end
-        # @sg-ignore Need a downcast here
+        # @sg-ignore https://github.com/apiology/solargraph/pull/427
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
       rescue RBS::DuplicatedDeclarationError => e
         Solargraph.logger.warn "RBS conversion failed due to duplicate declarations: [#{e.class}] #{e.message}"

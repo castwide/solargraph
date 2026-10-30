@@ -69,7 +69,7 @@ module Solargraph
       end
       if method_type.type.rest_positionals
         rest_positionals = method_type.type.rest_positionals
-        # @sg-ignore Unresolved call to name on RBS::Types::Function::Param
+        # @sg-ignore https://github.com/apiology/solargraph/pull/428
         rest_name = rest_positionals.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}"
         params.push RbsTranslator.to_parameter_pin(rest_positionals, rest_name, :restarg, closure, type_alias_decls: type_alias_decls)
         arg_num += 1
@@ -86,7 +86,7 @@ module Solargraph
       end
       if method_type.type.rest_keywords
         rest_keywords = method_type.type.rest_keywords
-        # @sg-ignore Unresolved call to name on RBS::Types::Function::Param
+        # @sg-ignore https://github.com/apiology/solargraph/pull/428
         rest_keywords_name = rest_keywords.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}"
         params.push RbsTranslator.to_parameter_pin(rest_keywords, rest_keywords_name, :kwrestarg, closure, type_alias_decls: type_alias_decls)
       end

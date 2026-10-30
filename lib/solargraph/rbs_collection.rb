@@ -16,7 +16,7 @@ module Solargraph
     def load metagem
       key = best_key(metagem)
       return [] unless key
-      # @sg-ignore Skip collection gems that have no source path
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       mem_cache[key] ||= RbsMap::Path.pins(gem_path_map[key])
     end
 
