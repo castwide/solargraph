@@ -59,6 +59,10 @@ describe Solargraph::Repo do
       meta = repo.find_by_name('nokogiri')
       expect(meta.name).to eq('nokogiri')
     end
+
+    it 'skips unavailable gems' do
+      expect(repo.find_by_name('not_a_real_gem')).to be_nil
+    end
   end
 
   context 'with a gemspec' do
