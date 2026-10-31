@@ -14,6 +14,8 @@ Gem::Specification.new do |s|
     all_files.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   end
 
+  s.metadata['rubygems_mfa_required'] = 'true'
+
   s.required_ruby_version = '>= 3.1'
 
   s.add_dependency 'backport', '~> 1.2'
