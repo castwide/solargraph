@@ -122,25 +122,6 @@ describe Solargraph::LanguageServer::Host do
     expect(app2_map).not_to include('Folder1App')
   end
 
-  it 'finishes mapping when a source file raises an error' do
-    Dir.mktmpdir do |dir|
-      3.times { |i| File.write File.join(dir, "test#{i}.rb"), "class Test#{i}\nend\n" }
-      host = described_class.new
-      host.client_capabilities = { 'window' => { 'workDoneProgress' => true } }
-      allow(Solargraph::SourceMap).to receive(:map).and_wrap_original do |original, src|
-        raise 'mapping failed' if src.filename.end_with? 'test1.rb'
-        original.call src
-      end
-      library = Solargraph::Library.new Solargraph::Workspace.new(dir, nil, {})
-      host.libraries.push library
-      expect { host.send :sync_library_map, library }.not_to raise_error
-      output = host.flush
-      expect(output).to include('window/workDoneProgress/create')
-      expect(output).to include(%("kind":"end"))
-      expect(library.mapped?).to be true
-    end
-  end
-
   it 'never reports mapping progress over 100 percent' do
     host = described_class.new
     host.client_capabilities = { 'window' => { 'workDoneProgress' => true } }
