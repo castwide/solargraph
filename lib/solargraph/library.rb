@@ -493,19 +493,9 @@ module Solargraph
       return false if src.nil?
       Logging.logger.debug "Mapping #{src.filename}"
       # @sg-ignore OK if src.filename is nil
-      source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+      mutex.synchronize { source_map_hash[src.filename] = Solargraph::SourceMap.map(src) }
       # @sg-ignore OK if src.filename is nil
       source_map_hash[src.filename]
-    rescue StandardError => e
-      # A file that can't be mapped is skipped instead of interrupting the
-      # entire workspace. Without this, a single bad file would keep the
-      # library from ever finishing its mapping pass, and any progress
-      # notification for the workspace would hang indefinitely.
-      filename = src.filename
-      mapping_failures.add filename
-      Logging.logger.warn "Failed to map #{filename}: [#{e.class}] #{e.message}"
-      Logging.logger.warn e.backtrace.join("\n")
-      retry
     end
 
     # @return [self]

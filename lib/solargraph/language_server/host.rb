@@ -892,12 +892,6 @@ module Solargraph
             progress.report "#{mapped}/#{total} files", pct
             progress.send self
           end
-        rescue StandardError => e
-          # Errors must not leave the client with an open progress
-          # notification. The failure is logged and reported as complete.
-          logger.warn "Error while mapping workspace: [#{e.class}] #{e.message}"
-          logger.warn e.backtrace.join("\n")
-        ensure
           progress.finish 'done'
           progress.send self
         end
