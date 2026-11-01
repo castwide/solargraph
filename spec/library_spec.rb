@@ -731,6 +731,16 @@ describe Solargraph::Library do
       expect(Open3).to have_received(:capture3).once
     end
 
+    it 'finishes caching when an unexpected error is raised' do
+      allow(Open3).to receive(:capture3).and_raise('cache failed')
+
+      library.catalog
+      library.send(:sync_catalog)
+      join_cache_threads
+
+      expect(library.cache_progress).to be_nil
+    end
+
     it 'finishes caching when the cache command cannot run' do
       allow(Open3).to receive(:capture3).and_raise(Errno::ENOENT)
 
