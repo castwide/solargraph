@@ -474,22 +474,13 @@ module Solargraph
     end
 
     def mapped?
-      (workspace.filenames - source_map_hash.keys - mapping_failures.to_a).empty?
-    end
-
-    # The names of files that failed to map. Failed files are treated as
-    # mapped so a workspace can finish loading. They can be mapped again if
-    # they're modified.
-    #
-    # @return [Set<String, nil>]
-    def mapping_failures
-      @mapping_failures ||= Set.new
+      (workspace.filenames - source_map_hash.keys).empty?
     end
 
     # @return [SourceMap, Boolean]
     def next_map
       return false if mapped?
-      src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) && !mapping_failures.include?(s.filename) }
+      src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       return false if src.nil?
       Logging.logger.debug "Mapping #{src.filename}"
       # @sg-ignore OK if src.filename is nil
@@ -584,7 +575,6 @@ module Solargraph
       return unless @current == source || workspace.has_file?(source.filename)
       # @sg-ignore OK if source.filename is nil
       source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
-      mapping_failures.delete source.filename
     end
 
     # @return [Set<Gem::Specification>]
