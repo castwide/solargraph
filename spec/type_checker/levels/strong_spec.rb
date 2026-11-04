@@ -1155,6 +1155,41 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    # base.rb sorts first, so the combined @foo pin takes its location, and
+    # the subclass assignment sits past base.rb's last line
+    it 'infers an ivar assigned in both an ancestor and a subclass file' do
+      base = Solargraph::Source.load_string(%(
+        class Base
+          def initialize
+            @foo = 'x'.
+              freeze
+          end
+        end
+      ), 'base.rb')
+      sub = Solargraph::Source.load_string(%(
+        class Sub < Base
+          # @return [String]
+          def foo
+            @foo
+          end
+
+          # @param value [String]
+          # @return [void]
+          def foo= value
+            @foo = value
+          end
+        end
+      ), 'sub.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.catalog(Solargraph::Bench.new(source_maps: [
+                                              Solargraph::SourceMap.map(base),
+                                              Solargraph::SourceMap.map(sub)
+                                            ]))
+      checker = described_class.new('sub.rb', api_map: api_map, level: :strong)
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'supports !@x.nil && @x.y' do
       checker = type_checker(%(
         class Bar
