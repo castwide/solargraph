@@ -370,6 +370,20 @@ module Solargraph
       mutex.synchronize { api_map.document_symbols(filename) }
     end
 
+    # Get the code lenses that conventions provide for a file.
+    #
+    # Files outside the workspace (e.g. specs, which the default config
+    # excludes) are mapped on demand.
+    #
+    # @param filename [String]
+    # @return [Array<Solargraph::CodeLens>]
+    def code_lenses filename
+      sync_catalog
+      source_map = mutex.synchronize { source_map_hash[filename] }
+      source_map ||= Solargraph::SourceMap.load(filename) if File.file?(filename)
+      source_map&.convention_code_lenses || []
+    end
+
     # @param path [String]
     # @return [Enumerable<Solargraph::Pin::Base>]
     def path_pins path
