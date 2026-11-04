@@ -285,11 +285,39 @@ module Solargraph
                                     pin: pin)
           end
         elsif pin.assignment
-          inferred = pin.probe(api_map)
-          ignored_pins.push pin if inferred.undefined? && declared_externally?(pin)
+          declared_pins = pin.is_a?(Pin::GlobalVariable) ? api_map.get_declared_global_variable_pins(pin.name) : []
+          if declared_pins.empty?
+            inferred = pin.probe(api_map)
+            ignored_pins.push pin if inferred.undefined? && declared_externally?(pin)
+          else
+            result.concat declared_global_assignment_problems(pin, declared_pins)
+          end
         end
       end
       result
+    end
+
+    # Check an assignment to a global variable whose type is declared
+    # elsewhere, e.g. `$stderr = 42` against core RBS's `$stderr: IO`
+    #
+    # @param pin [Pin::GlobalVariable]
+    # @param declared_pins [Array<Pin::GlobalVariable>]
+    # @return [Array<Problem>]
+    def declared_global_assignment_problems pin, declared_pins
+      declared = ComplexType.new(declared_pins.flat_map { |dp| dp.typify(api_map).items }.uniq)
+      inferred = pin.probe(api_map)
+      if inferred.undefined?
+        if declared_externally?(pin)
+          ignored_pins.push pin
+          return []
+        end
+        return [] unless rules.require_no_undefined_args?
+        return [Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)]
+      end
+      return [] if !rules.validate_calls? || assignment_conforms_to?(inferred, declared)
+      [Problem.new(pin.location,
+                   "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}",
+                   pin: pin)]
     end
 
     # @return [Array<Pin::BaseVariable>]
