@@ -41,7 +41,11 @@ module Solargraph
           # :nocov:
         end
 
-        return true if ignore_interface?
+        if expected.interface?
+          return conforms_via_interface? if required_interface_methods.any?
+          return true if rules.include?(:allow_unmatched_interface)
+        end
+
         return true if conforms_via_reverse_match?
 
         downcast_inferred = inferred.downcast_to_literal_if_possible
@@ -86,11 +90,6 @@ module Solargraph
         with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
       end
 
-      def ignore_interface?
-        (expected.any?(&:interface?) && rules.include?(:allow_unmatched_interface)) ||
-          (inferred.interface? && rules.include?(:allow_unmatched_interface))
-      end
-
       def can_strip_expected_parameters?
         expected.parameters? && !inferred.parameters? && rules.include?(:allow_empty_params)
       end
@@ -125,6 +124,19 @@ module Solargraph
           # :nocov:
         end
         true
+      end
+
+      # The methods the RBS interface declares itself:
+      # https://github.com/ruby/rbs/blob/master/docs/syntax.md#interface-declaration
+      # @return [Enumerable<Pin::Method>]
+      def required_interface_methods
+        @required_interface_methods ||= api_map.get_methods(expected.name, scope: :instance, deep: false)
+      end
+
+      # Whether `inferred` implements every method the interface declares; their
+      # signatures go unchecked: https://github.com/castwide/solargraph/issues/1267
+      def conforms_via_interface?
+        required_interface_methods.all? { |pin| !api_map.get_method_stack(inferred.name, pin.name, scope: :instance).empty? }
       end
 
       def key_types_conform?

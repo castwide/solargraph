@@ -53,7 +53,7 @@ module Solargraph
         # @return [Array<Location>]
         def references source, name
           if name.end_with?('=')
-            reg = /#{Regexp.escape name[0..-2]}\s*=/
+            reg = /#{Regexp.escape name.chomp('=')}\s*=/
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
