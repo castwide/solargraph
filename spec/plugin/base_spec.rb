@@ -18,6 +18,36 @@ describe Solargraph::Plugin::Base do
     end
   end
 
+  describe '#addon' do
+    it 'adds nothing by default' do
+      expect(plugin.addon).to be(Solargraph::Plugin::EMPTY_ADDON)
+    end
+  end
+
+  describe 'registration' do
+    let(:failing_plugin) do
+      Class.new(described_class) do
+        def addon
+          raise 'broken plugin'
+        end
+      end
+    end
+
+    after { Solargraph::Plugin.unregister failing_plugin }
+
+    it 'catalogs an ApiMap when a registered plugin raises' do
+      Solargraph::Plugin.register failing_plugin
+      api_map = Solargraph::ApiMap.new.map(Solargraph::Source.load_string('class Example; end', 'test.rb'))
+      expect(api_map.get_path_pins('Example')).not_to be_empty
+    end
+
+    it 'unregisters plugins' do
+      Solargraph::Plugin.register failing_plugin
+      Solargraph::Plugin.unregister failing_plugin
+      expect(Solargraph::Plugin.registry).not_to include(failing_plugin)
+    end
+  end
+
   describe '#pins_by_path' do
     it 'finds pins' do
       pins = plugin.pins_by_path('Example#foo')

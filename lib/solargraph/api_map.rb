@@ -106,9 +106,14 @@ module Solargraph
       source_map_hash.each_value do |map|
         conventions_environ.merge map.conventions_environ
       end
+      # @todo Determine what needs to be sent to global conventions
+      conventions_environ.merge Convention.for_global(nil)
+      requires = bench.external_requires.to_a + conventions_environ.requires
+      # Resolve the workspace's gems first so plugins see them on the first catalog
+      external_changed = external.update(requires, external.extra_gem_names.dup)
       addon = Plugin::Addon.new
       Plugin.registry.each do |plugin|
-        panel ||= Plugin::Panel.new(source_maps: bench.source_maps, live_map: bench.live_map, gem_names: external.configured_gem_names)
+        panel ||= Plugin::Panel.new(source_maps: bench.source_maps, live_map: bench.live_map, gem_names: external.configured_gem_names | bench.workspace.available_gem_names)
         added = plugin.new(panel).addon
         addon.gem_names.concat added.gem_names
         addon.pins.concat added.pins
@@ -116,9 +121,7 @@ module Solargraph
         Solargraph.logger.warn "#{plugin} failed - [#{e.class}] #{e.message}"
       end
 
-      # @todo Determine what needs to be sent to global conventions
-      conventions_environ.merge Convention.for_global(nil)
-      external_changed = external.update(bench.external_requires.to_a + conventions_environ.requires, addon.gem_names)
+      external_changed = external.update(requires, addon.gem_names) || external_changed
       store_changed = store.update(@@core_pins, external.pins.clone, conventions_environ.pins, addon.pins, iced_pins, live_pins) { process_macros }
       @cache.clear if external_changed || store_changed
       Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
