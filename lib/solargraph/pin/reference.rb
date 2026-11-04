@@ -55,6 +55,15 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         closure.gates
       end
+
+      private
+
+      # @return [void]
+      def preassign_ivars
+        super
+        @generic_values = nil
+        @type = nil
+      end
     end
   end
 end

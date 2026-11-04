@@ -90,6 +90,14 @@ module Solargraph
 
       private
 
+      # The ivars this module owns, for Base#preassign_ivars.
+      #
+      # @return [void]
+      def preassign_common_ivars
+        @context = nil
+        @path = nil
+      end
+
       # @return [ComplexType]
       def find_context
         here = closure

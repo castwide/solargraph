@@ -16,7 +16,7 @@ module Solargraph
       end
 
       def context
-        @return_type
+        return_type
       end
 
       # @param context [ComplexType, ComplexType::UniqueType] Used as context for this pin
