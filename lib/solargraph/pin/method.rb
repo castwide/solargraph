@@ -23,9 +23,10 @@ module Solargraph
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
       # @param context [ComplexType, ComplexType::UniqueType, nil]
+      # @param overloading [Boolean] true for an RBS `def m: ... | ...` that adds to an earlier declaration's overloads
       # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
-                     context: nil, **splat
+                     context: nil, overloading: false, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -35,6 +36,7 @@ module Solargraph
         @signatures = signatures
         @anon_splat = anon_splat
         @context = context if context
+        @overloading = overloading
       end
 
       # @param other [Pin::Method]
@@ -379,6 +381,23 @@ module Solargraph
 
       def attribute?
         @attribute
+      end
+
+      # True when this pin's signatures add to, rather than replace,
+      # those of an earlier declaration of the same method.
+      #
+      # @return [Boolean]
+      def overloading?
+        !!@overloading
+      end
+
+      # @param signatures [::Array<Signature>]
+      # @return [self]
+      def with_signatures signatures
+        m = proxy ComplexType.new(signatures.map(&:return_type).flat_map(&:items).uniq)
+        m.reset_generated!
+        m.signatures = signatures
+        m
       end
 
       # @parm other [self]
