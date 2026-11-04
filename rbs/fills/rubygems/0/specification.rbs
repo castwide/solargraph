@@ -886,7 +886,7 @@ class Gem::Specification < Gem::BasicSpecification
   # -->
   # Loads Ruby format gemspec from `file`.
   #
-  def self.load: (untyped file) -> (nil | untyped)
+  def self.load: (untyped file) -> Gem::Specification?
 
   # <!--
   #   rdoc-file=lib/rubygems/specification.rb

@@ -7,13 +7,14 @@ module Solargraph
     class Problem
       # @todo Missed nil violation
       # @return [Solargraph::Location]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1399
       attr_reader :location
 
       # @return [String]
       attr_reader :message
 
       # @todo Missed nil violation
-      # @return [Pin::Base]
+      # @return [Pin::Base, nil]
       attr_reader :pin
 
       # @return [String, nil]

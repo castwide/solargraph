@@ -7,7 +7,7 @@ module Solargraph
   #   bundle or dependency updates
   #
   class External
-    # @return [String]
+    # @return [String, nil]
     attr_reader :directory
 
     # @return [Array<String>]
@@ -15,7 +15,7 @@ module Solargraph
 
     attr_reader :extra_gem_names
 
-    # @param directory [String]
+    # @param directory [String, nil]
     # @param requires [Array<String>]
     # @param extra_gem_names [Array<String>]
     def initialize directory, requires, extra_gem_names = []
@@ -26,34 +26,42 @@ module Solargraph
       update!
     end
 
+    # @return [Array<String>]
     def configured_gem_names
       loaded_gems.map(&:name) + unloaded_gems.map(&:name) + extra_gem_names
     end
 
+    # @return [Array<String>]
     def unresolved_requires
       @unresolved_requires ||= []
     end
 
+    # @return [Array<String>]
     def unresolved_dependencies
       @unresolved_dependencies ||= []
     end
 
+    # @return [Set<Metagem>]
     def loaded_gems
       @loaded_gems ||= Set.new
     end
 
+    # @return [Set<Metagem>]
     def unloaded_gems
       @unloaded_gems ||= Set.new
     end
 
+    # @return [Array<String>]
     def unfound_gem_names
       @unfound_gem_names ||= []
     end
 
+    # @return [Set<String>]
     def loaded_stdlibs
       @loaded_stdlibs ||= Set.new
     end
 
+    # @return [Array<Pin::Base>]
     def pins
       @pins ||= []
     end
@@ -64,6 +72,7 @@ module Solargraph
     end
 
     # @param new_requires [Array<String>]
+    # @param new_gem_names [Array<String>]
     # @return [Boolean]
     def update new_requires, new_gem_names = []
       return false if requires == new_requires && new_gem_names == extra_gem_names && !cache_changed?
@@ -75,13 +84,16 @@ module Solargraph
     end
 
     # @return [Array<String>]
+    # @sg-ignore https://github.com/apiology/solargraph/pull/349
     def rbs_collection_paths
+      # @sg-ignore https://github.com/apiology/solargraph/pull/349
       @rbs_collection_paths ||= read_rbs_collection_paths
     end
 
     # @return [String, nil]
     def rbs_collection_config_path
       # @todo Get rid of the '*' case
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       @rbs_collection_config_path ||= unless directory.nil? || directory.empty? || directory == '*'
                                         yaml_file = File.join(directory, 'rbs_collection.yaml')
                                         yaml_file if File.file?(yaml_file)
@@ -90,6 +102,7 @@ module Solargraph
 
     private
 
+    # @return [void]
     def update!
       @generation = generation + 1
       clear_all
@@ -102,6 +115,7 @@ module Solargraph
       unloaded_gems.any? { |gem| Collection::Gem.cached?(gem) }
     end
 
+    # @return [void]
     def load_requires
       bundler_require = false
 
@@ -123,6 +137,7 @@ module Solargraph
       @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
+    # @return [void]
     def load_gem_names
       extra_gem_names.uniq.each do |gem|
         metagem = @repo.find_by_name(gem)
@@ -131,16 +146,20 @@ module Solargraph
       end
     end
 
+    # @return [RbsCollection]
     def rbs_collection
       @rbs_collection ||= RbsCollection.new(rbs_collection_lockfile)
     end
 
+    # @return [String, nil]
     def rbs_collection_lockfile
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       return if directory.nil? || directory.empty? || directory == '*'
       lockfile = File.join(directory, 'rbs_collection.lock.yaml')
       lockfile if File.file?(lockfile)
     end
 
+    # @return [void]
     def clear_all
       pins.clear
       unresolved_requires.clear
@@ -151,6 +170,8 @@ module Solargraph
       unfound_gem_names.clear
     end
 
+    # @param metagem [Metagem]
+    # @return [void]
     def process_gem metagem
       return if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
 
@@ -175,6 +196,8 @@ module Solargraph
       load_dependencies metagem
     end
 
+    # @param parent [Metagem]
+    # @return [void]
     def load_dependencies parent
       parent.dependencies.each do |name|
         next if loaded_gems.map(&:name).include?(name) || unloaded_gems.map(&:name).include?(name)

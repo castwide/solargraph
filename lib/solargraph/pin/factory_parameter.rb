@@ -21,7 +21,7 @@ module Solargraph
       attr_reader :method_name
       # @return [String]
       attr_reader :method_namespace
-      # @return [Symbol] :class or :instance
+      # @return [::Symbol] :class or :instance
       attr_reader :method_scope
       # @return [String, nil]
       attr_reader :param_name
@@ -34,9 +34,9 @@ module Solargraph
 
       # @param method_name [String] The name of the method that this parameter belongs to
       # @param method_namespace [String] The class of the method that this parameter belongs to
-      # @param method_scope [Symbol] The scope of the method, either :class or :instance
+      # @param method_scope [::Symbol] The scope of the method, either :class or :instance
       # @param param_name [String, nil] The name of the parameter
-      # @param value [String, Symbol] The value of the parameter
+      # @param value [::String, ::Symbol] The value of the parameter
       # @param decl [::Symbol] :arg, :kwarg
       # @param location [Location, nil] The location of the parameter in the source code
       # @param return_type [String, nil] The return type of the method that this parameter belongs to
@@ -58,6 +58,7 @@ module Solargraph
         @return_type = return_type
       end
 
+      # @return [String, nil]
       def name
         param_name
       end
@@ -68,8 +69,6 @@ module Solargraph
 
       # @return [String]
       def method_path
-        # @sg-ignore false failure on method_scope "Wrong argument type for Solargraph::Pin::Base#==: other expected
-        # Solargraph::Pin::Base, received :instance"
         @method_path ||= "#{method_namespace}#{method_scope == :instance ? '#' : '.'}#{method_name}"
       end
 

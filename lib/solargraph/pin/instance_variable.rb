@@ -3,17 +3,17 @@
 module Solargraph
   module Pin
     class InstanceVariable < BaseVariable
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1393
       # @return [ComplexType, ComplexType::UniqueType]
       def binder
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         closure.binder
       end
 
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1393
       # @return [::Symbol]
       def scope
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         closure.binder.scope
       end
 
@@ -42,7 +42,7 @@ module Solargraph
       # @param other_loc [Location]
       def visible_at? other_closure, other_loc
         return false if presence && location&.filename != other_loc.filename
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         return false if presence && !presence.include?(other_loc.range.start)
 
         visible_in_closure?(other_closure)

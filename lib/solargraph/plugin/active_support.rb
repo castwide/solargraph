@@ -13,12 +13,17 @@ module Solargraph
 
       private
 
+      # @return [Array<Pin::Reference::Extend>]
+      # @sg-ignore https://github.com/apiology/solargraph/pull/437
       def classmethod_pins
         pins_by_class(Pin::Reference::Include).map do |inc|
+          # @sg-ignore https://github.com/apiology/solargraph/pull/437
           Pin::Reference::Extend.new(name: "#{inc.name}::ClassMethods", closure: inc.closure)
         end
       end
 
+      # @return [Array<Pin::Method>]
+      # @sg-ignore https://github.com/apiology/solargraph/pull/437
       def attribute_pins
         source_maps.flat_map { |map| map.calls(:class_attribute, :mattr_accessor, :cattr_accessor, :mattr_reader, :cattr_reader, :mattr_writer, :cattr_writer, :config_accessor) }
                    .select { |call| call.closure.is_a?(Pin::Namespace) }
@@ -27,10 +32,15 @@ module Solargraph
       end
 
       # @param call [SourceMap::Call]
+      # @return [Array<Pin::Method>]
       def generate_call_pins call
+        # @sg-ignore Need a downcast here
         options = option_hash(call.chain.links.last.arguments.last)
+        # @type [Array<Symbol, String>]
+        # @sg-ignore Need a downcast here
         method_names = call.chain.links.last.arguments.select(&:literal?).map { |arg| arg.links.last.value }.compact
                            .grep(ATTRIBUTE_NAME)
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         case call.chain.links.last.word
         when 'class_attribute'
           class_suffixes = ['', '=']
@@ -61,6 +71,8 @@ module Solargraph
         end
       end
 
+      # @param args [Source::Chain]
+      # @return [Hash{Symbol => Object}]
       def option_hash args
         defaults = {
           instance_reader: true,
@@ -70,17 +82,21 @@ module Solargraph
         }
         kwargs = Parser::ParserGem::NodeMethods.convert_hash(args.node)
                                                .select { |_, val| val.literal? }
+                                               # @sg-ignore Need a downcast here
                                                .transform_values { |val| val.links.last.value }
         return defaults unless kwargs.is_a?(Hash)
         defaults.merge(kwargs)
       end
 
       # @param call [SourceMap::Call]
-      # @param name [String]
+      # @param name [Symbol, String]
       # @param class_suffixes [Array<String>]
       # @param instance_suffixes [Array<String>]
+      # @return [Array<Pin::Method>]
       def method_pins name, class_suffixes, instance_suffixes, call
+        # @sg-ignore Need to add nil check here
         comments = call.source_map.source.comments_for(call.chain.node)
+        # @sg-ignore Range.from_node result assumed always present
         location = Solargraph::Location.new(call.closure.filename, Solargraph::Range.from_node(call.chain.node))
         class_suffixes.map do |sfx|
           Pin::Method.new(name: "#{name}#{sfx}", closure: call.closure, scope: :class, attribute: true, location: location, comments: comments).tap do |pin|

@@ -72,7 +72,7 @@ module Solargraph
       sources.each do |source|
         next unless directory == '*' || config.calculated.include?(source.filename)
 
-        # @sg-ignore Wrong argument type for Hash#[]=: arg0 expected String, received String, nil
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         source_hash[source.filename] = source
         includes_any = true
       end
@@ -101,7 +101,7 @@ module Solargraph
       source_hash.values
     end
 
-    # @param filename [String]
+    # @param filename [String, nil]
     # @return [Boolean]
     def has_file? filename
       source_hash.key?(filename)
@@ -110,7 +110,7 @@ module Solargraph
     # Get a source by its filename.
     #
     # @param filename [String]
-    # @return [Solargraph::Source]
+    # @return [Solargraph::Source, nil]
     def source filename
       source_hash[filename]
     end
@@ -154,10 +154,11 @@ module Solargraph
     # @param updater [Source::Updater]
     # @return [void]
     def synchronize! updater
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
-    # @sg-ignore return type could not be inferred
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1366
     # @return [String]
     def command_path
       server['commandPath'] || 'solargraph'

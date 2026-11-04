@@ -44,7 +44,8 @@ module Solargraph
              .compact
              # @param a [self]
              # @param b [self]
-             # @sg-ignore https://github.com/castwide/solargraph/pull/1050
+             # @sg-ignore https://github.com/castwide/solargraph/pull/1299
+             #   with filter_map from https://github.com/castwide/solargraph/pull/1245
              .sort { |a, b| b.match <=> a.match }
              .map(&:pin)
       end
