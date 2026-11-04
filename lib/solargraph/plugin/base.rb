@@ -7,9 +7,10 @@ module Solargraph
     class Base
       extend Forwardable
 
+      # @return [Panel]
       attr_reader :panel
 
-      def_delegators :@panel, :pins, :pins_by_class, :pins_by_path, :gem_names, :source_maps
+      def_delegators :@panel, :pins, :pins_by_class, :pins_by_path, :gem_names, :source_maps, :external_pins
 
       # @param panel [Panel]
       def initialize panel
