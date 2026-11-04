@@ -31,6 +31,27 @@ describe Solargraph::Collection::Base do
     expect(cache).to eq([pin])
   end
 
+  context 'with an invalid cache file' do
+    before { FileUtils.mkdir_p File.dirname(base.cache_file) }
+
+    after { klass.uncache }
+
+    it 'raises when the file does not hold an array' do
+      File.write base.cache_file, Marshal.dump('not an array'), mode: 'wb'
+      expect { base.load }.to raise_error(TypeError, /does not contain an array of pins/)
+    end
+
+    it 'raises when the file holds a non-pin' do
+      File.write base.cache_file, Marshal.dump([pin, 'not a pin']), mode: 'wb'
+      expect { base.load }.to raise_error(TypeError, /contains a non-pin/)
+    end
+
+    it 'raises when the file is corrupt' do
+      File.write base.cache_file, 'garbage', mode: 'wb'
+      expect { base.load }.to raise_error(TypeError)
+    end
+  end
+
   it 'deletes caches' do
     klass.uncache
     expect(File).not_to be_file(base.cache_file)

@@ -98,14 +98,32 @@ module Solargraph
         cmd = ['ruby', '-e', bundle_script]
         o, e, s = Open3.capture3(*cmd, chdir: directory)
         if s.success?
-          json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
-          @metagems = json[:metagems].map { |data| Metagem.new(**data) }
-          @bundled_group_map = json[:groups].transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
+          last_line = o.strip.split("\n").last
+          json = last_line ? JSON.parse(last_line, symbolize_names: true) : { metagems: [], groups: {} }
+          # @sg-ignore double-splat argument is checked as a keyword named after the variable
+          @metagems = bundle_array(json[:metagems]).map { |data| Metagem.new(**data) }
+          @bundled_group_map = bundle_hash(json[:groups]).transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
         else
           Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"
           nil
         end
       end
+    end
+
+    # @param value [Object]
+    # @return [Array]
+    def bundle_array value
+      raise TypeError, "Unexpected bundle data from #{directory}" unless value.is_a?(Array)
+
+      value
+    end
+
+    # @param value [Object]
+    # @return [Hash{Symbol => Array<String>}]
+    def bundle_hash value
+      raise TypeError, "Unexpected bundle data from #{directory}" unless value.is_a?(Hash)
+
+      value
     end
 
     def bundle_script
