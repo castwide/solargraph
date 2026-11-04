@@ -1,0 +1,10 @@
+---
+gems:
+- name: pathless_fixture
+  version: '1.0'
+  source:
+    type: git
+- name: date
+  version: '0'
+  source:
+    type: stdlib

@@ -44,6 +44,7 @@ module Solargraph
           # @return [Source::Chain]
           def load_string code, filename, starting_line
             node = Parser.parse(code.sub(/\.$/, ''), filename, starting_line)
+            # @sg-ignore Need to add nil check here
             chain = NodeChainer.new(node).chain
             chain.links.push(Chain::Link.new) if code.end_with?('.')
             chain
@@ -121,7 +122,9 @@ module Solargraph
           elsif n.type == :and
             result.concat generate_links(n.children.last)
           elsif n.type == :or
+            # @sg-ignore https://github.com/castwide/solargraph/issues/1251
             result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename),
+                                       # @sg-ignore https://github.com/castwide/solargraph/issues/1251
                                        NodeChainer.chain(n.children[1], @filename, n)])
           elsif n.type == :if
             then_clause = if n.children[1]
@@ -156,6 +159,7 @@ module Solargraph
           elsif inside_method_call? # If the node is inside a method call, it may be a parameter.
             lit = infer_literal_node_type(n)
             if lit
+              # @sg-ignore nil false alarm
               method_call_chain = NodeChainer.chain(send_node, @filename, nil, [])
               literal = Chain::Literal.new(lit, n)
               result.push Chain::Parameter.new(literal, method_call_chain)

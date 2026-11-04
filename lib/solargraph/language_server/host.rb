@@ -502,13 +502,12 @@ module Solargraph
           #   might not exist.
           if result.empty? && params['data']['path'] =~ /\.new$/
             result.concat(library.path_pins(params['data']['path'].sub(/\.new$/, '#initialize')).map do |pin|
-              next pin unless pin.name == 'initialize'
+              next pin unless pin.is_a?(Pin::Method) && pin.name == 'initialize'
 
               Pin::Method.new(
                 name: 'new',
                 scope: :class,
                 location: pin.location,
-                # @sg-ignore Unresolved call to parameters on Solargraph::Pin::Base
                 parameters: pin.parameters,
                 return_type: ComplexType.try_parse(params['data']['path']),
                 comments: pin.comments,
@@ -702,7 +701,9 @@ module Solargraph
         @client_capabilities ||= {}
       end
 
+      # @sg-ignore need boolish support for ? methods
       def client_supports_progress?
+        # @sg-ignore missing flow-sensitive typing on hash keys
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
@@ -741,11 +742,11 @@ module Solargraph
       end
 
       # @param path [String]
-      # @sg-ignore Need to be able to choose signature on String#gsub
       # @return [String]
       def normalize_separators path
-        return path if File::ALT_SEPARATOR.nil?
-        path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
+        sep = File::ALT_SEPARATOR
+        return path if sep.nil?
+        path.gsub(sep, File::SEPARATOR)
       end
 
       # @param params [Hash]
@@ -861,7 +862,9 @@ module Solargraph
         }
       end
 
+      # @sg-ignore need boolish support for ? methods
       def prepare_rename?
+        # @sg-ignore missing flow-sensitive typing on hash keys
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 

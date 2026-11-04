@@ -47,6 +47,19 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Mixin#mix_method')
   end
 
+  it 'skips includes that do not resolve' do
+    map = Solargraph::SourceMap.load_string(%(
+      class UnresolvedIncluder
+        include NoSuchMod
+        def bar
+        end
+      end
+    ))
+    @api_map.index map.pins
+    pins = @api_map.get_methods('UnresolvedIncluder')
+    expect(pins.map(&:path)).to include('UnresolvedIncluder#bar')
+  end
+
   it 'finds methods from superclasses' do
     map = Solargraph::SourceMap.load_string(%(
       class Sup

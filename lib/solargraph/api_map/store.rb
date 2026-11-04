@@ -64,8 +64,10 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select do |pin|
-          # @sg-ignore flow sensitive typing not smart enough to handle this case
-          !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
+          next false if pin.name.empty?
+          next visibility.include?(pin.visibility) if pin.is_a?(Pin::Namespace)
+
+          pin.is_a?(Pin::Constant) && visibility.include?(pin.visibility)
         end
       end
 
@@ -133,7 +135,7 @@ module Solargraph
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
-        index.path_pin_hash[path]
+        index.path_pin_hash[path] || []
       end
 
       # @param fqns [String, nil]
@@ -171,16 +173,6 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Method>]
       def method_pins
         pins_by_class(Solargraph::Pin::Method)
-      end
-
-      # @param fqns [String]
-      # @return [Array<String>]
-      def domains fqns
-        result = []
-        fqns_pins(fqns).each do |nspin|
-          result.concat nspin.domains
-        end
-        result
       end
 
       # @return [Hash{String => YardMap::Macro}]
@@ -221,7 +213,7 @@ module Solargraph
           base = ''
           name = fqns
         end
-        fqns_pins_map[[base, name]]
+        fqns_pins_map[[base, name]] || []
       end
 
       # Get all ancestors (superclasses, includes, prepends, extends) for a namespace
@@ -325,7 +317,7 @@ module Solargraph
           end
         end
         @index = @indexes.last.clone
-        @index = @index.merge(block.call) if block
+        @index = index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear
         true

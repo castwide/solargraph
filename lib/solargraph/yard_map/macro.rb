@@ -127,11 +127,14 @@ module Solargraph
       # @param [SourceMap] source_map
       # @return [Array<YARD::Tags::Directive>]
       def generate_yardoc_from chain, source_map
-        name = chain.links.last.word
-        # @sg-ignore chain.links.last is assumed to be a Chain::Call
-        values = chain.links.last.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
-        # @sg-ignore chain.node is assumed to exist
-        code = source_map.source.code_for(chain.node)
+        call = chain.links.last
+        # Macros expand only from method calls, which carry arguments
+        return [] unless call.is_a?(Source::Chain::Call)
+
+        name = call.word
+        values = call.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
+        node = chain.node
+        code = node ? source_map.source.code_for(node) : raise("Macro call chain has no node: #{chain.inspect}")
         expanded_comment = macro_object.expand([name, *values], code)
                                        .gsub(/\n(?!@!|\s)/, "\n  ")
         parsed_docstring = Solargraph::Source.parse_docstring(expanded_comment)
@@ -149,7 +152,7 @@ module Solargraph
           next if VALUE_DIRECTIVES.include? directive.tag.tag_name
 
           # @sg-ignore chain.node is assumed to exist
-          comments = source_map.source.comments_for(chain.node)
+          comments = source_map.source.comments_for(node)
           if comments&.length&.positive?
             directive.tag.text += "\n#{comments}"
           end

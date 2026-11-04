@@ -9,7 +9,7 @@ module Solargraph
         class OpasgnNode < Parser::NodeProcessor::Base
           # @return [void]
           def process
-            target = node.children[0]
+            target = node.children.fetch(0)
             operator = node.children[1]
             argument = node.children[2]
             if target.type == :send

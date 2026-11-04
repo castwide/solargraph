@@ -169,8 +169,10 @@ module Solargraph
             rng = Range.from_node(node)
             next if rng.nil?
             pos = rng.ending
+            # Assignments combined from other files carry their own filename
+            filename = Location.from_node(node)&.filename || location&.filename
             # @sg-ignore Need to add nil check here
-            clip = api_map.clip_at(location.filename, pos)
+            clip = api_map.clip_at(filename, pos)
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
@@ -217,8 +219,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless super
-        # @sg-ignore Should add type check on other
-        assignment == other.assignment
+        other.is_a?(BaseVariable) && assignment == other.assignment
       end
 
       def type_desc

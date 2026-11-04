@@ -34,8 +34,16 @@ module Solargraph
 
       private
 
+      # @return [Array<Pin::Base>, nil]
       def file_cache_pins
-        Marshal.load(File.read(cache_file, mode: 'rb')) if File.exist?(cache_file) # rubocop:disable Security/MarshalLoad
+        return nil unless File.exist?(cache_file)
+
+        # @type [Object]
+        loaded = Marshal.load(File.read(cache_file, mode: 'rb')) # rubocop:disable Security/MarshalLoad
+        # @param pin [Object]
+        return loaded.map { |pin| pin.is_a?(Pin::Base) ? pin : raise(TypeError, "#{cache_file} contains a non-pin") } if loaded.is_a?(Array)
+
+        raise TypeError, "#{cache_file} does not contain an array of pins"
       end
 
       def generate_pin_caches

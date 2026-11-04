@@ -29,21 +29,18 @@ module Solargraph
 
       # @param text [String]
       # @param nullable [Boolean]
-      # @sg-ignore changes doesn't mutate @output, so this can never be nil
+      # @sg-ignore flow sensitive typing should support ivars
       # @return [String]
       def write text, nullable = false
         can_nullify = (nullable and changes.length == 1)
-        return @output if (@input == text) && (can_nullify == @did_nullify)
+        return @output if @output && (@input == text) && (can_nullify == @did_nullify)
         @input = text
-        @output = text
         @did_nullify = can_nullify
+        output = text
         changes.each do |ch|
-          # @sg-ignore Wrong argument type for
-          #   Solargraph::Source::Change#write: text expected String,
-          #   received String, nil
-          @output = ch.write(@output, can_nullify)
+          output = ch.write(output, can_nullify)
         end
-        @output
+        @output = output
       end
 
       # @param text [String]

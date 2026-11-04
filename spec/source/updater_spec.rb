@@ -29,6 +29,14 @@ describe Solargraph::Source::Updater do
     expect(updated).to eq('foo    ')
   end
 
+  it 'reuses its output when writing the same text again' do
+    range = Solargraph::Range.from_to(0, 3, 0, 3)
+    changes = [Solargraph::Source::Change.new(range, '.bar')]
+    updater = described_class.new('file.rb', 0, changes)
+    first = updater.write('foo')
+    expect(updater.write('foo')).to be(first)
+  end
+
   it 'handles nil ranges' do
     text = 'foo'
     changes = []
