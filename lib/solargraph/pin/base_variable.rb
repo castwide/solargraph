@@ -24,7 +24,7 @@ module Solargraph
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
       #   assignments that may have been made to this variable
-      # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
+      # @param mass_assignment [::Array(Parser::AST::Node, Integer), ::Array(Parser::AST::Node, ::Range<Integer>), nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
@@ -50,19 +50,24 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param presence [Range, nil]
+      # @param deconstruct [Boolean] true if mass_assignment is an array
+      #   pattern, which reads its subject through
+      #   {https://docs.ruby-lang.org/en/master/syntax/pattern_matching_rdoc.html#label-Matching+non-primitive+objects-3A+deconstruct+and+deconstruct_keys #deconstruct}
+      #   where a multiple assignment reads it through #to_ary
       # @param type_assertion [String, nil] RBS type from a trailing
       #   rbs-inline `#: TYPE` comment on the assignment
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
-                     type_assertion: nil,
+                     deconstruct: false, type_assertion: nil,
                      **splat
         super(**splat)
         @type_assertion = type_assertion
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
-        # @type [nil, ::Array(Parser::AST::Node, Integer)]
+        # @type [nil, ::Array(Parser::AST::Node, Integer), ::Array(Parser::AST::Node, ::Range<Integer>)]
         @mass_assignment = mass_assignment
+        @deconstruct = deconstruct
         @return_type = return_type
         @intersection_return_type = intersection_return_type
         @exclude_return_type = exclude_return_type
@@ -79,7 +84,8 @@ module Solargraph
                    source: self.source
         result = dup
         result.exclude_return_type = exclude_return_type
-        result.intersection_return_type = intersection_return_type
+        # Keep a narrowing this pin already has, e.g. a capture's pattern type
+        result.intersection_return_type = intersection_return_type || self.intersection_return_type
         result.source = source
         result.presence = presence
         result.reset_generated!
@@ -112,7 +118,7 @@ module Solargraph
 
       # @param other [self]
       #
-      # @return [Array(AST::Node, Integer), nil]
+      # @return [Array(AST::Node, Integer), Array(AST::Node, ::Range<Integer>), nil]
       def combine_mass_assignment other
         # @todo pick first non-nil arbitrarily - we don't yet support
         #   mass assignment merging
@@ -198,20 +204,87 @@ module Solargraph
         unless @mass_assignment.nil?
           mass_node, index = @mass_assignment
           types = return_types_from_node(mass_node, api_map)
-          types.map! do |type|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+          return adjust_type api_map, rest_capture_type(api_map, types, index) if index.is_a?(::Range)
+
+          # Each member of a union subject, e.g. `Array<String>, Box`
+          items = types.flat_map(&:items)
+          if @deconstruct
+            items = deconstructed_items(api_map, items)
+            # A member whose elements are unknown leaves the capture unknown
+            return ComplexType::UNDEFINED if items.any?(&:undefined?)
+          end
+
+          element_types = items.map do |type|
+            # @sg-ignore https://github.com/apiology/solargraph/pull/406
             if type.tuple?
+              # @sg-ignore https://github.com/apiology/solargraph/pull/406
               type.all_params[index]
+            # @sg-ignore https://github.com/apiology/solargraph/pull/406
             elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+              # @sg-ignore https://github.com/apiology/solargraph/pull/406
               type.all_params.first
             end
-          end.compact!
+          end.compact
 
-          return ComplexType::UNDEFINED if types.empty?
+          return ComplexType::UNDEFINED if element_types.empty?
 
-          return adjust_type api_map, ComplexType.new(types.uniq).qualify(api_map, *gates)
+          return adjust_type api_map, ComplexType.new(element_types.uniq).qualify(api_map, *gates)
         end
 
         ComplexType::UNDEFINED
+      end
+
+      # The Array bound by a `*rest` capture in an array pattern, of the
+      # subject's deconstructed element types, e.g. `Array<String>` from
+      # `[a, *rest]` on an `Array<String>` subject, or `Array<Integer>`
+      # from `[s, *rest]` on an `Array(String, Integer)` tuple.  Plain
+      # `::Array` when the element type is unknown.
+      #
+      # @param api_map [ApiMap]
+      # @param types [::Array<ComplexType>] the subject's types
+      # @param range [::Range<Integer>] subject positions the rest covers
+      # @return [ComplexType]
+      def rest_capture_type api_map, types, range
+        items = deconstructed_items(api_map, types.flat_map(&:items))
+        return ComplexType.parse('::Array') if items.any?(&:undefined?)
+
+        elements = items.flat_map do |type|
+          next type.all_params[range] || [] if type.tuple?
+          next [] unless type.rooted_name == '::Array'
+
+          type.all_params
+        end
+        return ComplexType.parse('::Array') if elements.empty?
+
+        element_type = ComplexType.new(elements.flat_map(&:items).uniq)
+        array_type = ComplexType::UniqueType.new('Array', [], [element_type], rooted: true, parameters_type: :list)
+        ComplexType.new([array_type]).qualify(api_map, *gates)
+      end
+
+      NEVER_DECONSTRUCTED = %w[::Integer ::Float ::Symbol ::TrueClass ::FalseClass ::Boolean].freeze
+      private_constant :NEVER_DECONSTRUCTED
+
+      # What an array pattern matches against, for each member of a
+      # subject: the member itself if it is already an Array, else the
+      # return type of its `deconstruct` method.
+      #
+      # @param api_map [ApiMap]
+      # @param items [::Array<ComplexType::UniqueType>]
+      # @return [::Array<ComplexType::UniqueType>]
+      def deconstructed_items api_map, items
+        items.flat_map do |type|
+          next [type] if type.rooted_name == '::Array'
+
+          # These never match an array pattern, and no subclass can add #deconstruct
+          next [] if type.nil_type? || NEVER_DECONSTRUCTED.include?(type.rooted_name)
+
+          deconstruct = api_map.get_method_stack(type.rooted_tag, 'deconstruct').first
+          # A subclass or a type we cannot see into may still deconstruct
+          next [ComplexType::UniqueType::UNDEFINED] if deconstruct.nil?
+
+          deconstruct.typify(api_map).self_to_type(type).items
+        end
       end
 
       # @param other [Object]
@@ -231,6 +304,9 @@ module Solargraph
       end
 
       def typify api_map
+        # A narrowing to a value constant (`in PATTERN => f`) is no declared type
+        return ComplexType::UNDEFINED if @return_type.nil? && narrowed_to_value_constant?(api_map)
+
         raw_return_type = super
 
         adjust_type(api_map, raw_return_type)
@@ -313,10 +389,31 @@ module Solargraph
       #
       # @return [ComplexType, ComplexType::UniqueType]
       def adjust_type api_map, raw_return_type
+        intersection = narrowed_to_value_constant?(api_map) ? nil : intersection_return_type
+        qualified_intersection = intersection&.qualify(api_map, *(closure&.gates || ['']))
+        # Intersect first: an undefined type takes the intersection whole,
+        # and an exclusion must still apply to it
+        intersected = raw_return_type.intersect_with qualified_intersection, api_map
         qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
-        minus_exclusions = raw_return_type.exclude qualified_exclude, api_map
-        qualified_intersection = intersection_return_type&.qualify(api_map, *(closure&.gates || ['']))
-        minus_exclusions.intersect_with qualified_intersection, api_map
+        intersected.exclude qualified_exclude, api_map
+      end
+
+      # True if narrowed to a constant that is not a class or module,
+      # e.g. `in PATTERN` with `PATTERN = /abc/`: a pattern matches it
+      # with ===, which says nothing about the type
+      #
+      # @param api_map [ApiMap]
+      # @return [Boolean]
+      def narrowed_to_value_constant? api_map
+        intersection = intersection_return_type
+        return false if intersection.nil?
+
+        gates = closure&.gates || ['']
+        intersection.items.any? do |unique_type|
+          # Resolved as a constant reference is, through superclasses and mixins
+          path = api_map.resolve(unique_type.name, gates)
+          !path.nil? && api_map.get_path_pins(path).any?(Pin::Constant)
+        end
       end
 
       # See if this variable is visible within 'viewing_closure'

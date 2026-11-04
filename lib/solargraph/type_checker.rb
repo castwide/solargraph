@@ -197,12 +197,16 @@ module Solargraph
     # @return [Boolean]
     def resolved_constant? pin
       return true if pin.typify(api_map).defined?
-      constant_pins = api_map.get_constants('', *pin.closure.gates)
+      gates = pin.closure&.gates || ['']
+      constant_pins = api_map.get_constants('', *gates)
                              .select { |p| p.name == pin.return_type.namespace }
       return true if constant_pins.find { |p| p.typify(api_map).defined? }
       # will need to probe when a constant name is assigned to a
       # class/module (alias)
       return true if constant_pins.find { |p| p.probe(api_map).defined? }
+      # A qualified constant, e.g. a capture of `in Float::INFINITY => f`
+      path = api_map.resolve(pin.return_type.namespace, gates)
+      return true if path && api_map.get_path_pins(path).any?(Pin::Constant)
       false
     end
 
