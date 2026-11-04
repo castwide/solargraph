@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rbs'
+
 module Solargraph
   module Pin
     # The base class for method and attribute pins.
@@ -185,6 +187,21 @@ module Solargraph
                                   location: location, type_location: type_location)
         block.closure = signature if block
         signature
+      end
+
+      # The type of a parameter as declared in this method's inline RBS
+      # signature.
+      #
+      # @param name [String]
+      # @return [ComplexType, nil]
+      def inline_rbs_parameter_type name
+        return nil if inline_rbs.empty?
+        method_type = RBS::Parser.parse_method_type(inline_rbs)
+        RbsTranslator.to_parameter_pins(method_type, self, parameter_names)
+                     .find { |param| param.name == name }
+                     &.return_type
+      rescue RBS::ParsingError
+        nil
       end
 
       # @return [::Array<Signature>]
