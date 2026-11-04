@@ -312,7 +312,6 @@ module Solargraph
         rooted_tags
       end
 
-      # @sg-ignore Need better if/elseanalysis
       # @return [String]
       def to_rbs
         if duck_type?
@@ -322,7 +321,7 @@ module Solargraph
         elsif name.downcase == 'nil'
           'nil'
         elsif name == GENERIC_TAG_NAME
-          all_params.first&.name
+          all_params.first&.name || 'untyped'
         elsif %w[Class Module].include?(name)
           rbs_name
         elsif %w[Tuple Array].include?(name) && fixed_parameters?

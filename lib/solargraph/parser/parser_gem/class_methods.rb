@@ -57,20 +57,27 @@ module Solargraph
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore Need to add nil check here
-            extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
+            extract_offset = lambda do |code, offset|
+              match = reg.match(code, offset)
+              match ? match.offset(0) : [nil, nil]
+            end
           else
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore Need to add nil check here
-            extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
+            extract_offset = lambda do |code, offset|
+              soff = code.index(name, offset)
+              soff ? [soff, soff + name.length] : [nil, nil]
+            end
           end
-          inner_node_references(name, source.node).map do |n|
+          inner_node_references(name, source.node).filter_map do |n|
             rng = Range.from_node(n)
             # @sg-ignore Need to add nil check here
             offset = Position.to_offset(source.code, rng.start)
             soff, eoff = extract_offset[source.code, offset]
+            # Operator calls like foo[0] do not spell the method name
+            next unless soff && eoff
+
             Location.new(
               source.filename,
               Range.new(

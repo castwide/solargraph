@@ -25,9 +25,12 @@ module Solargraph
         # @param locals [::Array<Pin::Parameter, Pin::LocalVariable>]
         # @return [::Array<Pin::Base>]
         def resolve api_map, name_pin, locals
-          # @type [Pin::Method]
           method_pin = method_call_chain.define(api_map, name_pin, locals)&.first
-          return [] unless method_pin
+          return [] unless method_pin.is_a?(Pin::Method)
+          # A literal nested inside an argument, e.g. foo([:bar]), is not
+          # itself an argument
+          arg_index = current_index
+          return [] unless arg_index
 
           # Use indexed lookup for better performance
           api_map.factory_parameters_for_method(method_pin).select do |fp|
@@ -36,7 +39,7 @@ module Solargraph
             next false unless fp.value == literal_value
 
             # a splat takes every argument from its position on
-            method_pin.parameters[param_index].restarg? ? current_index >= param_index : current_index == param_index
+            method_pin.parameters.fetch(param_index).restarg? ? arg_index >= param_index : arg_index == param_index
           end
         end
 
@@ -63,7 +66,7 @@ module Solargraph
         end
 
         # The index of the literal in the method call chain.
-        # @return [Integer]
+        # @return [Integer, nil]
         def current_index
           @current_index ||= method_call_chain.node.children[2..].index(literal.node)
         end
