@@ -10,7 +10,6 @@ module Solargraph
   module YardMap
     class NoYardocError < StandardError; end
 
-    autoload :Cache,       'solargraph/yard_map/cache'
     autoload :Mapper,      'solargraph/yard_map/mapper'
     autoload :Helpers,     'solargraph/yard_map/helpers'
     autoload :Macro,       'solargraph/yard_map/macro'
