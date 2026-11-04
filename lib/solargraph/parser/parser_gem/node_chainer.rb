@@ -64,7 +64,8 @@ module Solargraph
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
+              result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n),
+                                          assignment: assignment_syntax?(n))
             elsif n.children[0].nil?
               # @sg-ignore Need to add nil check here
               n.children[2..].map do |c|
@@ -77,7 +78,8 @@ module Solargraph
           elsif n.type == :csend
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
+              result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n),
+                                           assignment: assignment_syntax?(n))
             elsif n.children[0].nil?
               result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
             else
@@ -175,6 +177,19 @@ module Solargraph
         # @return [Parser::AST::Node, nil]
         def send_node
           @send_node ||= @tree&.find { |n| n.type == :send }
+        end
+
+        # True for `recv.attr = value` and `recv[key] = value`, which
+        # evaluate to `value` whatever the setter returns. An explicit
+        # call like `recv.[]=(key, value)` has no `=` operator and
+        # evaluates to the method's return value. The setter name check
+        # excludes the operator send that OpasgnNode synthesizes for
+        # `a += b`, which keeps the op_asgn's `+=` operator location.
+        #
+        # @param node [Parser::AST::Node]
+        def assignment_syntax? node
+          node.loc.respond_to?(:operator) && !node.loc.operator.nil? && node.children.length > 2 &&
+            node.children[1].to_s.end_with?('=')
         end
 
         # @param node [Parser::AST::Node]
