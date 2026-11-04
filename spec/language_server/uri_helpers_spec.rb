@@ -36,4 +36,9 @@ describe Solargraph::LanguageServer::UriHelpers do
     file = described_class.uri_to_file(uri)
     expect(file).to eq('Z:/dev_tools/')
   end
+
+  it 'refuses to build a URI for a source with no filename' do
+    expect { described_class.file_to_uri(nil) }
+      .to raise_error(ArgumentError, 'Cannot build a URI for a source with no filename')
+  end
 end

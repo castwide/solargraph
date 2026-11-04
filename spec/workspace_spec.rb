@@ -31,6 +31,14 @@ describe Solargraph::Workspace do
     expect(workspace.filenames).not_to include(source.filename)
   end
 
+  it 'does not merge sources without a filename' do
+    wildcard = described_class.new('*')
+    source = Solargraph::Source.load_string("x = 1\n", nil)
+
+    expect(wildcard.merge(source)).to be(false)
+    expect(wildcard.filenames).to be_empty
+  end
+
   it 'updates sources' do
     original = workspace.source(file_path)
     updated = Solargraph::Source.load_string('puts "updated"', file_path)
@@ -39,6 +47,22 @@ describe Solargraph::Workspace do
     expect(workspace.filenames).to include(file_path)
     expect(workspace.source(file_path)).not_to eq(original)
     expect(workspace.source(file_path)).to eq(updated)
+  end
+
+  it 'ignores synchronizing a file outside the workspace' do
+    updater = Solargraph::Source::Updater.new(File.join(dir_path, 'other.rb'), 1, [])
+
+    expect { workspace.synchronize!(updater) }.not_to raise_error
+    expect(workspace.filenames).to eq([file_path])
+  end
+
+  it 'synchronizes a file in the workspace' do
+    original = workspace.source(file_path)
+    change = Solargraph::Source::Change.new(nil, 'puts "updated"')
+    updater = Solargraph::Source::Updater.new(file_path, original.version + 1, [change])
+    workspace.synchronize!(updater)
+
+    expect(workspace.source(file_path).code).to eq('puts "updated"')
   end
 
   it 'removes deleted sources' do

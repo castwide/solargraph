@@ -1,6 +1,18 @@
 # frozen_string_literal: true
 
 describe Solargraph::Source do
+  describe '#filename!' do
+    it 'returns the filename' do
+      source = described_class.load_string('x', 'foo.rb')
+      expect(source.filename!).to eq('foo.rb')
+    end
+
+    it 'raises without a filename' do
+      source = described_class.load_string('x')
+      expect { source.filename! }.to raise_error(ArgumentError)
+    end
+  end
+
   it 'parses code' do
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
