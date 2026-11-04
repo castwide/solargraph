@@ -11,11 +11,11 @@ module Solargraph
             s_visi = region.visibility
             s_visi = :public if s_visi == :module_function || region.scope != :class
             loc = get_node_location(node)
-            closure = if node.children[0].is_a?(AST::Node) && node.children[0].type == :self
+            closure = if node.children.fetch(0).is_a?(AST::Node) && node.children.fetch(0).type == :self
                         region.closure
                       else
                         Solargraph::Pin::Namespace.new(
-                          name: unpack_name(node.children[0]),
+                          name: unpack_name(node.children.fetch(0)),
                           source: :parser
                         )
                       end

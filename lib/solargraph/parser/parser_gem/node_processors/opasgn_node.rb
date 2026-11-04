@@ -72,7 +72,7 @@ module Solargraph
             #      s(:int, 2)) # argument
 
             # @type [Parser::AST::Node]
-            variable_name = asgn.children[0]
+            variable_name = asgn.children.fetch(0)
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar
             # [6] pry(main)> Parser::CurrentRuby.parse("a = a + 1")
             # => s(:lvasgn, :a,
