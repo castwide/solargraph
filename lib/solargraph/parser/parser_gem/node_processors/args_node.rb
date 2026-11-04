@@ -20,8 +20,7 @@ module Solargraph
                     name: u.children[0].to_s,
                     assignment: u.children[1],
                     asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
-                    # @sg-ignore Need to add nil check here
-                    presence: callable.location.range,
+                    presence: callable.location!.range,
                     decl: get_decl(u),
                     source: :parser
                   )
@@ -41,8 +40,7 @@ module Solargraph
             locals.push Solargraph::Pin::Parameter.new(
               location: loc,
               closure: callable,
-              # @sg-ignore Need to add nil check here
-              presence: region.closure.location.range,
+              presence: region.closure.location!.range,
               decl: get_decl(node),
               source: :parser
             )
