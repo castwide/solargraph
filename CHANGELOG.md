@@ -1,3 +1,7 @@
+## 0.62.1 - November 4, 2026
+- Always report completion for workspace mapping progress (#1475)
+- Close attribute directives over their namespace (#1432)
+
 ## 0.62.0 - October 30, 2026
 - Fix false positive: Struct.new(keyword_init: true) members are optional (#1269)
 - Strip nil from or-expression fallbacks in conditional branch values (#1309)
