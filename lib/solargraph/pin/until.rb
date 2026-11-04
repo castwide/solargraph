@@ -4,6 +4,7 @@ module Solargraph
   module Pin
     class Until < CompoundStatement
       include Breakable
+      include ClosureRequired
 
       # @param node [Parser::AST::Node, nil]
       # @param [Hash{Symbol => Object}] splat

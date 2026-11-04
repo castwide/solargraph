@@ -35,6 +35,7 @@ module Solargraph
     autoload :KeywordParam,     'solargraph/pin/keyword_param'
     autoload :Search,           'solargraph/pin/search'
     autoload :Breakable,        'solargraph/pin/breakable'
+    autoload :ClosureRequired,  'solargraph/pin/closure_required'
     autoload :Until,            'solargraph/pin/until'
     autoload :While,            'solargraph/pin/while'
     autoload :Callable,         'solargraph/pin/callable'

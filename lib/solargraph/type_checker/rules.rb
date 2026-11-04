@@ -71,9 +71,10 @@ module Solargraph
       #
       # pending code fixes (277):
       #
-      # @todo 281: Need to add nil check here
+      # @todo 280: Need to add nil check here
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
+      # @todo 1: https://github.com/castwide/solargraph/pull/1258
       #
       # flow sensitive typing could handle (99):
       #

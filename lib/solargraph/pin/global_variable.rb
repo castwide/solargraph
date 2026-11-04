@@ -3,6 +3,7 @@
 module Solargraph
   module Pin
     class GlobalVariable < BaseVariable
+      include ClosureRequired
     end
   end
 end
