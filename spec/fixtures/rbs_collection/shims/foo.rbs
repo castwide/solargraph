@@ -1,0 +1,4 @@
+class Foo
+  def bar: () -> String
+  def baz: () -> Integer
+end
