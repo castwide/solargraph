@@ -6,6 +6,23 @@ module Solargraph
       # @return [::Symbol] :class or :instance
       attr_reader :scope
 
+      # Override the pin's scope.
+      #
+      # Scope is normally determined by the syntax that declared the pin, but
+      # YARD's `@!scope` directive can change it after the fact. Any values
+      # derived from the scope, such as the pin's path and context, are
+      # recalculated.
+      #
+      # @param scope [::Symbol] :class or :instance
+      # @return [void]
+      def scope= scope
+        return if @scope == scope
+
+        @scope = scope
+        # remove cached values generated from scope
+        reset_generated!
+      end
+
       # @param scope [::Symbol] :class or :instance
       # @param generics [::Array<Pin::String>, nil]
       # @param generic_defaults [Hash{String => ComplexType}]
