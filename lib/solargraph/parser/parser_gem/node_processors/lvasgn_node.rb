@@ -20,6 +20,7 @@ module Solargraph
               name: name,
               assignment: node.children[1],
               comments: comments_for(node),
+              type_assertion: type_assertion_for(node),
               presence: presence,
               source: :parser
             )
