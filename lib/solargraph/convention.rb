@@ -9,9 +9,6 @@ module Solargraph
     autoload :Gemfile, 'solargraph/convention/gemfile'
     autoload :Gemspec, 'solargraph/convention/gemspec'
     autoload :Rakefile, 'solargraph/convention/rakefile'
-    autoload :StructDefinition, 'solargraph/convention/struct_definition'
-    autoload :DataDefinition,   'solargraph/convention/data_definition'
-    autoload :ActiveSupportConcern, 'solargraph/convention/active_support_concern'
 
     # @type [Set<Convention::Base>]
     @@conventions = Set.new
@@ -38,12 +35,14 @@ module Solargraph
       result
     end
 
-    # @param doc_map [DocMap]
+    # @todo Determine what argument needs to be passed here
+    #
+    # @param object [Object]
     # @return [Environ]
-    def self.for_global doc_map
+    def self.for_global object
       result = Environ.new
       @@conventions.each do |conv|
-        result.merge conv.global(doc_map)
+        result.merge conv.global(object)
       end
       result
     end
@@ -73,6 +72,5 @@ module Solargraph
     register Gemfile
     register Gemspec
     register Rakefile
-    register ActiveSupportConcern
   end
 end
