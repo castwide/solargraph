@@ -217,12 +217,16 @@ module Solargraph
           # is asserted after the loop - the body may run zero times,
           # and a break can leave it with the condition still false.
           #
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           before_do_clause_loc = do_clause.location.expression.adjust(begin_pos: -1)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           before_do_clause_pos = Position.new(before_do_clause_loc.line, before_do_clause_loc.column)
           false_ranges << Range.new(before_do_clause_pos,
+                                    # @sg-ignore https://github.com/castwide/solargraph/pull/1259
                                     get_node_end_position(do_clause))
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
