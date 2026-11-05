@@ -181,13 +181,17 @@ module Solargraph
                        if found
                          result.push found
                        else
+                         # @sg-ignore https://github.com/castwide/solargraph/pull/1439
                          $stderr.puts "Gem '#{name}' not found"
                        end
                      end
                    rescue Gem::MissingSpecError
+                     # @sg-ignore https://github.com/castwide/solargraph/pull/1439
                      $stderr.puts "Gem '#{name}' not found"
                    rescue Gem::Requirement::BadRequirementError => e
+                     # @sg-ignore https://github.com/castwide/solargraph/pull/1439
                      $stderr.puts "Gem '#{name}' failed while loading"
+                     # @sg-ignore https://github.com/castwide/solargraph/pull/1439
                      $stderr.puts e.message
                    end
                  end
@@ -336,6 +340,7 @@ module Solargraph
           # $stderr.puts instead of Kernel#warn: bin/solargraph disables Ruby
           # warnings ($VERBOSE = nil), which also silences Kernel#warn, so
           # warn-based CLI messages never reach the user.
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1439
           $stderr.puts "Pin not found for path '#{path}'"
           exit 1
         else

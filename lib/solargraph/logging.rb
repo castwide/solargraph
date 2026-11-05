@@ -21,6 +21,7 @@ module Solargraph
       return LOG_LEVELS.fetch(configured_level) if LOG_LEVELS.key?(configured_level)
 
       if configured_level
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1439
         $stderr.puts "Invalid value for SOLARGRAPH_LOG: #{configured_level.inspect} - " \
                      "valid values are #{LOG_LEVELS.keys}"
       end
