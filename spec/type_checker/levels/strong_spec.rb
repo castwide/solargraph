@@ -1619,5 +1619,53 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message))
         .to eq ['Declared type String does not match inferred type String, nil for variable x']
     end
+
+    it 'resolves Object methods on a block parameter of unknown type' do
+      checker = type_checker(%(
+        # @param list [Array]
+        # @param name [String]
+        # @return [Boolean]
+        def named? list, name
+          list.any? { |item| item.to_s == name }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq []
+    end
+
+    it 'narrows a block parameter of unknown type with is_a?' do
+      checker = type_checker(%(
+        # @param list [Array]
+        # @return [void]
+        def shout list
+          list.each do |item|
+            next unless item.is_a?(String)
+            item.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq []
+    end
+
+    it 'still flags a type-specific call on a block parameter of unknown type' do
+      checker = type_checker(%(
+        # @param list [Array]
+        # @return [void]
+        def shout list
+          list.each { |item| item.upcase }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq ['Unresolved call to upcase']
+    end
+
+    it 'does not resolve private Kernel methods on a value of unknown type' do
+      checker = type_checker(%(
+        # @param list [Array]
+        # @return [void]
+        def shout list
+          list.each { |item| item.puts 'x' }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq ['Unresolved call to puts']
+    end
   end
 end
