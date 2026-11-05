@@ -2,6 +2,7 @@
 
 require 'tmpdir'
 require 'yard'
+require 'timeout'
 
 describe Solargraph::Library do
   it 'does not open created files in the workspace' do
@@ -45,12 +46,47 @@ describe Solargraph::Library do
           adapter.remo
         end
       ), 'file.rb', 0)
-      # give Solargraph time to cache the gem
-      while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
-        sleep 0.25
+      Timeout.timeout 60 do
+        # give Solargraph time to cache the gem
+        while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
+          expect(library.send(:cache_errors)).to be_empty
+          sleep 0.25
+        end
+        expect(completion).to be_a(Solargraph::SourceMap::Completion)
+        expect(completion.pins.map(&:name)).to include('remote')
       end
-      expect(completion).to be_a(Solargraph::SourceMap::Completion)
-      expect(completion.pins.map(&:name)).to include('remote')
+    end
+  end
+
+  context 'with a require from a gem whose yardoc another process has locked' do
+    let(:metagem) { Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport')) }
+    let(:lock_file) { File.join(Solargraph::Yardoc.path_for(metagem), 'processing') }
+
+    before do
+      Solargraph::Collection::Gem.uncache(metagem)
+      FileUtils.mkdir_p File.dirname(lock_file)
+      FileUtils.touch lock_file
+    end
+
+    after do
+      FileUtils.rm_f lock_file
+    end
+
+    it 'caches the gem anyway' do
+      library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
+                                                              Solargraph::Workspace::Config.new))
+      library.attach Solargraph::Source.load_string(%(
+        require 'backport'
+
+        # @param adapter [Backport::Adapter]
+        def foo(adapter)
+          adapter.remo
+        end
+      ), 'file.rb', 0)
+      Timeout.timeout 60 do
+        sleep 0.25 while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
+        expect(completion.pins.map(&:name)).to include('remote')
+      end
     end
   end
 
@@ -660,24 +696,59 @@ describe Solargraph::Library do
     end
   end
 
-  describe '#sync_catalog' do
-    # Regression test for https://github.com/castwide/solargraph/issues/1111
-    #
-    # When the first cacheable gemspec is already being cached by another
-    # process, cache_next_gemspec enqueues it and, if other gemspecs are
-    # still pending, recurses to try the next one. That recursion must not
-    # go back through sync_catalog's own mutex, or it deadlocks with a
-    # ThreadError on the thread that is already inside the mutex.
-    it 'does not deadlock when the next cacheable gemspec is already being processed elsewhere' do
-      library = described_class.new
+  describe '#cache_next_gemspec' do
+    let(:library) { described_class.new(Solargraph::Workspace.new(Dir.pwd, Solargraph::Workspace::Config.new)) }
+    let(:metagem) { Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport')) }
+    let(:cache_threads) { [] }
+
+    before do
       api_map = library.send(:api_map)
-      gemspecs = (1..3).map { |i| instance_double(Gem::Specification, name: "gem_#{i}", version: Gem::Version.new('1.0.0')) }
       allow(api_map).to receive(:catalog)
-      allow(api_map).to receive_messages(uncached_yard_gemspecs: gemspecs, uncached_rbs_collection_gemspecs: [], uncached_gemspecs: gemspecs, source_maps: [], pins: [])
-      allow(Solargraph::Yardoc).to receive(:processing?).and_return(true)
+      allow(api_map).to receive(:unloaded_gems).and_return(Set[metagem])
+      allow(Thread).to receive(:new).and_wrap_original do |original, *args, &block|
+        original.call(*args, &block).tap { |thread| cache_threads.push thread }
+      end
+    end
+
+    # Join the cache threads, stopping after a few in case they respawn
+    # forever.
+    def join_cache_threads
+      5.times do
+        thread = cache_threads.shift
+        break unless thread
+        thread.join
+      end
+    end
+
+    it 'does not retry a gem whose cache command failed' do
+      status = instance_double(Process::Status, success?: false)
+      allow(Open3).to receive(:capture3).and_return(['', 'error', status])
 
       library.catalog
-      expect { library.send(:sync_catalog) }.not_to raise_error
+      library.send(:sync_catalog)
+      join_cache_threads
+
+      expect(Open3).to have_received(:capture3).once
+    end
+
+    it 'finishes caching when an unexpected error is raised' do
+      allow(Open3).to receive(:capture3).and_raise('cache failed')
+
+      library.catalog
+      library.send(:sync_catalog)
+      join_cache_threads
+
+      expect(library.cache_progress).to be_nil
+    end
+
+    it 'finishes caching when the cache command cannot run' do
+      allow(Open3).to receive(:capture3).and_raise(Errno::ENOENT)
+
+      library.catalog
+      library.send(:sync_catalog)
+      join_cache_threads
+
+      expect(library.cache_progress).to be_nil
     end
   end
 end

@@ -14,6 +14,10 @@ module Solargraph
         @loader ||= RBS::EnvironmentLoader.new(repository: repository)
       end
 
+      def repository
+        @repository ||= RBS::Repository.new(no_stdlib: false)
+      end
+
       private
 
       # @return [Array<Pin::Base>]
