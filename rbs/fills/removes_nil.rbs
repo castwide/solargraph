@@ -1,0 +1,23 @@
+# Marks core compact methods %a{solargraph:removes-nil}.
+#
+# Each 'def name: ...' has no overloads of its own, so it only adds its
+# annotations to the core method.
+#
+# %a{solargraph:removes-nil} drops nil from the element types
+# (Hash: value types) of the returned collection, which a signature like
+# '() -> ::Array[Elem]' cannot express.
+
+class Array[unchecked out Elem]
+  %a{solargraph:removes-nil}
+  def compact: ...
+end
+
+module Enumerable[unchecked out Elem]
+  %a{solargraph:removes-nil}
+  def compact: ...
+end
+
+class Hash[unchecked out K, unchecked out V]
+  %a{solargraph:removes-nil}
+  def compact: ...
+end
