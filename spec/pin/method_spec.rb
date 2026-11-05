@@ -580,6 +580,27 @@ describe Solargraph::Pin::Method do
       expect(pin.probe(api_map).tag).to eq('String')
     end
 
+    it 'ignores flow-sensitive narrowing when inferring from instance variables' do
+      # Mirrors Diff::LCS::Change, where IntClass is a constant holding
+      # a class, not a class name the guard could narrow to
+      source = Solargraph::Source.load_string(%(
+        class Foo
+          IntClass = 1.class
+
+          attr_reader :position
+
+          def initialize(*args)
+            @position, = *args
+            fail 'Invalid Position Type' unless @position.is_a? IntClass
+          end
+        end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('Foo#position').first
+      expect(pin.probe(api_map)).to be_undefined
+    end
+
     it 'infers return types from method rescue block' do
       source = Solargraph::Source.load_string(%(
         class Foo
