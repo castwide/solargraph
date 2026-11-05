@@ -180,7 +180,8 @@ module Solargraph
 
           # @return [void]
           def process_attribute
-            node.children.drop(2).each do |a|
+            # @sg-ignore Need to add nil check here
+            node.children[2..].each do |a|
               loc = get_node_location(node)
               clos = region.closure
               cmnt = comments_for(node)
