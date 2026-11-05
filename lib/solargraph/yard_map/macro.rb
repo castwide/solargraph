@@ -11,6 +11,17 @@ module Solargraph
       # its content.
       VALUE_DIRECTIVES = %w[parse scope].freeze
 
+      # Directives that define an object capable of owning @overload tags.
+      OVERLOAD_OWNERS = %w[method attribute parse].freeze
+
+      # The directive used to generate a pin for the @overload tags a macro
+      # declares without an owning @!method directive. Its arguments are
+      # represented by (...) so that any of the overloads remains valid.
+      OVERLOAD_METHOD_DIRECTIVE = '@!method $1(...)'
+
+      # An @overload tag that starts a line of a macro's text.
+      OVERLOAD_TAG_LINE = /^\s*@overload(\s|$)/
+
       class << self
         # @param directive [YARD::Tags::Directive]
         # @param method_pin [Pin::Method]
@@ -123,8 +134,16 @@ module Solargraph
         code = source_map.source.code_for(chain.node)
         expanded_comment = macro_object.expand([name, *values], code)
                                        .gsub(/\n(?!@!|\s)/, "\n  ")
-        directives = Solargraph::Source.parse_docstring(expanded_comment).directives.select do |directive|
+        parsed_docstring = Solargraph::Source.parse_docstring(expanded_comment)
+        directives = parsed_docstring.directives.select do |directive|
           PROCESSABLE_DIRECTIVES.include?(directive.tag.tag_name)
+        end
+        # A macro can document the methods it generates with bare @overload
+        # tags instead of wrapping them in a @!method directive. Those overloads
+        # have no pin to attach to and would otherwise be discarded, so
+        # generate the pin they describe.
+        if declares_overloads? && directives.none? { |directive| OVERLOAD_OWNERS.include?(directive.tag.tag_name) }
+          directives += generate_overload_directives([name, *values], code)
         end
         directives.each do |directive|
           next if VALUE_DIRECTIVES.include? directive.tag.tag_name
@@ -136,6 +155,37 @@ module Solargraph
           end
         end
         directives
+      end
+
+      # True if the macro declares @overload tags. The tags are read from the
+      # macro's text and not from its parsed docstring because the indentation
+      # a macro's content ends up with can nest the tags inside other objects.
+      #
+      # @return [Boolean]
+      def declares_overloads?
+        text.match?(OVERLOAD_TAG_LINE)
+      end
+
+      # Generates the @!method directive for a macro's bare @overload tags. The
+      # pin takes the name the macro generates, that is, the pin a
+      # @!method $1(...) directive would produce, and keeps the overloads in
+      # its comments.
+      #
+      # The macro's unprocessed text is used here and not its macro data. The
+      # data is re-indented for @! directives, which flattens the nesting that
+      # keeps a @param attached to the @overload it describes.
+      #
+      # @param call_params [Array<String>]
+      # @param code [String]
+      # @return [Array<YARD::Tags::Directive>]
+      def generate_overload_directives call_params, code
+        body = text.each_line.map { |line| "  #{line}" }.join
+        expanded = YARD::CodeObjects::MacroObject.expand(
+          "#{OVERLOAD_METHOD_DIRECTIVE}\n#{body}", call_params, code
+        )
+        Solargraph::Source.parse_docstring(expanded).directives.select do |directive|
+          directive.tag.tag_name == 'method'
+        end
       end
     end
   end
