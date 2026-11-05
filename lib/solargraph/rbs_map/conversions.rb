@@ -103,10 +103,8 @@ module Solargraph
         decls.any? do |name, entry|
           # @sg-ignore Unresolved call to decl on generic<D>
           type = entry.decl.type
-          # @sg-ignore Unresolved call to is_a? on generic<D>
           next false unless type.is_a?(RBS::Types::Alias)
 
-          # @sg-ignore Unresolved call to to_s on generic<D>
           type.name.to_s == name.to_s || !decls.key?(type.name)
         end
       end
