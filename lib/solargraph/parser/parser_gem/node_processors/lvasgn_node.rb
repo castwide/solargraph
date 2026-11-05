@@ -12,6 +12,7 @@ module Solargraph
             # @sg-ignore Need to add nil check here
             presence = Range.new(here, region.closure.location.range.ending)
             loc = get_node_location(node)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             locals.push Solargraph::Pin::LocalVariable.new(
               location: loc,
               closure: region.closure,

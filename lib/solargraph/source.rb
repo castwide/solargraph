@@ -413,7 +413,9 @@ module Solargraph
       stack.unshift node
       node.children.each do |c|
         next unless Parser.is_ast_node?(c)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418 https://github.com/castwide/solargraph/pull/1396 https://github.com/castwide/solargraph/pull/1259
         next if c.loc.expression.nil?
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418 https://github.com/castwide/solargraph/pull/1396 https://github.com/castwide/solargraph/pull/1259
         inner_tree_at(c, position, stack)
       end
     end

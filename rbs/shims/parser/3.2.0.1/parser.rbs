@@ -47,7 +47,7 @@ module Parser
       attr_reader location: Source::Map
       alias loc location
 
-      def children: () -> Array[self]
+      def children: () -> Array[self | Integer | String | Symbol | nil]
     end
 
     class Processor
