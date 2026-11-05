@@ -114,25 +114,29 @@ module Solargraph
 
       # Whether +other+ declares the same parameter types, so merging cannot
       # take away an argument type's ability to select a return type.  Return
-      # types are excluded: widening one is the purpose of merging.
+      # types are excluded: widening one is the purpose of merging.  An
+      # undefined parameter type matches any type, as it has nothing to
+      # select a return type with.
+      #
+      # Rootedness is ignored deliberately: GemPins.combine matches a YARD
+      # pin, whose types are still unqualified, against its RBS counterpart,
+      # whose types are rooted, so String and ::String are one overload here.
       #
       # @param other [Callable]
       # @return [Boolean]
       def same_parameter_types? other
         return false unless generics == other.generics
         return false unless block.nil? == other.block.nil?
-        return false unless parameter_type_tags == other.parameter_type_tags
+        types = blockless_parameters.map(&:return_type)
+        other_types = other.blockless_parameters.map(&:return_type)
+        return false unless types.length == other_types.length
+        # @param type [ComplexType]
+        # @param other_type [ComplexType]
+        return false unless types.zip(other_types).all? do |type, other_type|
+          type.undefined? || other_type.undefined? || type.tags == other_type.tags
+        end
 
         block.nil? || block.same_parameter_types?(other.block)
-      end
-
-      # Rootedness is ignored deliberately: GemPins.combine matches a YARD
-      # pin, whose types are still unqualified, against its RBS counterpart,
-      # whose types are rooted, so String and ::String are one overload here.
-      #
-      # @return [Array<String>]
-      def parameter_type_tags
-        blockless_parameters.map { |param| param.return_type.tags }
       end
 
       # @param generics_to_resolve [Enumerable<String>]

@@ -142,6 +142,21 @@ describe Solargraph::Pin::Method do
     expect(combined.signatures.flat_map { |sig| sig.parameters.map { |param| param.return_type.rooted_tags } }).to contain_exactly('Integer', 'Float')
   end
 
+  it 'merges a signature whose parameter type is undefined into a typed one' do
+    closure = Solargraph::Pin::Namespace.new(name: 'Foo', type: :class)
+    untyped_pin = described_class.new(closure: closure, name: 'add', scope: :instance, comments: %(
+@overload add(bar)
+  @return [Integer]
+    ))
+    typed_pin = described_class.new(closure: closure, name: 'add', scope: :instance, comments: %(
+@overload add(bar)
+  @param bar [Integer]
+  @return [Integer]
+    ))
+    combined = untyped_pin.combine_with(typed_pin)
+    expect(combined.signatures.length).to eq(1)
+  end
+
   it 'does not merge with changes in parameters' do
     # @todo Method pin parameters are pins now
     pin1 = described_class.new(name: 'bar', parameters: %w[one two])
