@@ -122,7 +122,7 @@ module Solargraph
             source: spec.source.to_s,
             version: spec.version,
             require_paths: spec.require_paths,
-            dependencies: spec.dependencies.map(&:name)
+            dependencies: spec.runtime_dependencies.map(&:name)
           }
         end
         groups = Bundler.definition.groups.to_h do |group|
