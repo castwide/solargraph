@@ -551,7 +551,12 @@ module Solargraph
         generics = decl.overloads.map(&:method_type).map do |method_type|
           type_parameter_names method_type
         end
-        removes_nil = removes_nil?(decl)
+        annotations = method_annotations(decl)
+        if decl.overloading? && decl.overloads.empty?
+          # 'def name: ...' only adds its annotations to a method declared elsewhere
+          annotation_overrides(decl, closure, annotations)
+          return
+        end
 
         if decl.instance?
           name = decl.name.to_s
@@ -566,7 +571,7 @@ module Solargraph
             signatures: [],
             generics: generics,
             visibility: visibility,
-            removes_nil: removes_nil,
+            annotations: annotations,
             source: :rbs
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
@@ -589,27 +594,39 @@ module Solargraph
           scope: final_scope,
           signatures: [],
           generics: generics,
-          removes_nil: removes_nil,
+          annotations: annotations,
           source: :rbs
         )
         pin.signatures.concat method_def_to_sigs(decl, pin)
         pins.push pin
       end
 
-      # %a{solargraph:removes-nil} on the method, or on every overload
+      # The method's annotations, plus any annotation that every overload has
       #
       # @param decl [RBS::AST::Members::MethodDefinition]
-      # @return [Boolean]
-      def removes_nil? decl
-        return true if removes_nil_annotation?(decl.annotations)
+      # @return [Set<String>]
+      def method_annotations decl
+        annotations = decl.annotations.to_set(&:string)
+        return annotations if decl.overloads.empty?
 
-        !decl.overloads.empty? && decl.overloads.all? { |overload| removes_nil_annotation?(overload.annotations) }
+        annotations | decl.overloads.map { |overload| overload.annotations.to_set(&:string) }.reduce(:&)
       end
 
-      # @param annotations [Array<RBS::AST::Annotation>]
-      # @return [Boolean]
-      def removes_nil_annotation? annotations
-        annotations.any? { |annotation| annotation.string == 'solargraph:removes-nil' }
+      # @param decl [RBS::AST::Members::MethodDefinition] a 'def name: ...'
+      #   with no overloads of its own
+      # @param closure [Pin::Closure]
+      # @param annotations [Set<String>]
+      # @return [void]
+      def annotation_overrides decl, closure, annotations
+        return if annotations.empty?
+
+        location = location_decl_to_pin_location(decl.location)
+        paths = []
+        paths.push "#{closure.path}##{decl.name}" if decl.instance?
+        paths.push "#{closure.path}.#{decl.name}" if decl.singleton?
+        paths.each do |path|
+          pins.push Pin::Reference::Override.new(location, path, [], annotations: annotations, source: :rbs)
+        end
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]

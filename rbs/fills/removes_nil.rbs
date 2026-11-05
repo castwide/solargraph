@@ -1,8 +1,7 @@
-# Adds %a{solargraph:removes-nil} to core methods.
+# Marks core compact methods %a{solargraph:removes-nil}.
 #
-# Each 'def name: ...' adds only its annotations; RbsMap::Core copies them
-# onto the core method and keeps the core signatures, and uses nothing
-# else from this file.
+# Each 'def name: ...' has no overloads of its own, so it only adds its
+# annotations to the core method.
 #
 # %a{solargraph:removes-nil} drops nil from the element types
 # (Hash: value types) of the returned collection, which a signature like
