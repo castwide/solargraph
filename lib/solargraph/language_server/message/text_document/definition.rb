@@ -15,7 +15,7 @@ module Solargraph
 
           # @return [Array<Hash>, nil]
           def code_location
-            suggestions = host.definitions_at(params['textDocument']['uri'], @line, @column)
+            suggestions = host.definitions_at(params['textDocument']['uri'], @line, @column) || []
             # @sg-ignore Need to add nil check here
             return nil if suggestions.empty?
             # @sg-ignore Need to add nil check here
