@@ -13,13 +13,21 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :requires
 
+    attr_reader :extra_gem_names
+
     # @param directory [String]
     # @param requires [Array<String>]
-    def initialize directory, requires
+    # @param extra_gem_names [Array<String>]
+    def initialize directory, requires, extra_gem_names = []
       @repo = Repo.new(directory)
       @directory = directory
       @requires = requires
+      @extra_gem_names = extra_gem_names
       update!
+    end
+
+    def configured_gem_names
+      loaded_gems.map(&:name) + unloaded_gems.map(&:name) + extra_gem_names
     end
 
     def unresolved_requires
@@ -38,6 +46,10 @@ module Solargraph
       @unloaded_gems ||= Set.new
     end
 
+    def unfound_gem_names
+      @unfound_gem_names ||= []
+    end
+
     def loaded_stdlibs
       @loaded_stdlibs ||= Set.new
     end
@@ -53,10 +65,11 @@ module Solargraph
 
     # @param new_requires [Array<String>]
     # @return [Boolean]
-    def update new_requires
-      return false if requires == new_requires && !cache_changed?
+    def update new_requires, new_gem_names = []
+      return false if requires == new_requires && new_gem_names == extra_gem_names && !cache_changed?
 
       requires.replace new_requires
+      extra_gem_names.replace new_gem_names
       update!
       true
     end
@@ -81,7 +94,8 @@ module Solargraph
       @generation = generation + 1
       clear_all
       load_requires
-      load_rbs_collection
+      load_gem_names
+      # load_rbs_collection
     end
 
     def cache_changed?
@@ -96,7 +110,7 @@ module Solargraph
           bundler_require = true
         end
         if RbsMap::Stdlib.has?(path)
-          pins.concat Collection::Stdlib.load(path)
+          pins.concat Collection::Stdlib.load(path) if loaded_stdlibs.add?(path)
         else
           metagem = @repo.find_by_path(path)
           next unresolved_requires.push(path) unless metagem
@@ -109,6 +123,14 @@ module Solargraph
       @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
+    def load_gem_names
+      extra_gem_names.uniq.each do |gem|
+        metagem = @repo.find_by_name(gem)
+        next unfound_gem_names.push(gem) unless metagem
+        process_gem metagem
+      end
+    end
+
     def rbs_collection
       @rbs_collection ||= RbsCollection.new(rbs_collection_lockfile)
     end
@@ -119,30 +141,6 @@ module Solargraph
       lockfile if File.file?(lockfile)
     end
 
-    # Signature sets for the Ruby stdlib are part of a collection's lockfile
-    # but are not associated with any gem in the bundle, so the gem lookup in
-    # #load_rbs_collection never finds them. Load them from the rbs gem.
-    #
-    # @return [void]
-    def load_collection_stdlibs
-      rbs_collection.stdlib_names.each do |library|
-        next if loaded_stdlibs.include? library
-        next unless RbsMap::Stdlib.has? library
-        loaded_stdlibs.add library
-        pins.concat Collection::Stdlib.load(library)
-      end
-    end
-
-    def load_rbs_collection
-      load_collection_stdlibs
-      loaded_gems.each do |metagem|
-        rbsc_pins = rbs_collection.load(metagem)
-        # @todo Combining the pins is necessary because concatenating them
-        #   breaks deep type inference in some cases
-        pins.replace(RbsMap::Helpers.combine(pins, rbsc_pins)) unless rbsc_pins.empty?
-      end
-    end
-
     def clear_all
       pins.clear
       unresolved_requires.clear
@@ -150,21 +148,29 @@ module Solargraph
       loaded_gems.clear
       unloaded_gems.clear
       loaded_stdlibs.clear
+      unfound_gem_names.clear
     end
 
     def process_gem metagem
       return if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
 
-      if metagem.cacheable?
-        if Collection::Gem.cached?(metagem)
-          loaded_gems.add metagem
-          pins.concat Collection::Gem.load(metagem)
-        else
-          unloaded_gems.add metagem
-        end
+      if metagem.cacheable? && !Collection::Gem.cached?(metagem)
+        unloaded_gems.add metagem
       else
         loaded_gems.add metagem
-        pins.concat Collection::Gem.load(metagem)
+        base_pins = Collection::Gem.load(metagem)
+        rbsc_pins = rbs_collection.load(metagem)
+        if rbsc_pins.empty?
+          pins.concat base_pins
+        else
+          pins.concat RbsMap::Helpers.combine(base_pins, rbsc_pins)
+        end
+        # Gems might not declare stdlib dependencies as gem dependencies
+        # (e.g., `activesupport` requires `date`)
+        base_pins.select { |pin| pin.is_a?(Pin::Reference::Require) && RbsMap::Stdlib.has?(pin.name) }
+                 .each do |pin|
+                   pins.concat Collection::Stdlib.load(pin.name) if loaded_stdlibs.add?(pin.name)
+                 end
       end
       load_dependencies metagem
     end
