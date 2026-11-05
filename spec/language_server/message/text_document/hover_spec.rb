@@ -49,4 +49,40 @@ describe Solargraph::LanguageServer::Message::TextDocument::Hover do
     message.process
     expect(message.result[:contents][:value]).to eq("x\n\n`=~ String`")
   end
+
+  it 'infers the return type of the overload matching the argument type when two pins for one method are combined' do
+    namespace = Solargraph::Pin::Namespace.new(name: 'Widget', type: :class)
+    integer_pin = Solargraph::Pin::Method.new(closure: namespace, name: 'scan', scope: :instance, comments: %(
+@overload scan(count)
+  @param count [Integer]
+  @return [Symbol]
+    ))
+    float_pin = Solargraph::Pin::Method.new(closure: namespace, name: 'scan', scope: :instance, comments: %(
+@overload scan(count)
+  @param count [Float]
+  @return [String]
+    ))
+    combined = integer_pin.combine_with(float_pin)
+    # Stubbed rather than registered: started hosts left by other specs iterate
+    # the shared convention registry from their own threads.
+    allow(Solargraph::Convention).to receive(:for_local).and_wrap_original do |original, source_map|
+      original.call(source_map).merge(Solargraph::Environ.new(pins: [namespace, combined]))
+    end
+    host = Solargraph::LanguageServer::Host.new
+    host.open('file:///test.rb', 'x = Widget.new.scan(1.5)', 1)
+    host.catalog
+    message = described_class.new(host, {
+                                    'params' => {
+                                      'textDocument' => {
+                                        'uri' => 'file:///test.rb'
+                                      },
+                                      'position' => {
+                                        'line' => 0,
+                                        'character' => 0
+                                      }
+                                    }
+                                  })
+    message.process
+    expect(message.result[:contents][:value]).to eq("x\n\n`=~ String`")
+  end
 end
