@@ -122,6 +122,47 @@ describe Solargraph::LanguageServer::Host do
     expect(app2_map).not_to include('Folder1App')
   end
 
+  it 'never reports mapping progress over 100 percent' do
+    host = described_class.new
+    host.client_capabilities = { 'window' => { 'workDoneProgress' => true } }
+    library = instance_double Solargraph::Library
+    workspace = instance_double Solargraph::Workspace
+    source_map_hash = {}
+    allow(library).to receive_messages(
+      workspace: workspace,
+      source_map_hash: source_map_hash
+    )
+    # The workspace is scanned before mapping begins, but files can still be
+    # added while the mapping pass is running.
+    allow(workspace).to receive(:sources).and_return [1]
+    mapped = 0
+    allow(library).to receive(:next_map) do
+      mapped += 1
+      source_map_hash["test#{mapped}.rb"] = mapped
+      mapped <= 4
+    end
+    host.send :sync_library_map, library
+    output = host.flush
+    percentages = output.scan(/"percentage":(\d+)/).flatten.map(&:to_i)
+    expect(percentages).not_to be_empty
+    expect(percentages.all? { |pct| pct.between? 0, 100 }).to be true
+    expect(output).to include(%("kind":"end"))
+  end
+
+  it "sends a library's progress to the client" do
+    host = described_class.new
+    host.client_capabilities = { 'window' => { 'workDoneProgress' => true } }
+    progress = Solargraph::LanguageServer::Progress.new('Testing')
+    progress.begin('Started', 0)
+    Dir.mktmpdir do |dir|
+      host.prepare(dir)
+      library = host.libraries.first
+      library.changed
+      library.notify_observers progress
+    end
+    expect(host.flush).to include(%("method":"$/progress","params":{"token":"#{progress.uuid}"))
+  end
+
   it 'stops' do
     host = described_class.new
     host.stop
