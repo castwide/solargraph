@@ -11,15 +11,15 @@ describe Solargraph::Type do
   # Methods lib/ calls on a type that the Typedef classes do not define
   # yet. Each one ported shrinks this list.
   not_yet_on_typedef = %i[
-    == all_rooted? conforms_to? downcast_to_literal_if_possible eql? erased_variance
-    erased_version_of? hash nil_type? qualify reduce_class_type resolve_generics
+    == all_rooted? conforms_to? downcast_to_literal_if_possible duck_type? eql? erased_variance
+    erased_version_of? hash namespace nil_type? qualify reduce_class_type resolve_generics
     resolve_generics_from_context rooted_tags self_to_type selfy? tags to_rbs transform
     void? without_nil
   ].freeze
 
   # Contract methods ComplexType answers through method_missing, which
   # forwards them to its first member.
-  delegated_to_first_member = %i[erased_variance].freeze
+  delegated_to_first_member = %i[duck_type? erased_variance].freeze
 
   # The contract is written as @!method directives, so read it the way
   # Solargraph reads any source file.
