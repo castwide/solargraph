@@ -55,7 +55,6 @@ module Solargraph
         end
         # Register up front so expansion does not depend on declaration order.
         core_aware_environment(loader, fallback: environment).type_alias_decls.each_value do |entry|
-          # @sg-ignore Wrong argument type for Hash#[]=: value expected RBS::AST::Declarations::TypeAlias, received generic<D>
           type_alias_decls[entry.decl.name.to_s] = entry.decl
         end
         # @sg-ignore Need a downcast here
@@ -611,7 +610,8 @@ module Solargraph
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs,
                                        type_location: type_location, closure: pin)
                   end
-          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block, source: :rbs,
+          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block,
+                             block_required: overload.method_type.block&.required || false, source: :rbs,
                              type_location: type_location, closure: pin)
         end
       end
