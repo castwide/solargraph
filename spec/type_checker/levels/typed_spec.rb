@@ -443,5 +443,42 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'accepts a method body that only ever raises against any declared return type' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Boolean]
+          def matches?
+            raise 'Override me!'
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'accepts a method body that only ever aborts against any declared return type' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String]
+          def name
+            abort('Override me!')
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'accepts a method body that conditionally raises alongside a conforming return' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String]
+          def maybe cond
+            return 'x' if cond
+            raise 'nope'
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

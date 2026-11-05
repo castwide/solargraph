@@ -130,6 +130,18 @@ describe 'YARD type specifier list parsing' do
       expect(qualified.to_rbs).to eq('bool')
     end
 
+    # A `bot` type (e.g. the inferred return of a method that only
+    # raises) never reaches an actual namespace to qualify - #qualify
+    # must skip it rather than asking the ApiMap to resolve 'bot' as
+    # a namespace name.
+    it 'leaves a bot type unqualified' do
+      api_map = instance_double(Solargraph::ApiMap, qualify: nil)
+      type = Solargraph::ComplexType::BOT
+      qualified = type.qualify(api_map)
+      expect(qualified.tag).to eq('bot')
+      expect(api_map).not_to have_received(:qualify)
+    end
+
     # Parametrized Types
     #
     # In addition to basic types (like String or Array), YARD
