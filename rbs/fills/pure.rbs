@@ -1,0 +1,48 @@
+# Marks read-only core methods %a{pure}: they don't change the receiver
+# and return the same value for the same receiver and arguments, so
+# flow-sensitive typing can narrow a repeated call after a guard.
+#
+# Each 'def name: ...' has no overloads of its own, so it only adds its
+# annotations to the core method.
+#
+# Steep treats Array#[] and Hash#[] as pure, and ruby/rbs#3186 proposes
+# annotating them in core RBS.
+
+class Array[unchecked out E]
+  # reads an element or slice
+  %a{pure}
+  def []: ...
+
+  # reads the first element(s)
+  %a{pure}
+  def first: ...
+
+  # reads the last element(s)
+  %a{pure}
+  def last: ...
+end
+
+class Hash[unchecked out K, unchecked out V]
+  # reads a value; a default proc runs on a missing key, as Steep also
+  # accepts
+  %a{pure}
+  def []: ...
+
+  # reads a value or raises KeyError; a block form is never narrowed
+  %a{pure}
+  def fetch: ...
+end
+
+module RBS
+  module Unnamed
+    class ENVClass
+      # reads an environment variable; ENV[]= ends the narrowing
+      %a{pure}
+      def []: ...
+
+      # reads an environment variable or raises KeyError
+      %a{pure}
+      def fetch: ...
+    end
+  end
+end
