@@ -85,6 +85,13 @@ module Solargraph
         @prepend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
+      # @return [Hash{String => Array<Pin::Reference::IncludedMixin>}]
+      def included_mixin_references
+        # @param h [String]
+        # @param k [Array<Pin::Reference::IncludedMixin>]
+        @included_mixin_references ||= Hash.new { |h, k| h[k] = [] }
+      end
+
       # @return [Hash{String => Array<Pin::Reference::Superclass>}]
       def superclass_references
         # @param h [String]
@@ -107,7 +114,7 @@ module Solargraph
 
       attr_writer :pins, :pin_select_cache, :namespace_hash, :pin_class_hash, :path_pin_hash, :include_references,
                   :extend_references, :prepend_references, :superclass_references, :factory_parameter_hash,
-                  :macro_method_names, :macro_method_name_pins
+                  :macro_method_names, :macro_method_name_pins, :included_mixin_references
 
       # @return [self]
       def deep_clone
@@ -117,7 +124,7 @@ module Solargraph
           copy.macro_method_names = macro_method_names
           %i[
             namespace_hash pin_class_hash path_pin_hash include_references extend_references prepend_references
-            superclass_references macro_method_name_pins
+            superclass_references macro_method_name_pins included_mixin_references
           ].each do |sym|
             copy.send("#{sym}=", send(sym).clone)
             copy.send(sym)&.transform_values!(&:clone)
@@ -150,6 +157,7 @@ module Solargraph
         map_references Pin::Reference::Prepend, prepend_references
         map_references Pin::Reference::Extend, extend_references
         map_references Pin::Reference::Superclass, superclass_references
+        map_references Pin::Reference::IncludedMixin, included_mixin_references
         macro_pins = pins_by_class(Pin::Method).select { |pin| pin.macros.any? }
         @macro_method_names = macro_pins.to_set(&:name)
         @macro_method_name_pins = macro_pins.to_set.classify(&:name)
