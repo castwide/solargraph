@@ -643,7 +643,6 @@ module Solargraph
         else
           fqns = api_map.qualify(parts.first, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
-          # @sg-ignore Need to add nil check here
           path = fqns + ref[parts.fetch(0).length] + parts.fetch(-1)
         end
         pins = api_map.get_path_pins(path)
