@@ -29,7 +29,8 @@ module Solargraph
         super(**splat)
         @visibility = visibility
         @explicit = explicit
-        @block = block
+        @block_known = block != :undefined
+        @block = block if block.is_a?(Signature)
         @node = node
         @attribute = attribute
         @signatures = signatures
@@ -93,7 +94,7 @@ module Solargraph
       def reset_generated!
         super
         unless signatures.empty?
-          @block = :undefined
+          @block_known = false
           []
         end
         block&.reset_generated!
@@ -126,11 +127,10 @@ module Solargraph
         !block.nil?
       end
 
-      # @sg-ignore flow sensitive typing needs to remove literal with
-      #   this unless block
       # @return [Pin::Signature, nil]
       def block
-        return @block unless @block == :undefined
+        return @block if @block_known
+        @block_known = true
         @block = signatures.first&.block
       end
 
@@ -277,7 +277,7 @@ module Solargraph
           types = macro_names.flat_map do |mac|
             directive = api_map.named_macro(mac)
             next unless directive
-            macro = Solargraph::YardMap::Macro.from_directive(directive, self)
+            macro = Solargraph::YardMap::Macro.from_directive(directive.directive, self)
             expanded = macro.macro_object.expand([name, *parameter_names])
             docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
             docstring.tags(:return).flat_map(&:types)
@@ -465,7 +465,14 @@ module Solargraph
 
       protected
 
-      attr_writer :block, :signature_help, :documentation, :return_type
+      attr_writer :signature_help, :documentation, :return_type
+
+      # @param value [Pin::Signature, nil]
+      # @return [void]
+      def block= value
+        @block_known = true
+        @block = value
+      end
 
       def dodgy_visibility_source?
         # as of 2025-03-12, the RBS generator used for
@@ -769,7 +776,7 @@ module Solargraph
       def inline_rbs
         comments.lines
                 .select { |line| line.start_with?(': ') }
-                .map { |line| line[2..].strip }
+                .map { |line| line.delete_prefix(': ').strip }
                 .join("\n")
       end
     end

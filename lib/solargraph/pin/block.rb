@@ -5,10 +5,10 @@ module Solargraph
     class Block < Callable
       include Breakable
 
-      # @return [Parser::AST::Node]
+      # @return [Parser::AST::Node, nil]
       attr_reader :receiver
 
-      # @return [Parser::AST::Node]
+      # @return [Parser::AST::Node, nil]
       attr_reader :node
 
       # @param receiver [Parser::AST::Node, nil]
@@ -45,10 +45,11 @@ module Solargraph
       # @param parameters [::Array<Parameter>]
       #
       # @return [::Array<ComplexType>]
+      # @sg-ignore Need better handling of Enumerator#with_index
       def destructure_yield_types yield_types, parameters
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
-          yield_type = yield_types.first
+          yield_type = yield_types.fetch(0)
           return yield_type.all_params if yield_type.tuple? && yield_type.all_params.length == parameters.length
         end
         parameters.map.with_index { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
@@ -74,7 +75,7 @@ module Solargraph
           # block; 'parameters' is what the block accepts
           argument_types = destructure_yield_types(yield_types, parameters)
           param_types = argument_types.each_with_index.map do |arg_type, idx|
-            param = parameters[idx]
+            param = parameters.fetch(idx)
             param_type = chain.base.infer(api_map, param, locals)
             unless arg_type.nil?
               if arg_type.generic? && param_type.defined?

@@ -262,6 +262,26 @@ describe Solargraph::Pin::Parameter do
     expect(pin.return_type.tag).to eq('String')
   end
 
+  it 'detects unnamed @param tag types via an overridden method' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        # @param [String]
+        def foo(bar)
+        end
+      end
+
+      class Sub < Base
+        def foo(bar)
+          bar
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.source_map('test.rb').locals.find { |p| p.name == 'bar' && p.closure.path == 'Sub#foo' }
+    expect(pin.typify(api_map).tag).to eq('String')
+  end
+
   it 'infers return types from method reference tags' do
     source = Solargraph::Source.load_string(%(
       class Foo
