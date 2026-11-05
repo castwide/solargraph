@@ -495,7 +495,7 @@ module Solargraph
           )
           result.concat(library.locate_pins(location).select { |pin| pin.name == params['label'] })
         end
-        if params['data']['path']
+        if params['data']['path'] && !params['data']['path'].empty?
           result.concat library.path_pins(params['data']['path'])
           # @todo This exception is necessary because `Library#path_pins` does
           #   not perform a namespace method query, so the implicit `.new` pin
@@ -706,6 +706,15 @@ module Solargraph
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
+      # The Library observer callback that sends a library's progress to
+      # the client.
+      #
+      # @param progress [Solargraph::LanguageServer::Progress, nil]
+      # @return [void]
+      def update progress
+        progress&.send(self)
+      end
+
       private
 
       # @return [Array<Integer>]
@@ -736,7 +745,6 @@ module Solargraph
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
-        # @sg-ignore flow sensitive typing needs to handle constants
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
@@ -870,15 +878,23 @@ module Solargraph
       def sync_library_map library
         total = library.workspace.sources.length
         progress = Progress.new('Mapping workspace')
-        progress.begin "0/#{total} files", 0
-        progress.send self
-        while library.next_map
-          pct = ((library.source_map_hash.keys.length.to_f / total) * 100).to_i
-          progress.report "#{library.source_map_hash.keys.length}/#{total} files", pct
+        begin
+          progress.begin "0/#{total} files", 0
+          progress.send self
+          while library.next_map
+            mapped = library.source_map_hash.length
+            # The workspace can change while it's being mapped, e.g., when the
+            # user opens a file that wasn't included in the original scan. The
+            # progress should never report more than 100%.
+            total = mapped if mapped > total
+            # @sg-ignore Wrong argument type for Integer#/: arg_0 expected BigDecimal, received Integer
+            pct = total.zero? ? 100 : ((mapped * 100) / total).clamp(0, 100)
+            progress.report "#{mapped}/#{total} files", pct
+            progress.send self
+          end
+          progress.finish 'done'
           progress.send self
         end
-        progress.finish 'done'
-        progress.send self
       end
     end
   end

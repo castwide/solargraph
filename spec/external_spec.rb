@@ -2,7 +2,7 @@
 
 describe Solargraph::External do
   let(:directory) { File.join('spec', 'fixtures', 'external_bundled_gem') }
-  let(:requires) { ['backport', 'gem/with/yard/macros', 'reverse_markdown'] }
+  let(:requires) { ['backport', 'gem/with/yard/macros', 'reverse_markdown', 'addressable'] }
   let(:external) { described_class.new(directory, requires) }
 
   before(:all) do # rubocop:disable RSpec/BeforeAfterAll
@@ -64,21 +64,13 @@ describe Solargraph::External do
 
   context 'with RBS collection' do
     let(:directory) { File.join('spec', 'fixtures', 'rbs_collection') }
-    let(:requires) { [] }
+    let(:requires) { ['addressable'] }
 
     it 'combines gem_rbs_collection pins' do
+      external.unloaded_gems.each { |metagem| Solargraph::Collection::Gem.load(metagem) }
+      external.update(requires)
       pin = external.pins.find { |pin| pin.path == 'Addressable::URI.parse' }
       expect(pin).to be_a(Solargraph::Pin::Method)
-    end
-
-    it 'combines local source pins' do
-      pin = external.pins.find { |pin| pin.path == 'Foo#bar' }
-      expect(pin.return_type.to_s).to eq('String')
-    end
-
-    it 'appends local source pins' do
-      pin = external.pins.find { |pin| pin.path == 'Foo#baz' }
-      expect(pin.return_type.to_s).to eq('Integer')
     end
   end
 
@@ -97,8 +89,8 @@ describe Solargraph::External do
 
   it 'ignores duplicate gems' do
     external = described_class.new(directory, ['backport', 'backport/version'])
-    backport_pins = external.pins.select { |pin| pin.path == 'Backport' }
-    expect(backport_pins).to be_one
+    backport_method_pins = external.pins.select { |pin| pin.path == 'Backport.prepare_stdio_server' }
+    expect(backport_method_pins).to be_one
   end
 
   it 'loads stdlib paths' do

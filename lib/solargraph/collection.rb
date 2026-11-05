@@ -5,7 +5,6 @@ module Solargraph
     autoload :Base,   'solargraph/collection/base'
     autoload :Core,   'solargraph/collection/core'
     autoload :Gem,    'solargraph/collection/gem'
-    autoload :Rbs,    'solargraph/collection/rbs'
     autoload :Stdlib, 'solargraph/collection/stdlib'
 
     # A hash for storing pin collections in memory.
