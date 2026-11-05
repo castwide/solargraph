@@ -120,7 +120,7 @@ module Solargraph
       end
 
       def rest?
-        %i[restarg kwrestarg].include?(decl)
+        %i[restarg kwrestarg forward_args].include?(decl)
       end
 
       def block?

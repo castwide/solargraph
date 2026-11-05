@@ -186,6 +186,23 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.return_type.tag).to eq('String')
   end
 
+  it 'closes attribute directives attached to methods over their namespace' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        # @!attribute [r] bar
+        #   @return [String]
+        def bar; end
+
+        # @!attribute [r] baz
+        #   @return [String]
+        attr_reader :baz
+      end
+    ))
+    foo = map.first_pin('Foo')
+    attribute_pins = map.pins.select { |pin| pin.source == :yard_map && %w[bar baz].include?(pin.name) }
+    expect(attribute_pins.map(&:closure)).to eq([foo, foo])
+  end
+
   it 'processes private visibility directives attached to methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
