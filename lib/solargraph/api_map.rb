@@ -106,10 +106,20 @@ module Solargraph
       source_map_hash.each_value do |map|
         conventions_environ.merge map.conventions_environ
       end
+      addon = Plugin::Addon.new
+      Plugin.registry.each do |plugin|
+        panel ||= Plugin::Panel.new(source_maps: bench.source_maps, live_map: bench.live_map, gem_names: external.configured_gem_names)
+        added = plugin.new(panel).addon
+        addon.gem_names.concat added.gem_names
+        addon.pins.concat added.pins
+      rescue StandardError => e
+        Solargraph.logger.warn "#{plugin} failed - [#{e.class}] #{e.message}"
+      end
+
       # @todo Determine what needs to be sent to global conventions
       conventions_environ.merge Convention.for_global(nil)
-      external_changed = external.update(bench.external_requires.to_a + conventions_environ.requires)
-      store_changed = store.update(@@core_pins, external.pins.clone, conventions_environ.pins, iced_pins, live_pins) { process_macros }
+      external_changed = external.update(bench.external_requires.to_a + conventions_environ.requires, addon.gem_names)
+      store_changed = store.update(@@core_pins, external.pins.clone, conventions_environ.pins, addon.pins, iced_pins, live_pins) { process_macros }
       @cache.clear if external_changed || store_changed
       Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
@@ -769,6 +779,22 @@ module Solargraph
       methods
     end
 
+    # Mixins that +self.included+ hooks of the modules included in fqns apply
+    # to it, e.g. +base.extend ClassMethods+
+    #
+    # @param fqns [String]
+    # @param keywords [Array<::Symbol>] which of :include, :prepend and :extend
+    # @return [Array<String>]
+    def included_hook_mixins fqns, keywords
+      store.get_includes(fqns).flat_map do |ref|
+        included = dereference(ref)
+        next [] if included.nil?
+        store.get_included_mixins(ComplexType.parse(included).namespace)
+             .select { |mixin| keywords.include?(mixin.keyword) }
+             .filter_map { |mixin| dereference(mixin) }
+      end
+    end
+
     # @param fq_sub_tag [String]
     # @return [String, nil]
     def qualify_superclass fq_sub_tag
@@ -841,6 +867,9 @@ module Solargraph
             result.concat inner_get_methods_from_reference(in_tag, namespace_pin, rooted_type, scope, visibility, deep,
                                                            skip, true)
           end
+          included_hook_mixins(fqns, %i[include prepend]).each do |mixin|
+            result.concat inner_get_methods(mixin, scope, visibility, deep, skip, true)
+          end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
@@ -853,6 +882,9 @@ module Solargraph
           store.get_extends(fqns).reverse.each do |em|
             fqem = dereference(em)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
+          end
+          included_hook_mixins(fqns, [:extend]).each do |mixin|
+            result.concat inner_get_methods(mixin, :instance, visibility, deep, skip, true)
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
