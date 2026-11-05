@@ -3336,8 +3336,6 @@ describe Solargraph::SourceMap::Clip do
     end
 
     it 'types variables with names relative to a namespace' do
-      pending('relative type names in inline RBS resolve from the root')
-
       expect(infer_at(%(
         module Top
           class Bar; end
