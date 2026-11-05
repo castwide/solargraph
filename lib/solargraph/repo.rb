@@ -205,11 +205,10 @@ module Solargraph
     def find_installed_gemspec name, version
       # Gems installed to a local bundle path take precedence, mirroring the
       # resolution performed by Bundler at runtime.
-      found = find_gemspec_in_homes(local_gem_home_paths, name, version)
-      return found if found
-      match = Gem::Specification.find_all_by_name(name).find { |gs| gs.version.to_s == version }
-      return match if match
-      find_gemspec_in_homes(gem_home_paths, name, version)
+      find_gemspec_in_homes(local_gem_home_paths, name, version) ||
+        Gem::Specification.find_all_by_name(name).find { |gs| gs.version.to_s == version } ||
+        find_gemspec_in_homes(gem_home_paths, name, version) ||
+        find_gemspec_fallback(name, version)
     end
 
     # @param homes [Array<String>]
@@ -227,6 +226,12 @@ module Solargraph
         end
       end
       nil
+    end
+
+    def find_gemspec_fallback name, version
+      found = Gem::Specification.find_by_name(name)
+      Solargraph.logger.warn "Repo could not find #{name} #{version} in current environment, defaulting to #{name} #{found.version}"
+      found
     end
 
     # Find a gemspec file in a gem home, accounting for platform-specific
