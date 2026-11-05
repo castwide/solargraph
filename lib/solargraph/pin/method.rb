@@ -502,7 +502,7 @@ module Solargraph
       # @param signature_pins [Array<Pin::Signature>]
       #
       # @return [Array<Pin::Signature>]
-      def combine_signatures_by_arity(*signature_pins)
+      def combine_signatures_by_arity *signature_pins
         # @type [Hash{Array => Array<Pin::Signature>}]
         by_arity = {}
         signature_pins.each do |signature_pin|
