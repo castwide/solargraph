@@ -61,7 +61,7 @@ module Solargraph
             return
           end
           current = mutex.synchronize { queue.shift }
-          return if queue.include?(current)
+          return if current.nil? || queue.include?(current)
           begin
             host.diagnose current
           rescue InvalidOffsetError
