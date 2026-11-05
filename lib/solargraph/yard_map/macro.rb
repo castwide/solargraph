@@ -1,9 +1,26 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class YardMap
+  module YardMap
     class Macro
-      PROCESSABLE_DIRECTIVES = %w[method attribute parse].freeze
+      PROCESSABLE_DIRECTIVES = %w[method attribute parse scope].freeze
+
+      # Directives whose text is a value rather than a definition. The comments
+      # attached to the macro's call site belong to the objects the macro
+      # generates, but adding them to one of these directives would invalidate
+      # its content.
+      VALUE_DIRECTIVES = %w[parse scope].freeze
+
+      # Directives that define an object capable of owning @overload tags.
+      OVERLOAD_OWNERS = %w[method attribute parse].freeze
+
+      # The directive used to generate a pin for the @overload tags a macro
+      # declares without an owning @!method directive. Its arguments are
+      # represented by (...) so that any of the overloads remains valid.
+      OVERLOAD_METHOD_DIRECTIVE = '@!method $1(...)'
+
+      # An @overload tag that starts a line of a macro's text.
+      OVERLOAD_TAG_LINE = /^\s*@overload(\s|$)/
 
       class << self
         # @param directive [YARD::Tags::Directive]
@@ -73,13 +90,34 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def generate_pins_from chain, pin, source_map
         call_location = Solargraph::Location.from_node(chain.node)
+        return [] unless call_location
+
+        # A @!scope directive in a macro applies to the objects the macro
+        # generates after it, the same way it applies to the objects that
+        # follow it in a namespace. Its effect ends with the macro.
+        #
+        # @type [::Symbol, nil]
+        inherited_scope = nil
+
         # @param generated_pins [Array<Pin::Base>]
         generate_yardoc_from(chain, source_map).reduce([]) do |generated_pins, directive|
+          # @sg-ignore flow sensitive typing confuses this block variable with the #directive attr reader
+          if directive.tag.tag_name == 'scope'
+            inherited_scope = Directives::ScopeDirective.parse_scope(directive) || inherited_scope
+            next generated_pins
+          end
           directive_processor = YardMap::Directives.for(directive)
-          next generated_pins unless directive_processor && call_location
-          generated_pins + directive_processor.process_directive(
+          next generated_pins unless directive_processor
+          new_pins = directive_processor.process_directive(
             source_map.source, source_map.pins, call_location.range.start, call_location.range.start, directive
           )
+          if Directives::ScopeDirective.scopes_directive?(directive)
+            # A @!scope directive nested in another directive's text applies
+            # only to the object that directive defines.
+            scope = Directives::ScopeDirective.nested_scope(directive) || inherited_scope
+            Directives::ScopeDirective.apply_scope new_pins, scope
+          end
+          generated_pins + new_pins
         end
       end
 
@@ -96,17 +134,58 @@ module Solargraph
         code = source_map.source.code_for(chain.node)
         expanded_comment = macro_object.expand([name, *values], code)
                                        .gsub(/\n(?!@!|\s)/, "\n  ")
-        directives = Solargraph::Source.parse_docstring(expanded_comment).directives.select do |directive|
+        parsed_docstring = Solargraph::Source.parse_docstring(expanded_comment)
+        directives = parsed_docstring.directives.select do |directive|
           PROCESSABLE_DIRECTIVES.include?(directive.tag.tag_name)
         end
+        # A macro can document the methods it generates with bare @overload
+        # tags instead of wrapping them in a @!method directive. Those overloads
+        # have no pin to attach to and would otherwise be discarded, so
+        # generate the pin they describe.
+        if declares_overloads? && directives.none? { |directive| OVERLOAD_OWNERS.include?(directive.tag.tag_name) }
+          directives += generate_overload_directives([name, *values], code)
+        end
         directives.each do |directive|
+          next if VALUE_DIRECTIVES.include? directive.tag.tag_name
+
           # @sg-ignore chain.node is assumed to exist
           comments = source_map.source.comments_for(chain.node)
-          if comments&.length&.positive? && directive.tag.tag_name != 'parse'
+          if comments&.length&.positive?
             directive.tag.text += "\n#{comments}"
           end
         end
         directives
+      end
+
+      # True if the macro declares @overload tags. The tags are read from the
+      # macro's text and not from its parsed docstring because the indentation
+      # a macro's content ends up with can nest the tags inside other objects.
+      #
+      # @return [Boolean]
+      def declares_overloads?
+        text.match?(OVERLOAD_TAG_LINE)
+      end
+
+      # Generates the @!method directive for a macro's bare @overload tags. The
+      # pin takes the name the macro generates, that is, the pin a
+      # @!method $1(...) directive would produce, and keeps the overloads in
+      # its comments.
+      #
+      # The macro's unprocessed text is used here and not its macro data. The
+      # data is re-indented for @! directives, which flattens the nesting that
+      # keeps a @param attached to the @overload it describes.
+      #
+      # @param call_params [Array<String>]
+      # @param code [String]
+      # @return [Array<YARD::Tags::Directive>]
+      def generate_overload_directives call_params, code
+        body = text.each_line.map { |line| "  #{line}" }.join
+        expanded = YARD::CodeObjects::MacroObject.expand(
+          "#{OVERLOAD_METHOD_DIRECTIVE}\n#{body}", call_params, code
+        )
+        Solargraph::Source.parse_docstring(expanded).directives.select do |directive|
+          directive.tag.tag_name == 'method'
+        end
       end
     end
   end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class YardMap
+  module YardMap
     module Directives
       module AttributeDirective
         module_function
@@ -57,7 +57,10 @@ module Solargraph
         # @param [Position] position
         # @return [Pin::Closure]
         def closure_at pins, position
-          pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location&.range&.contain?(position) }.last
+          # Skip the method the directive documents; attributes belong to its namespace
+          pins.select do |pin|
+            pin.is_a?(Pin::Closure) && !pin.is_a?(Pin::Method) && pin.location&.range&.contain?(position)
+          end.last
         end
       end
     end
