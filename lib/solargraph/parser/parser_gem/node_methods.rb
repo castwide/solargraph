@@ -509,7 +509,6 @@ module Solargraph
                 result.concat reduce_to_value_nodes([node.children[0]])
                 ensure_body = node.children[1]
                 if include_explicit_returns && ensure_body.is_a?(::Parser::AST::Node)
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat explicit_return_values_from_compound_statement(ensure_body)
                 end
               elsif FUNCTION_VALUE.include?(node.type)
