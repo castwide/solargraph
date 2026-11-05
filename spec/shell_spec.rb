@@ -137,6 +137,50 @@ describe Solargraph::Shell do
     end
   end
 
+  context 'with a plugin configured in the workspace' do
+    let(:plugin_dir) { Dir.mktmpdir }
+
+    before do
+      File.write(File.join(plugin_dir, 'cache_probe_plugin.rb'), '')
+      File.write(File.join(temp_dir, '.solargraph.yml'), "plugins:\n  - cache_probe_plugin\n")
+      $LOAD_PATH.unshift plugin_dir
+    end
+
+    after do
+      $LOAD_PATH.delete plugin_dir
+      $LOADED_FEATURES.delete_if { |path| path.end_with?('cache_probe_plugin.rb') }
+      Solargraph::CacheDir.plugins.delete 'cache_probe_plugin'
+      Solargraph::CacheDir.plugin_requires.delete 'cache_probe_plugin'
+      FileUtils.rm_rf plugin_dir
+    end
+
+    it 'loads the plugin before caching' do
+      capture_both { described_class.new([], directory: temp_dir).cache('nonexistentgem8675309') }
+      expect($LOADED_FEATURES).to include(end_with('cache_probe_plugin.rb'))
+    end
+
+    it 'loads the plugin before uncaching' do
+      capture_both { described_class.new([], directory: temp_dir).uncache('nonexistentgem8675309') }
+      expect($LOADED_FEATURES).to include(end_with('cache_probe_plugin.rb'))
+    end
+
+    it 'loads the plugins it is given instead of the configured ones' do
+      capture_both { described_class.new([], directory: temp_dir, plugins: '').cache('nonexistentgem8675309') }
+      expect($LOADED_FEATURES).not_to include(end_with('cache_probe_plugin.rb'))
+    end
+
+    it 'loads and records the plugins it is given' do
+      capture_both { described_class.new([], directory: temp_dir, plugins: 'cache_probe_plugin').cache('nonexistentgem8675309') }
+      expect(Solargraph::CacheDir.plugin_requires).to include('cache_probe_plugin')
+    end
+
+    it 'warns about a plugin it cannot load' do
+      allow(Solargraph.logger).to receive(:warn)
+      capture_both { described_class.new([], directory: temp_dir, plugins: 'missing_probe_plugin').cache('nonexistentgem8675309') }
+      expect(Solargraph.logger).to have_received(:warn).with("Failed to load plugin 'missing_probe_plugin'")
+    end
+  end
+
   describe 'cache' do
     it 'caches a stdlib gem without erroring out' do
       skip 'WIP'
