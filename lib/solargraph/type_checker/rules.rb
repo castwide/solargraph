@@ -69,9 +69,9 @@ module Solargraph
       #
       # @todo 4: Missed nil violation
       #
-      # pending code fixes (277):
+      # pending code fixes (268):
       #
-      # @todo 281: Need to add nil check here
+      # @todo 272: Need to add nil check here
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
@@ -82,7 +82,7 @@ module Solargraph
       # @todo 21: flow sensitive typing needs to narrow down type with an if is_a? check
       # @todo 13: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
-      # @todo 7: need boolish support for ? methods
+      # @todo 6: need boolish support for ? methods
       # @todo 6: flow sensitive typing needs better handling of ||= on lvars
       # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 5: flow sensitive typing needs to handle 'raise if'
@@ -99,7 +99,6 @@ module Solargraph
       # @todo 2: Need to handle duck-typed method calls on union types
       # @todo 2: Need better handling of #compact
       # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
-      # @todo 2: missing flow-sensitive typing on hash keys
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle if foo = bar
       # @todo 1: flow sensitive typing needs to handle "if foo.nil?"

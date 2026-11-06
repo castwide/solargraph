@@ -88,7 +88,8 @@ module Solargraph
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
-              self.class.const_get('BlankRubocopFormatter')
+              # @sg-ignore
+              BlankRubocopFormatter
             else
               require_rubocop(config['version'])
               klass = Class.new(::RuboCop::Formatter::BaseFormatter)
@@ -100,7 +101,9 @@ module Solargraph
           #
           # @return [String, nil]
           def cop_list value
-            value = value.join(',') if value.is_a?(Array)
+            # @type [String]
+            # @sg-ignore Translate to something flow sensitive typing understands
+            value = value.join(',') if value.respond_to?(:join)
             return nil if value == '' || !value.is_a?(String)
             value
           end

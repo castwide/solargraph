@@ -15,7 +15,7 @@ class ProgressTestHost
     @messages.push [method, params]
   end
 
-  def send_request method, params
+  def send_request method, params, &block
     @messages.push [method, params]
   end
 
