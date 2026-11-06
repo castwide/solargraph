@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class YardMap
+  module YardMap
     class Mapper
       # Synthesizes the constructor pins YARD never generates for a
       # `Foo = Struct.new(:bar, :baz)` (or `class Foo < Struct.new(...)`)
