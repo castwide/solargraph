@@ -49,6 +49,25 @@ describe Solargraph::TypeChecker do
         .to eq(['Wrong argument type for #foo: str expected String, received Class<File>'])
     end
 
+    it 'reports a tuple whose elements are out of order' do
+      checker = type_checker(%(
+        class Foo
+          # @param x [Array(String, Integer)]
+          # @return [void]
+          def take(x); end
+
+          # @return [void]
+          def call_take
+            # @type [Array(Integer, String)]
+            y = [1, 'a']
+            take(y)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Wrong argument type for Foo#take: x expected Array(String, Integer), received Array(Integer, String)'])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]
