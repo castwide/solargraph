@@ -53,6 +53,8 @@ module Solargraph
     # @param inferred [ComplexType, ComplexType::UniqueType]
     # @param expected [ComplexType, ComplexType::UniqueType]
     def return_type_conforms_to? inferred, expected
+      # Callers of a method whose return includes void do not use the value
+      return true if expected.any?(&:void?)
       conforms_to?(inferred, expected, :return_type)
     end
 
@@ -161,15 +163,7 @@ module Solargraph
         elsif rules.must_tag_or_infer? && pin.probe(api_map).undefined?
           result.push Problem.new(pin.location, "Untyped method #{pin.path} could not be inferred")
         end
-      elsif rules.validate_tags? && !(pin.return_type.undefined? && declared.any?(&:void?))
-        # An ancestor tag that includes void alongside other types is
-        # documenting an optional return, not a contract every override
-        # commits to. When this pin has no @return tag of its own,
-        # Pin::Method#typify_from_super borrows that tag only as a
-        # best-effort guess for hover/completion; there is nothing to
-        # cross-check an inferred body against in that case. A
-        # single-type ancestor tag (no void) still validates normally.
-        #
+      elsif rules.validate_tags?
         # Attribute pins never have a node (attr_reader/attr_writer/attr_accessor are
         # synthesized, not parsed method bodies), but their inferred type is still
         # meaningful: #probe walks the backing ivar's assignments via infer_from_iv.
