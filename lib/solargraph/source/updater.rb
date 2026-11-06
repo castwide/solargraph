@@ -29,7 +29,7 @@ module Solargraph
 
       # @param text [String]
       # @param nullable [Boolean]
-      # @sg-ignore flow sensitive typing should support ivars
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1338
       # @return [String]
       def write text, nullable = false
         can_nullify = (nullable and changes.length == 1)

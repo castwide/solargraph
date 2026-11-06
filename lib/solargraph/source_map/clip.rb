@@ -13,7 +13,7 @@ module Solargraph
         @cursor = cursor
         closure_pin = closure
         if closure_pin.is_a?(Pin::Block) && closure_pin.receiver &&
-           # @sg-ignore Range.from_node can return nil for a node with no location, though a real receiver always has one
+           # @sg-ignore https://github.com/castwide/solargraph/pull/1258
            !Solargraph::Range.from_node(closure_pin.receiver)&.contain?(cursor.range.start)
           closure_pin.rebind(api_map)
         end
