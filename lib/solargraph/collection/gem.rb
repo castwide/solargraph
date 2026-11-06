@@ -44,7 +44,9 @@ module Solargraph
       end
 
       def without_yard
-        files = metagem.require_paths.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
+        dirs = metagem.require_paths +
+               Convention.extra_source_paths(root: metagem.full_path, require_paths: metagem.require_paths)
+        files = dirs.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }.uniq
         source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
 
         # Generating an ApiMap is necessary for processing macros
