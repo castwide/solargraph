@@ -65,6 +65,7 @@ module Solargraph
             # default, which is what ToMethod's `arg_type` uses to choose
             # `:kwoptarg` over `:kwarg` -- matching how a real keyword_init
             # Struct accepts any member being omitted.
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1480
             initializer.parameters = members.map { |m| keyword ? ["#{m}:", ''] : [m.to_s, nil] }
             initializer
           end
@@ -101,11 +102,6 @@ module Solargraph
 
           # @param path [String]
           # @return [Encoding]
-          # @sg-ignore Only Encoding.find("internal") can return nil, per
-          #   https://docs.ruby-lang.org/en/3.2/Encoding.html#method-c-find --
-          #   never a name parsed from a magic comment. The `||` below
-          #   covers it, but flow-sensitive typing doesn't narrow it out of
-          #   this method's inferred return type.
           def detect_encoding path
             first_lines = File.open(path, 'rb') { |f| [f.gets, f.gets] }.compact
             first_lines.shift if first_lines.first&.start_with?('#!')
