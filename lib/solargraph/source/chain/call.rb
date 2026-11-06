@@ -11,6 +11,9 @@ module Solargraph
       class Call < Chain::Link
         include Solargraph::Parser::NodeMethods
 
+        # Methods that keep the elements their block is truthy for
+        SELECTING_METHODS = %w[Array#select Array#filter Enumerable#select Enumerable#filter].freeze
+
         # @return [String]
         attr_reader :word
 
@@ -211,6 +214,7 @@ module Solargraph
               type, new_signature_pin = match_overload_type(ol, p, api_map, name_pin, locals, type, new_signature_pin)
               break if type.defined?
             end
+            type = narrow_selected(type, p, api_map)
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
@@ -421,6 +425,30 @@ module Solargraph
           block_pins = api_map.get_block_pins
           # @sg-ignore Need to add nil check here
           block_pins.find { |pin| pin.location.contain?(node_location) }
+        end
+
+        # Narrow the elements of `select` and `filter` results to the
+        # type their block's parameter has where the block is truthy,
+        # e.g. `children.select { |c| c.is_a?(Foo) }` is an `Array<Foo>`
+        #
+        # @param type [ComplexType]
+        # @param method_pin [Pin::Method]
+        # @param api_map [ApiMap]
+        # @return [ComplexType]
+        def narrow_selected type, method_pin, api_map
+          return type unless SELECTING_METHODS.include?(method_pin.path)
+          return type unless type.items.length == 1 && type.rooted_name == '::Array'
+
+          body = block&.node
+          return type unless body.is_a?(AST::Node)
+          return type if type.all_params.empty?
+
+          element_type = ComplexType.new(type.all_params.flat_map(&:items))
+          narrowed = Parser::FlowSensitiveTyping.narrowed_select_element_type(body, element_type, api_map)
+          return type if narrowed.undefined?
+
+          array_type = ComplexType::UniqueType.new('Array', [], [narrowed], rooted: true, parameters_type: :list)
+          ComplexType.new([array_type])
         end
 
         # @param api_map [ApiMap]
