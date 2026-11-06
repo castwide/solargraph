@@ -458,7 +458,6 @@ module Solargraph
             # An inherited self.new documented to return its own class
             # returns an instance of the receiver
             if pin.name == 'new' && pin.scope == :class && pin.namespace != rooted_tag &&
-               # @sg-ignore Need to add nil check here
                pin.return_type.qualify(self, *pin.gates).tag == pin.namespace
               next pin.proxy_with_signatures(ComplexType::SELF)
             end
