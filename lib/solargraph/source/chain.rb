@@ -47,6 +47,14 @@ module Solargraph
       # @return [::Array<Source::Chain::Link>]
       attr_reader :links
 
+      # Whether an inference in progress is resolving this pin's type
+      #
+      # @param pin [Pin::Base]
+      # @return [Boolean]
+      def self.inferring? pin
+        @@inference_stack.include?(pin) || @@inference_stack.include?(pin.identity)
+      end
+
       attr_reader :node
 
       # @param node [Parser::AST::Node, nil]

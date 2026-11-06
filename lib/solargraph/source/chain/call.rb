@@ -418,9 +418,25 @@ module Solargraph
           # @sg-ignore Need to add nil check here
           node_location = Solargraph::Location.from_node(block.node)
           return if node_location.nil?
-          block_pins = api_map.get_block_pins
-          # @sg-ignore Need to add nil check here
-          block_pins.find { |pin| pin.location.contain?(node_location) }
+
+          # block.node is the block's body, so enclosing blocks contain it too,
+          # and its first statement may be a closure of its own (a def), so
+          # take the innermost block containing the whole body: the one every
+          # other containing block also contains. A block's range includes its
+          # receiver, so in `a.map { }.each { }` the each block contains map's.
+          containing = api_map.get_block_pins.select { |pin| pin.location&.contain?(node_location) }
+          containing.find { |pin| containing.all? { |other| encloses?(other, pin) } }
+        end
+
+        # @param outer [Pin::Base]
+        # @param inner [Pin::Base]
+        # @return [Boolean]
+        def encloses? outer, inner
+          outer_location = outer.location
+          inner_location = inner.location
+          return false if outer_location.nil? || inner_location.nil?
+
+          outer_location.contain?(inner_location)
         end
 
         # @param api_map [ApiMap]
@@ -431,11 +447,16 @@ module Solargraph
           return nil unless with_block?
 
           block_pin = find_block_pin(api_map)
+          # The body needs the block's own parameters, which the caller's
+          # locals lack. Typifying one of them lands back here; skip the body.
+          params = block_pin&.parameters || []
+          return nil if params.any? { |param| Chain.inferring?(param) }
+
           # We use the block pin as the closure, as the parameters
           # here will only be defined inside the block itself and we
           # need to be able to see them
           # @sg-ignore Need to add nil check here
-          block.infer(api_map, block_pin, locals)
+          block.infer(api_map, block_pin, locals.union(params))
         end
 
         protected
