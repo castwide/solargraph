@@ -209,7 +209,7 @@ module Solargraph
         # like the left side of `a.is_a?(Foo) || a.zero?` on its right
         # side, have other presences
         downcasts = locals.select { |pin| pin.name == variable.name && pin.presence == truthy }
-        downcasts.each { |pin| type = ComplexType.new(pin.adjust_type(api_map, type).items) }
+        downcasts.each { |pin| type = pin.adjust_type(api_map, type) }
         type
       end
 
