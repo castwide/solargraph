@@ -69,9 +69,9 @@ module Solargraph
       #
       # @todo 4: Missed nil violation
       #
-      # pending code fixes (276):
+      # pending code fixes (277):
       #
-      # @todo 280: Need to add nil check here
+      # @todo 281: Need to add nil check here
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
@@ -99,8 +99,6 @@ module Solargraph
       # @todo 2: Need to handle duck-typed method calls on union types
       # @todo 2: Need better handling of #compact
       # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
-      # @todo 2: https://github.com/castwide/solargraph/issues/1227
-      # @todo 1: Need better handling of Enumerator#with_index
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle if foo = bar
       # @todo 1: flow sensitive typing needs to handle "if foo.nil?"
