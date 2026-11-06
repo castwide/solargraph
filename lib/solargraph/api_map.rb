@@ -457,8 +457,8 @@ module Solargraph
           result.map! do |pin|
             # An inherited self.new documented to return its own class
             # returns an instance of the receiver
-            if pin.name == 'new' && pin.scope == :class && pin.namespace != rooted_tag &&
-               pin.return_type.qualify(self, *pin.gates).tag == pin.namespace
+            if pin.name == 'new' && pin.scope == :class && pin.namespace != fqns &&
+               pin.return_type.qualify(self, *pin.gates).namespace == pin.namespace
               next pin.proxy_with_signatures(ComplexType::SELF)
             end
             next pin unless pin.path == 'Class#new'
