@@ -82,12 +82,15 @@ module Solargraph
                                                                                                 '  '))).lines.each do |l|
             if l.start_with?('  ')
               # Code block
-              sections.push DocSection.new(true) unless sections.last.code?
-            elsif sections.last.code?
+              # @sg-ignore https://github.com/apiology/solargraph/pull/175
+              sections.push DocSection.new(true) unless sections.empty? || sections.last.code?
+            # @sg-ignore https://github.com/apiology/solargraph/pull/175
+            elsif !sections.empty? && sections.last.code?
               # Regular documentation
               sections.push DocSection.new(false)
             end
-            sections.last.concat l
+            # @sg-ignore https://github.com/apiology/solargraph/pull/175
+            sections.last.concat l unless sections.empty?
           end
           sections.map(&:to_s).join.strip
         end

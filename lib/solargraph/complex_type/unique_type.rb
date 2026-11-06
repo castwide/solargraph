@@ -200,7 +200,7 @@ module Solargraph
           # @sg-ignore flow sensitive typing should support .class == .class
           @subtypes == other.subtypes &&
           # @sg-ignore flow sensitive typing should support .class == .class
-          @rooted == other.rooted? &&
+          rooted? == other.rooted? &&
           # @sg-ignore flow sensitive typing should support .class == .class
           @all_params == other.all_params &&
           # @sg-ignore flow sensitive typing should support .class == .class
@@ -283,7 +283,7 @@ module Solargraph
       end
 
       def hash
-        [self.class, @name, @key_types, @sub_types, @rooted, @all_params, @parameters_type].hash
+        [self.class, @name, @key_types, @sub_types, rooted?, @all_params, @parameters_type].hash
       end
 
       # @return [self]

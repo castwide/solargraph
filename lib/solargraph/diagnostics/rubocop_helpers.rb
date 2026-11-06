@@ -34,7 +34,7 @@ module Solargraph
       #
       # @param filename [String]
       # @param code [String]
-      # @return [Array(Array<String>, Array<String>)]
+      # @return [Array(Hash{Symbol => undefined}, Array<String>)]
       def generate_options filename, code
         args = ['-f', 'j', '--force-exclusion', filename]
         base_options = RuboCop::Options.new
