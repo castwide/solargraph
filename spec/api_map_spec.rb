@@ -819,6 +819,39 @@ describe Solargraph::ApiMap do
     expect(clip.infer.to_s).to eq('Symbol')
   end
 
+  context 'with top-level aliases and assertions on' do
+    around do |example|
+      old_asserts = ENV.fetch('SOLARGRAPH_ASSERTS', nil)
+      ENV['SOLARGRAPH_ASSERTS'] = 'on'
+      example.run
+    ensure
+      ENV['SOLARGRAPH_ASSERTS'] = old_asserts
+    end
+
+    it 'resolves an alias of a top-level method' do
+      source = Solargraph::Source.load_string(%(
+        instance_eval do
+          alias rake_namespace namespace
+
+          # @return [Symbol]
+          def namespace; :ns; end
+        end
+      ), 'test.rb')
+      api_map = described_class.new.map(source)
+
+      expect(api_map.get_method_stack('', 'rake_namespace').map(&:return_type).map(&:to_s)).to eq(['Symbol'])
+    end
+
+    it 'resolves an alias of a Kernel method' do
+      source = Solargraph::Source.load_string(%(
+        alias my_puts puts
+      ), 'test.rb')
+      api_map = described_class.new.map(source)
+
+      expect(api_map.get_method_stack('', 'my_puts').map(&:name)).to eq(['my_puts'])
+    end
+  end
+
   it 'resolves aliases in identically named deeply nested classes' do
     source = Solargraph::Source.load_string(%(
       module A
