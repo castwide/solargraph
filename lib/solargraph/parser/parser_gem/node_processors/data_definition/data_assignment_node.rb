@@ -27,13 +27,12 @@ module Solargraph
               # @param node [::Parser::AST::Node]
               def match? node
                 return false unless node&.type == :casgn
-                assignment_node = node.children[2]
-                return false if assignment_node.nil?
+                return false if node.children[2].nil?
 
-                data_node = if assignment_node.type == :block
-                              assignment_node.children.fetch(0)
+                data_node = if node.children[2].type == :block
+                              node.children[2].children[0]
                             else
-                              assignment_node
+                              node.children[2]
                             end
 
                 data_definition_node?(data_node)
@@ -41,9 +40,8 @@ module Solargraph
             end
 
             def class_name
-              namespace_node = node.children[0]
-              if namespace_node
-                Parser::NodeMethods.unpack_name(namespace_node) + "::#{node.children[1]}"
+              if node.children[0]
+                Parser::NodeMethods.unpack_name(node.children[0]) + "::#{node.children[1]}"
               else
                 node.children[1].to_s
               end
@@ -53,13 +51,10 @@ module Solargraph
 
             # @return [Parser::AST::Node]
             def data_node
-              assignment_node = node.children[2]
-              return nil if assignment_node.nil?
-
-              if assignment_node.type == :block
-                assignment_node.children[0]
+              if node.children[2].type == :block
+                node.children[2].children[0]
               else
-                assignment_node
+                node.children[2]
               end
             end
           end

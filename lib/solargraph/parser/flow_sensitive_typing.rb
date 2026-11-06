@@ -270,15 +270,12 @@ module Solargraph
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
-        # @sg-ignore flow sensitive typing needs better guard support
-        if call_receiver&.type == :send && call_receiver.children.fetch(0).nil? && call_receiver.children.fetch(1).is_a?(Symbol)
-          # @sg-ignore flow sensitive typing needs better guard support
-          variable_name = call_receiver.children.fetch(1).to_s
+        if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
+          variable_name = call_receiver.children[1].to_s
         end
         # or like this:
         # (lvar :repr)
-        # @sg-ignore flow sensitive typing needs better guard support
-        variable_name = call_receiver.children.fetch(0).to_s if %i[lvar ivar].include?(call_receiver&.type)
+        variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
         return unless variable_name
 
         [call_arg, variable_name]
