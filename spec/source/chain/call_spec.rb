@@ -930,6 +930,20 @@ describe Solargraph::Source::Chain::Call do
     expect(api_map.clip_at('test.rb', [4, 8]).infer.rooted_tags).to eq('::Array<::String>')
   end
 
+  it 'narrows select results by each class check joined with &&' do
+    source = Solargraph::Source.load_string(%(
+      # @param items [Array<String, Integer, Symbol>]
+      def foo items
+        a = items.select { |i| i.is_a?(Comparable) && i.is_a?(String) }
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.rooted_tags).to eq('::Array<::String>')
+  end
+
   it 'keeps select element types when the block does more than check its parameter' do
     source = Solargraph::Source.load_string(%(
       # @param items [Array<String, Integer>]
