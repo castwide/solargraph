@@ -149,6 +149,32 @@ describe Solargraph::Source do
     expect(refs.map { |r| source.at(r.range) }).to eq(['[]='])
   end
 
+  it 'ignores a later literal when the operator call does not spell its name' do
+    source = described_class.load_string(%(
+      class Foo
+        def [](index)
+        end
+      end
+      Foo.new[0]
+      arr = []
+    ))
+    refs = source.references('[]')
+    expect(refs.map { |r| r.range.start.line }).to eq([2])
+  end
+
+  it 'ignores a later match when the setter call does not spell its name' do
+    source = described_class.load_string(%(
+      class Foo
+        def []=(index, value)
+        end
+      end
+      Foo.new[0] = 1
+      same = [] == []
+    ))
+    refs = source.references('[]=')
+    expect(refs.map { |r| r.range.start.line }).to eq([2])
+  end
+
   it 'allows escape sequences incompatible with UTF-8' do
     source = described_class.new('
       x = " Un bUen café \x92"
