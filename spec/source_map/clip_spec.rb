@@ -822,6 +822,25 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('Class')
   end
 
+  it 'infers the receiver from an inherited <Class>.new that returns its own class' do
+    source = Solargraph::Source.load_string(%(
+      module Outer
+        class Base
+          # @return [Base]
+          def self.new(name); end
+        end
+
+        class Sub < Base; end
+      end
+      value = Outer::Sub.new('x')
+      value
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [10, 6])
+    expect(clip.infer.tag).to eq('Outer::Sub')
+  end
+
   it 'infers undefined from Class#new' do
     source = Solargraph::Source.load_string(%(
       cls = Class.new
