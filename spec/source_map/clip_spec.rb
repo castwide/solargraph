@@ -841,6 +841,40 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('Outer::Sub')
   end
 
+  it 'keeps another documented type from an inherited factory .new' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        # @return [String]
+        def self.new; end
+      end
+
+      class Sub < Base; end
+      value = Sub.new
+      value
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [8, 6])
+    expect(clip.infer.tag).to eq('String')
+  end
+
+  it 'intentionally infers the subclass from an inherited .new documented to return the base class' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        # @return [Base]
+        def self.new; end
+      end
+
+      class Sub < Base; end
+      value = Sub.new
+      value
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [8, 6])
+    expect(clip.infer.tag).to eq('Sub')
+  end
+
   it 'infers undefined from Class#new' do
     source = Solargraph::Source.load_string(%(
       cls = Class.new
