@@ -41,6 +41,13 @@ describe Solargraph::Diagnostics::Rubocop do
     end
   end
 
+  it 'lints only the given code when the source has no filename' do
+    source = Solargraph::Source.load_string("x = 1\n")
+    results = described_class.new.diagnose(source, nil)
+
+    expect(results.map { |r| r[:code] }).to eq(['Lint/UselessAssignment'])
+  end
+
   it 'calculates ranges' do
     file = File.realpath(File.join('spec', 'fixtures', 'rubocop-unused-variable-error', 'app.rb'))
     source = Solargraph::Source.load(file)

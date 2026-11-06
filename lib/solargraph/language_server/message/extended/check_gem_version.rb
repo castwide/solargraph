@@ -56,9 +56,10 @@ module Solargraph
                 host.show_message "The Solargraph gem is up to date (version #{Solargraph::VERSION})."
               end
             elsif fetched?
-              Solargraph::Logging.logger.warn error
-              # @sg-ignore Need to add nil check here
-              host.show_message(error, MessageTypes::ERROR) if params['verbose']
+              # fetch_available sets an error whenever it finds no version
+              message = error
+              Solargraph::Logging.logger.warn message
+              host.show_message(message, MessageTypes::ERROR) if message && params['verbose']
             end
             set_result({
                          installed: current,
@@ -72,27 +73,26 @@ module Solargraph
           attr_reader :current
 
           # @return [Gem::Version]
-          # @sg-ignore Need to add nil check here
           def available
-            if !@available && !@fetched
+            @available ||= begin
               @fetched = true
-              begin
-                @available ||= begin
-                  # @type [Gem::Dependency, nil]
-                  tuple = CheckGemVersion.fetcher.search_for_dependency(Gem::Dependency.new('solargraph')).flatten.first
-                  if tuple.nil?
-                    @error = 'An error occurred fetching the gem data'
-                    GEM_ZERO
-                  else
-                    tuple.version
-                  end
-                end
-              rescue Errno::EADDRNOTAVAIL => e
-                @error = "Unable to connect to gem source: #{e.message}"
-                GEM_ZERO
-              end
+              fetch_available
             end
-            @available
+          end
+
+          # @return [Gem::Version]
+          def fetch_available
+            # @type [Gem::Dependency, nil]
+            tuple = CheckGemVersion.fetcher.search_for_dependency(Gem::Dependency.new('solargraph')).flatten.first
+            if tuple.nil?
+              @error = 'An error occurred fetching the gem data'
+              GEM_ZERO
+            else
+              tuple.version
+            end
+          rescue Errno::EADDRNOTAVAIL => e
+            @error = "Unable to connect to gem source: #{e.message}"
+            GEM_ZERO
           end
 
           def fetched?
