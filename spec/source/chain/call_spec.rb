@@ -948,6 +948,22 @@ describe Solargraph::Source::Chain::Call do
     expect(api_map.clip_at('test.rb', [7, 8]).infer.rooted_tags).to eq('::Array<::String, ::Integer>')
   end
 
+  it 'keeps select element types when the block checks classes with ||' do
+    source = Solargraph::Source.load_string(%(
+      # @param items [Array<String, Integer>]
+      def foo items
+        a = items.select { |i| i.is_a?(String) || i.is_a?(Symbol) }
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    # Flow-sensitive typing does not narrow where an `||` is truthy,
+    # in an `if` condition either
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.rooted_tags).to eq('::Array<::String, ::Integer>')
+  end
+
   it 'does not narrow select by a check on an enclosing block parameter' do
     source = Solargraph::Source.load_string(%(
       # @param items [Array<String, Integer>]
