@@ -662,7 +662,6 @@ module Solargraph
         changed
         notify_observers @cache_progress
       end
-      # @sg-ignore Unresolved call to report
       @cache_progress.report(message, pct)
       changed
       notify_observers @cache_progress
