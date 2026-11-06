@@ -101,9 +101,9 @@ module Solargraph
           last_line = o.strip.split("\n").last
           raise TypeError, "Unexpected bundle data from #{directory}" unless last_line
 
-          # @sg-ignore flow sensitive typing needs to handle 'raise if'
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           json = JSON.parse(last_line, symbolize_names: true)
-          # @sg-ignore double-splat argument is checked as a keyword named after the variable
+          # @sg-ignore https://github.com/apiology/solargraph/pull/63
           @metagems = bundle_array(json[:metagems]).map { |data| Metagem.new(**data) }
           @bundled_group_map = bundle_hash(json[:groups]).transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
         else
