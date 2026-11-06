@@ -44,9 +44,10 @@ describe Protocol do
   end
 
   before do
-    version = instance_double(Gem::Version, version: Gem::Version.new('1.0.0'))
+    tuple = Gem::NameTuple.new('solargraph', Gem::Version.new('1.0.0'), 'ruby')
+    source = Gem::Source.new('https://rubygems.org/')
     Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher =
-      instance_double(Gem::SpecFetcher, search_for_dependency: [version])
+      instance_double(Gem::SpecFetcher, search_for_dependency: [[[tuple, source]], []])
   end
 
   after do

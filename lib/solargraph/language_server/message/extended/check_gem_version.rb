@@ -57,7 +57,7 @@ module Solargraph
               end
             elsif fetched?
               # fetch_available sets an error whenever it finds no version
-              message = error
+              message = fetch_error
               Solargraph::Logging.logger.warn message
               host.show_message(message, MessageTypes::ERROR) if message && params['verbose']
             end
@@ -88,10 +88,10 @@ module Solargraph
             return tuple.version if tuple
 
             problem = found.grep(Gem::SourceFetchProblem).first
-            @error = problem ? "Unable to connect to gem source: #{problem.wordy}" : 'An error occurred fetching the gem data'
+            @fetch_error = problem ? "Unable to connect to gem source: #{problem.wordy}" : 'An error occurred fetching the gem data'
             GEM_ZERO
           rescue Errno::EADDRNOTAVAIL => e
-            @error = "Unable to connect to gem source: #{e.message}"
+            @fetch_error = "Unable to connect to gem source: #{e.message}"
             GEM_ZERO
           end
 
@@ -100,7 +100,7 @@ module Solargraph
           end
 
           # @return [String, nil]
-          attr_reader :error
+          attr_reader :fetch_error
         end
       end
     end

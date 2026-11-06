@@ -45,6 +45,7 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
     message = described_class.new(host, { 'params' => { 'verbose' => true } })
     message.process
     expect(message.result).to eq({ installed: Gem::Version.new(Solargraph::VERSION), available: Gem::Version.new('0.0.0') })
+    expect(message.error).to be_nil
     expect(host.flush).to include('Unable to connect to gem source')
   end
 
