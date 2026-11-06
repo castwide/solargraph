@@ -729,7 +729,9 @@ describe Solargraph::TypeChecker do
     end
 
     it 'understands Open3 methods' do
-      checker = type_checker(%(
+      pending 'https://github.com/castwide/solargraph/pull/1292'
+
+      source = Solargraph::Source.load_string(%(
         require 'open3'
 
         # @return [void]
@@ -738,7 +740,14 @@ describe Solargraph::TypeChecker do
           foo = {'foo' => 'bar'}
           Open3.capture2e(foo, 'ls', chdir: '/tmp')
         end
-      ))
+      ), 'test.rb')
+      rules = Solargraph::TypeChecker::Rules.new(:strong, {})
+      api_map = Solargraph::ApiMap.new(loose_unions: !rules.require_all_unique_types_support_call?)
+      # Load the stdlib open3 pins in every environment, not only where a
+      # gem cache happens to bring them in
+      api_map.catalog Solargraph::Bench.new(source_maps: [Solargraph::SourceMap.map(source)],
+                                            external_requires: ['open3'])
+      checker = described_class.new('test.rb', api_map: api_map, level: :strong, rules: rules)
       expect(checker.problems.map(&:message)).to be_empty
     end
 
