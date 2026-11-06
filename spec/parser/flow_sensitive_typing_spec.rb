@@ -1025,4 +1025,139 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('ReproBase')
   end
+
+  it 'narrows the other side of a self.class == other.class guard' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def eql?(other)
+          self.class == other.class &&
+            name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 20])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'narrows the other side of a self.class == other.class guard past a return-unless' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def ==(other)
+          return false unless self.class == other.class
+          name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 18])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'leaves the declared type in place without a self.class == other.class guard' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def eql?(other)
+          name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 18])
+    expect(clip.infer.to_s).to eq('Object')
+  end
+
+  it 'does not narrow other via self.class == other.class in a class method' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def self.same?(other)
+          self.class == other.class &&
+            name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 20])
+    expect(clip.infer.to_s).to eq('Object')
+  end
+
+  it 'narrows the other side when self is the right-hand side of the class guard' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def eql?(other)
+          other.class == self.class &&
+            name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 20])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'narrows the argument of an instance_of?(other.class) guard' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def eql?(other)
+          instance_of?(other.class) &&
+            name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 20])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'narrows the argument of a self.instance_of?(other.class) guard' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def eql?(other)
+          self.instance_of?(other.class) &&
+            name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 20])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'does not narrow via other.instance_of?(foo.class)' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        # @param foo [Object]
+        def eql?(other, foo)
+          other.instance_of?(foo.class) &&
+            name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 20])
+    expect(clip.infer.to_s).to eq('Object')
+  end
+
+  it 'narrows the receiver of an other.instance_of?(self.class) guard' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def eql?(other)
+          other.instance_of?(self.class) &&
+            name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 20])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
 end
