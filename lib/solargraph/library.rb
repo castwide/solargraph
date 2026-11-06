@@ -483,19 +483,13 @@ module Solargraph
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       return false if src.nil?
       Logging.logger.debug "Mapping #{src.filename}"
-      # @sg-ignore OK if src.filename is nil
-      mutex.synchronize { source_map_hash[src.filename] = Solargraph::SourceMap.map(src) }
-      # @sg-ignore OK if src.filename is nil
-      source_map_hash[src.filename]
+      mutex.synchronize { source_map_hash[src.filename!] = Solargraph::SourceMap.map(src) }
     end
 
     # @return [self]
     def map!
       workspace.sources.each do |src|
-        # @sg-ignore OK if src.filename is nil
-        source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        # @sg-ignore OK if src.filename is nil
-        find_external_requires source_map_hash[src.filename]
+        find_external_requires(source_map_hash[src.filename!] = Solargraph::SourceMap.map(src))
       end
       self
     end
@@ -524,8 +518,7 @@ module Solargraph
       new_set = source_map.requires.to_set(&:name)
       _filenames = nil
       filenames = -> { _filenames ||= workspace.filenames.to_set }
-      # @sg-ignore OK if source_map.filename is nil
-      source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
+      source_map_external_require_hash[source_map.source.filename!] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
           full = File.join(base, path)
           filenames[].include?(full) or filenames[].include?(full << '.rb')
@@ -573,8 +566,7 @@ module Solargraph
       return unless source
       # @sg-ignore Wrong argument type for Solargraph::Workspace#has_file?: filename expected String, received String, nil
       return unless @current == source || workspace.has_file?(source.filename)
-      # @sg-ignore OK if source.filename is nil
-      source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
+      source_map_hash[source.filename!] = Solargraph::SourceMap.map(source)
     end
 
     # @return [Set<Gem::Specification>]
