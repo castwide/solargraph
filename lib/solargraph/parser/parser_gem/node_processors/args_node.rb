@@ -23,6 +23,9 @@ module Solargraph
                     # @sg-ignore Need to add nil check here
                     presence: callable.location.range,
                     decl: get_decl(u),
+                    # a default value is assigned only when the caller
+                    # omits the arg, so it cannot override @param
+                    definite: false,
                     source: :parser
                   )
                   callable.parameters.push locals.last

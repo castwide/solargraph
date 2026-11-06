@@ -8,7 +8,20 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            process_children
+            # the rhs of `a || b` only executes if `a` is falsy, so
+            # any assignment there isn't guaranteed to have executed
+            lhs, rhs = node.children
+            NodeProcessor.process(lhs, region, pins, locals, ivars)
+            rhs_cs = Solargraph::Pin::CompoundStatement.new(
+              location: get_node_location(rhs),
+              closure: region.closure,
+              compound_statement: region.compound_statement,
+              conditional: true,
+              node: rhs,
+              source: :parser
+            )
+            pins.push rhs_cs
+            NodeProcessor.process(rhs, region.update(compound_statement: rhs_cs), pins, locals, ivars)
 
             FlowSensitiveTyping.new(locals,
                                     ivars,

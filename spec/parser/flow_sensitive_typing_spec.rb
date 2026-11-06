@@ -314,6 +314,22 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Foo')
   end
 
+  it 'keeps a definite reassignment visible inside a subsequent if-guard' do
+    source = Solargraph::Source.load_string(%(
+      def m
+        x = nil
+        x = 1
+        if x
+          y = x * 2
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 14])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+  end
+
   it 'skips is_a? without a receiver' do
     source = Solargraph::Source.load_string(%(
     if is_a? Object
@@ -899,6 +915,88 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean')
   end
 
+  it 'does not extend a ||= body guard to a variable other than the assignment target' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @param qux [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil, qux: nil)
+          baz ||= begin
+            return if qux.nil?
+            qux
+          end
+          qux
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    # skipping the body means baz was truthy, which says nothing
+    # about qux, so the guard does not survive the ||=
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
+  it 'keeps types a ||= body guard does not rule out on the path that skipped the body' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param x [String, Integer, nil]
+        # @return [void]
+        def bar(x)
+          x ||= begin
+            return if x.is_a?(String)
+            1
+          end
+          x
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    # skipping the body means x was truthy, which says nothing about
+    # whether it was a String, so the guard does not survive the ||=
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.items.map(&:rooted_tag)).to include('::String', '::Integer')
+  end
+
+  it 'extends a ||= body guard that leaves unless the target is truthy past the ||=' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [String, nil]
+      def bar(x)
+        x ||= begin
+          return unless x
+          1
+        end
+        x
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'extends a ||= body guard whose else branch leaves when the target is nil past the ||=' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [String, nil]
+      def bar(x)
+        x ||= begin
+          if !x.nil?
+            1
+          else
+            return
+          end
+        end
+        x
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [10, 8])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
   it 'uses .nil? in a return if() in a try / rescue / ensure to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -926,10 +1024,9 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [8, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
 
+    # the rescue clause can run before the guard did
     clip = api_map.clip_at('test.rb', [10, 12])
-    expect(clip.infer.rooted_tags).to eq('::Boolean')
-
-    pending('better scoping of return if in begin/rescue/ensure')
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
 
     clip = api_map.clip_at('test.rb', [12, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
@@ -1024,5 +1121,277 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
+  it 'narrows a local assigned in a while condition inside the loop body' do
+    source = Solargraph::Source.load_string(%(
+      # @return [String, nil]
+      def nxt; end
+
+      def check
+        while (line = nxt)
+          line
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('String')
+  end
+
+  it 'uses only the latest straight-line assignment of a local' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        # @type [Integer, nil]
+        value = nil
+        value
+        value = 'a'
+        value
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.to_s).to eq('Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 8])
+    expect(clip.infer.to_s).to eq('String')
+  end
+
+  it 'uses a reassignment inside a block for the rest of the block' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        # @type [Integer, nil]
+        value = nil
+        [1].each do |i|
+          value = 'a'
+          value
+        end
+        value
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [8, 8])
+    expect(clip.infer.to_s).to eq('Integer, nil')
+  end
+
+  it 'keeps earlier assignments in a rescue clause after a reassignment in its begin body' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        value = 1
+        begin
+          value = 'a'
+          value
+        rescue StandardError
+          value
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.to_s).to eq('Integer, String')
+  end
+
+  it 'uses the rescued exception type for a reused variable name' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        error = 'a'
+        begin
+          error
+        rescue StandardError => error
+          error
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('StandardError')
+  end
+
+  it 'uses the earlier assignment in the condition of a modifier if' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        name = 'a'
+        name = nil if name.empty?
+        name
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 22])
+    expect(clip.infer.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.to_s).to eq('String, nil')
+  end
+
+  it 'keeps earlier assignments in an ensure clause after a reassignment in its begin body' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        value = 1
+        begin
+          value = 'a'
+        ensure
+          value
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('Integer, String')
+  end
+
+  it 'keeps earlier values after a rescue that binds the same variable name' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        error = 'a'
+        begin
+          error
+        rescue StandardError => error
+          error
+        end
+        error
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [8, 8])
+    expect(clip.infer.to_s).not_to eq('StandardError')
+  end
+
+  it 'uses the earlier value inside a multiple assignment that reassigns it in a block' do
+    source = Solargraph::Source.load_string(%(
+      # @param s [String, nil]
+      # @return [Array(Integer, String, nil)]
+      def step s; [1, s]; end
+
+      def run
+        # @type [String, nil]
+        acc = nil
+        [1, 2].each do
+          _n, acc = step(acc)
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 26])
+    expect(clip.infer.to_s).to eq('String, nil')
+  end
+
+  it 'unions the reassignment in an if clause with the guarded path that skipped it' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Integer, nil]
+      def check x
+        if x.nil?
+          x = 'a'
+        end
+        x
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 8])
+    expect(clip.infer.to_s).to eq('Integer, String')
+  end
+
+  it 'unions the reassignment in an unless clause with the guarded path that skipped it' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Integer, nil]
+      def check x
+        unless x
+          x = 'a'
+        end
+        x
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 8])
+    expect(clip.infer.to_s).to eq('Integer, String')
+  end
+
+  it 'unions an instance variable reassigned in a guarded clause with the path that skipped it' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def setup
+          # @type [Integer, nil]
+          @v = nil
+        end
+
+        def check
+          if @v.nil?
+            @v = 'a'
+          end
+          @v
+        end
+
+        def check_unless
+          unless @v
+            @v = 'a'
+          end
+          @v
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [11, 10]).infer.to_s).to eq('Integer, String')
+    expect(api_map.clip_at('test.rb', [18, 10]).infer.to_s).to eq('Integer, String')
+  end
+
+  it 'drops a guarded clause reassignment once a later assignment replaces it' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Integer, nil]
+      def check x
+        if x.nil?
+          x = 'a'
+        end
+        x = 1.0
+        x
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Float')
+  end
+
+  it 'narrows an instance variable first assigned in a guarded clause past the if' do
+    source = Solargraph::Source.load_string(%(
+      class Prog; end
+
+      class Foo
+        def start
+          unless @prog
+            @prog = Prog.new
+          end
+          @prog
+        end
+
+        def stop
+          @prog = nil
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.to_s).to eq('Prog')
+  end
+
+  it 'keeps a nil assigned in the guarded clause of an instance variable past the if' do
+    source = Solargraph::Source.load_string(%(
+      class Prog; end
+
+      class Foo
+        # @return [Prog, nil]
+        def make; end
+
+        def start
+          unless @prog
+            @prog = make
+          end
+          @prog
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [11, 10])
+    expect(clip.infer.to_s).to eq('Prog, nil')
   end
 end

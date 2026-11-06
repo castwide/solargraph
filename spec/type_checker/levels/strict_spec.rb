@@ -937,7 +937,7 @@ describe Solargraph::TypeChecker do
     end
 
     it 'Uses flow scope to specialize understanding of cvar types' do
-      pending 'better cvar support'
+      pending 'skipping the clause narrows nil out of a nil-only @blah, leaving undefined that hides the String'
 
       checker = type_checker(%(
         class Bar

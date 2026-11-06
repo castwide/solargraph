@@ -17,14 +17,56 @@ module Solargraph
           ivars = api_map.get_instance_variable_pins(name_pin.context.namespace, name_pin.context.scope).select do |p|
             p.name == word
           end
-          out = api_map.var_at_location(ivars, word, name_pin, location)
-          [out].compact
+          api_map.var_pins_at_location(visible_pins(ivars, name_pin), word, name_pin, location)
         end
 
         private
 
         # @return [Location, nil]
         attr_reader :location
+
+        # The pins in +ivars+ whose assignment this read can see: for
+        # `@x = value`, just that assignment; when an earlier
+        # assignment dominates the read, the latest such assignment
+        # plus the pins starting between it and the read; otherwise
+        # every pin in +ivars+.
+        #
+        # @param ivars [::Array<Pin::InstanceVariable>]
+        # @param closure [Pin::Closure]
+        # @return [::Array<Pin::InstanceVariable>]
+        def visible_pins ivars, closure
+          here = location
+          return ivars unless here
+
+          # `@x = value` evaluates to value, which its own pin types
+          own = ivars.find { |pin| pin.presence.nil? && pin.location == here } if assignment_with_value?
+          return [own] if own
+
+          dominating = ivars.select { |pin| pin.dominates?(closure, here) }
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1399
+          latest = dominating.max_by { |pin| pin.location.range.start }
+          return ivars unless latest
+
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1399
+          after = latest.location.range.start
+          between = ivars.select do |pin|
+            start = pin.presence&.start || pin.location&.range&.start
+            pin.location&.filename == here.filename && start &&
+              (start <=> after) == 1 && (start <=> here.range.start) == -1
+          end
+          [latest] + between
+        end
+
+        # True for `@x = value`; false for a read, or for the bare
+        # target of `@x ||= value`, which names the previous value
+        #
+        # @return [Boolean]
+        def assignment_with_value?
+          node = @node
+          return false unless node
+
+          node.type == :ivasgn && node.children.length == 2
+        end
       end
     end
   end

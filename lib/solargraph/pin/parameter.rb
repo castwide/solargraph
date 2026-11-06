@@ -181,7 +181,6 @@ module Solargraph
           @return_type = ComplexType::UNDEFINED
           found = param_tag
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? || found.types.nil?
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
           if @return_type.undefined?
             case decl
             when :restarg
@@ -208,6 +207,13 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
+        if definite
+          # reassigned by an assignment guaranteed to have run, so the
+          # reassigned type wins over the declared @param type
+          reassigned_type = probe(api_map)
+          return reassigned_type if reassigned_type.defined?
+        end
+
         new_type = super
         return new_type if new_type.defined?
 
