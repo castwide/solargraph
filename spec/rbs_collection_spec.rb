@@ -22,7 +22,24 @@ describe Solargraph::RbsCollection do
   end
 
   describe 'gems without a path' do
-    let(:lockfile) { File.join('spec', 'fixtures', 'rbs_collection_no_path', 'rbs_collection.lock.yaml') }
+    let(:dir) { Dir.mktmpdir }
+    let(:lockfile) do
+      File.join(dir, 'rbs_collection.lock.yaml').tap do |path|
+        File.write(path, <<~YAML)
+          gems:
+          - name: pathless_fixture
+            version: '1.0'
+            source:
+              type: git
+          - name: date
+            version: '0'
+            source:
+              type: stdlib
+        YAML
+      end
+    end
+
+    after { FileUtils.rm_rf(dir) }
 
     it 'leaves them out of the gem keys' do
       expect(rbs_collection.gem_keys).to be_empty
