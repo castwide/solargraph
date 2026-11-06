@@ -82,7 +82,7 @@ describe Solargraph::RbsMap::Core do
     # @todo This is a simple smoke test to ensure that mixins are applied
     #   correctly. It would be better to test RbsMap or RbsMap::Conversions
     #   with an RBS fixture.
-    pins = core.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == 'Enumerable' }
+    pins = core.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == '::Enumerable' }
     expect(pins.map(&:closure).map(&:namespace)).to include('Enumerator')
   end
 
