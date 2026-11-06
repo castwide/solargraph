@@ -85,6 +85,10 @@ Once installed, you can also insert your own local overrides and definitions in 
 
 As of version 0.33.0, Solargraph includes a [type checker](https://github.com/castwide/solargraph/issues/192) that uses a combination of YARD tags and code analysis to report missing type definitions. In strict mode, it performs type inference to determine whether the tags match the types it detects from code.  In strong mode it will ask you to clarify your intentions by adding annotations for better validation.
 
+Run it with `bundle exec solargraph typecheck --level <normal|typed|strict|strong|alpha>`. Each level turns on additional rules on top of the previous one.
+
+To adopt a stricter level gradually on an existing codebase, `.solargraph.yml`'s `type_checker.rules` section can override where an individual rule kicks in, independent of the rest of the level. Run `bundle exec solargraph config` to generate a `.solargraph.yml` with every option, including this one, documented inline - or see the [configuration guide](https://solargraph.org/guides/configuration).
+
 ### The Documentation Cache
 
 Solargraph uses a cache directory to store documentation for the Ruby core and gems. The default location is `~/.cache/solargraph`, e.g., `/home/<username>/.cache/solargraph` on Linux or `C:\Users\<username>\.cache\solargraph` on Windows.
