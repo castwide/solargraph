@@ -402,7 +402,7 @@ module Solargraph
       # try to find common types via conformance
       items.each do |ut|
         intersection_type.each do |int_type|
-          # rubocop:disable Lint/DuplicateBranch
+          # rubocop:disable-next Lint/DuplicateBranch
           if int_type.conforms_to?(api_map, ut, :assignment)
             types << int_type
           elsif ut.conforms_to?(api_map, int_type, :assignment)
@@ -414,7 +414,6 @@ module Solargraph
             # answer available without an intersection type.
             types << int_type
           end
-          # rubocop:enable Lint/DuplicateBranch
         end
       end
       types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
