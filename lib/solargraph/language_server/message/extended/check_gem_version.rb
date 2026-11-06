@@ -82,14 +82,14 @@ module Solargraph
 
           # @return [Gem::Version]
           def fetch_available
-            # @type [Gem::Dependency, nil]
-            tuple = CheckGemVersion.fetcher.search_for_dependency(Gem::Dependency.new('solargraph')).flatten.first
-            if tuple.nil?
-              @error = 'An error occurred fetching the gem data'
-              GEM_ZERO
-            else
-              tuple.version
-            end
+            # [[[name_tuple, source], ...], [fetch_problem, ...]]
+            found = CheckGemVersion.fetcher.search_for_dependency(Gem::Dependency.new('solargraph')).flatten
+            tuple = found.grep(Gem::NameTuple).first
+            return tuple.version if tuple
+
+            problem = found.grep(Gem::SourceFetchProblem).first
+            @error = problem ? "Unable to connect to gem source: #{problem.wordy}" : 'An error occurred fetching the gem data'
+            GEM_ZERO
           rescue Errno::EADDRNOTAVAIL => e
             @error = "Unable to connect to gem source: #{e.message}"
             GEM_ZERO
