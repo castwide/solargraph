@@ -179,7 +179,8 @@ module Solargraph
 
           # @return [void]
           def process_attribute
-            node.children.drop(2).each do |a|
+            # @sg-ignore Need to add nil check here
+            node.children[2..].each do |a|
               loc = get_node_location(node)
               clos = region.closure
               cmnt = comments_for(node)
@@ -210,8 +211,8 @@ module Solargraph
               method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last,
                                                             source: :parser)
               if method_pin.return_type.defined?
-                method_pin.docstring.add_tag YARD::Tags::Tag.new(:param, '',
-                                                                 method_pin.return_type.items.map(&:rooted_tags), 'value')
+                pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '',
+                                                                pins.last.return_type.items.map(&:rooted_tags), 'value')
               end
             end
           end

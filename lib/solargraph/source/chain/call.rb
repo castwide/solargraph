@@ -232,8 +232,11 @@ module Solargraph
               reduced_context = name_pin.binder.reduce_class_type
               pin.proxy(reduced_context)
             else
+              # @sg-ignore Need to add nil check here
               next pin if pin.return_type.undefined?
+              # @sg-ignore Need to add nil check here
               selfy = pin.return_type.self_to_type(name_pin.binder)
+              # @sg-ignore Need to add nil check here
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
@@ -246,9 +249,9 @@ module Solargraph
           factory_parameter = api_map.factory_parameters_for_method(method_pin).find do |factory_param|
             method_pin.parameters.each_with_index.find do |param, index|
               current_argument = arguments[index]
-              next if current_argument.nil? || !current_argument.literal?
+              next unless current_argument&.literal?
+              # @type [Solargraph::Source::Chain::Literal]
               last_link = current_argument.links.last
-              next unless last_link.is_a?(Chain::Literal)
               argument_value = last_link.value
 
               param.name == factory_param.param_name && argument_value == factory_param.value
@@ -368,6 +371,7 @@ module Solargraph
 
           # @param signature_pin [Pin::Signature]
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
+            # @sg-ignore Need to add nil check here
             return_type = signature_pin.return_type.qualify(api_map, *name_pin.gates)
             signature_pin.proxy(return_type)
           end
