@@ -185,14 +185,6 @@ module Solargraph
     # @!method nil_type?
     #   @return [Boolean]
 
-    # @!method duck_type?
-    #   Whether this is a duck type like #to_s.
-    #   @return [Boolean]
-
-    # @!method namespace
-    #   The namespace whose methods a value of this type responds to.
-    #   @return [String]
-
     # @!method qualify(api_map, *gates)
     #   Fully qualify this type's namespaces.
     #   @param api_map [ApiMap]
