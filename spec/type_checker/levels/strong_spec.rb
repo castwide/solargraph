@@ -24,6 +24,27 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('does not match inferred type')
     end
 
+    it 'reads a destructured declared tuple element by position' do
+      checker = type_checker(%(
+        class Foo; end
+        class Bar; end
+
+        class Holder
+          # @return [Array(Foo, Bar)]
+          def pair
+            [Foo.new, Bar.new]
+          end
+
+          # @return [Bar]
+          def second
+            _h, sel = pair
+            sel
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'does not flag attributes whose declared type already allows nil' do
       checker = type_checker(%(
         class Foo
