@@ -83,7 +83,6 @@ module Solargraph
       # @todo 13: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
       # @todo 6: need boolish support for ? methods
-      # @todo 1: missing flow-sensitive typing on array elements
       # @todo 6: flow sensitive typing needs better handling of ||= on lvars
       # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 5: flow sensitive typing needs to handle 'raise if'
