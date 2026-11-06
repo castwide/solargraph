@@ -47,7 +47,7 @@ module Solargraph
 
       # @param pins [Array<Pin::Base>]
       # @return [Pin::Base, nil]
-      def combine_pins(*pins)
+      def combine_pins *pins
         # @type [Pin::Base, nil]
         combined_pin = nil
         # @param memo [Pin::Base, nil]
