@@ -347,32 +347,32 @@ module Solargraph
         index.pins_by_class(Pin::Symbol)
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Superclass>}]
+      # @return [Index::ArrayHash{String => Array<Pin::Reference::Superclass>}]
       def superclass_references
         index.superclass_references
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Include>}]
+      # @return [Index::ArrayHash{String => Array<Pin::Reference::Include>}]
       def include_references
         index.include_references
       end
 
-      # @return [Hash{String => Array<Solargraph::Pin::Reference::Include>}]
+      # @return [Index::ArrayHash{String => Array<Solargraph::Pin::Reference::Include>}]
       def include_reference_pins
         index.include_reference_pins
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
+      # @return [Index::ArrayHash{String => Array<Pin::Reference::Prepend>}]
       def prepend_references
         index.prepend_references
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Extend>}]
+      # @return [Index::ArrayHash{String => Array<Pin::Reference::Extend>}]
       def extend_references
         index.extend_references
       end
 
-      # @return [Hash{String => Array<Pin::FactoryParameter>}]
+      # @return [Index::ArrayHash{String => Array<Pin::FactoryParameter>}]
       def factory_parameter_hash
         index.factory_parameter_hash
       end
