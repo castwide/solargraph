@@ -103,7 +103,7 @@ module Solargraph
 
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           json = JSON.parse(last_line, symbolize_names: true)
-          # @sg-ignore https://github.com/apiology/solargraph/pull/63
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1231
           @metagems = bundle_array(json[:metagems]).map { |data| Metagem.new(**data) }
           @bundled_group_map = bundle_hash(json[:groups]).transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
         else
