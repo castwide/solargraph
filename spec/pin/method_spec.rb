@@ -927,6 +927,6 @@ describe Solargraph::Pin::Method do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     pin = api_map.get_path_pins('Foo#bar').first
-    expect { pin.typify(api_map) }.not_to raise_error
+    expect(pin.typify(api_map)).to be_undefined
   end
 end

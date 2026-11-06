@@ -1199,6 +1199,16 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
+    it 'does not type a method by an empty (see) reference' do
+      checker = type_checker(%(
+        class SeeFoo
+          # (see )
+          def bar; end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include(a_string_including('Declared return type'))
+    end
+
     it 'accepts any return from an override of a void-inclusive ancestor return tag' do
       checker = type_checker(%(
         class Base

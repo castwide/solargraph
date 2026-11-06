@@ -611,8 +611,10 @@ module Solargraph
           return result unless result.nil?
         end
         match = comments.match(/^[ \t]*\(see (.*)\)/m)
-        return nil if match.nil?
-        resolve_reference match[1].to_s, api_map
+        # YARD leaves an empty (see ) as plain text, not a reference
+        reference = match && match[1].to_s.strip
+        return nil if reference.nil? || reference.empty?
+        resolve_reference reference, api_map
       end
 
       # @return [String]
