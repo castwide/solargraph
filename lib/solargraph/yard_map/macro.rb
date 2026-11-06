@@ -38,6 +38,7 @@ module Solargraph
 
         # @param method_pin [Pin::Method]
         # @return [YARD::CodeObjects::MethodObject]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1480
         def method_object_from_pin method_pin
           namespace_object = nil
           method_pin.each_closure do |namespace_pin|
