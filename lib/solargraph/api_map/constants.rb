@@ -35,9 +35,12 @@ module Solargraph
 
         flat = gates.flatten
         flat.push '' if flat.empty?
-        return cached_resolve[[name, flat]] if cached_resolve.include? [name, flat]
-        # don't recurse
-        return nil if in_process.include? [name, flat]
+        if cached_resolve.include? [name, flat]
+          cached_result = cached_resolve[[name, flat]]
+          # don't recurse
+          return nil if cached_result == :in_process
+          return cached_result
+        end
         resolve_and_cache(name, flat)
       end
 
@@ -94,7 +97,7 @@ module Solargraph
 
       # @return [void]
       def clear
-        [cached_collect, cached_resolve, in_process].each(&:clear)
+        [cached_collect, cached_resolve].each(&:clear)
       end
 
       private
@@ -107,11 +110,8 @@ module Solargraph
       # @sg-ignore flow sensitive typing should be able to handle redefinition
       # @return [String, nil]
       def resolve_and_cache name, gates
-        in_process.add [name, gates]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1451
+        cached_resolve[[name, gates]] = :in_process
         cached_resolve[[name, gates]] = resolve_uncached(name, gates)
-      ensure
-        in_process.delete [name, gates]
       end
 
       # @param name [String]
@@ -187,16 +187,9 @@ module Solargraph
         end
       end
 
-      # @return [Hash{Array(String, Array<String>) => String, nil}]
+      # @return [Hash{Array(String, Array<String>) => String, :in_process, nil}]
       def cached_resolve
         @cached_resolve ||= {}
-      end
-
-      # Keys whose resolution is underway, so recursion stops
-      #
-      # @return [Set<Array(String, Array<String>)>]
-      def in_process
-        @in_process ||= Set.new
       end
 
       # @return [Hash{Array<String> => Array<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>}]
