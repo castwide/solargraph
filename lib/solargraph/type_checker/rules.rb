@@ -69,27 +69,26 @@ module Solargraph
       #
       # @todo 4: Missed nil violation
       #
-      # pending code fixes (277):
+      # pending code fixes (227):
       #
-      # @todo 281: Need to add nil check here
-      # @todo 22: Translate to something flow sensitive typing understands
+      # @todo 232: Need to add nil check here
+      # @todo 21: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
-      # flow sensitive typing could handle (99):
+      # flow sensitive typing could handle (97):
       #
-      # @todo 36: flow sensitive typing needs to handle attrs
+      # @todo 35: flow sensitive typing needs to handle attrs
       # @todo 29: flow sensitive typing should be able to handle redefinition
       # @todo 21: flow sensitive typing needs to narrow down type with an if is_a? check
       # @todo 13: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
-      # @todo 6: need boolish support for ? methods
+      # @todo 8: need boolish support for ? methods
       # @todo 6: flow sensitive typing needs better handling of ||= on lvars
       # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 5: flow sensitive typing needs to handle 'raise if'
-      # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 4: nil? support in flow sensitive typing
+      # @todo 3: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 3: flow sensitive typing ought to be able to handle 'when ClassName'
-      # @todo 2: downcast output of Enumerable#select
       # @todo 2: flow sensitive typing should handle return nil if location&.name.nil?
       # @todo 2: flow sensitive typing should handle is_a? and next
       # @todo 2: Need to look at Tuple#include? handling
@@ -99,7 +98,7 @@ module Solargraph
       # @todo 2: Need to handle duck-typed method calls on union types
       # @todo 2: Need better handling of #compact
       # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
-      # @todo 1: flow sensitive typing not smart enough to handle this case
+      # @todo 1: downcast output of Enumerable#select
       # @todo 1: flow sensitive typing needs to handle if foo = bar
       # @todo 1: flow sensitive typing needs to handle "if foo.nil?"
       # @todo 1: flow sensitive typing should support case/when
