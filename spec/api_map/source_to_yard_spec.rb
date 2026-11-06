@@ -60,6 +60,18 @@ describe Solargraph::ApiMap::SourceToYard do
     expect(class_object.instance_mixins).to include(module_object)
   end
 
+  it 'skips instance mixins it has no code object for' do
+    source = Solargraph::SourceMap.load_string(%(
+      class Baz
+        include Unknown
+      end
+    ))
+    object = Object.new
+    object.extend described_class
+    object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
+    expect(object.code_object_at('Baz').instance_mixins).not_to include(nil)
+  end
+
   it 'generates class mixins' do
     source = Solargraph::SourceMap.load_string(%(
       module Foo
