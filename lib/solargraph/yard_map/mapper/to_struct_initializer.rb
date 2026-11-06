@@ -109,6 +109,7 @@ module Solargraph
             return Encoding::UTF_8 if match.nil?
 
             encoding_name = match[1]
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1481
             return Encoding::UTF_8 if encoding_name.nil?
 
             begin
