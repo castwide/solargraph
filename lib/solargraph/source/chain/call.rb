@@ -49,48 +49,67 @@ module Solargraph
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
 
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
+
+          # @type [::Array<Pin::Base>]
+          resolved = []
+          binder_call_type(api_map, name_pin, locals) do |pins|
+            resolved.concat pins
+            ComplexType::UNDEFINED
+          end
+          # Dedup on rooted_tags rather than #tag, which reports only the
+          # first member and so collapses two distinct unions.
+          resolved.uniq { |pin| [pin.path, pin.return_type.rooted_tags] }
+        end
+
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Closure] name_pin.binder should give us the type of the object on which 'word' will be invoked
+        # @param locals [::Array<Pin::LocalVariable>]
+        # @yieldparam pins [::Array<Pin::Base>]
+        # @yieldparam name_pin [Pin::Base]
+        # @yieldreturn [Type]
+        # @return [Type]
+        def infer_type api_map, name_pin, locals, &definitions_type
+          # @sg-ignore https://github.com/apiology/solargraph/pull/403
+          return super if %w[super yield].include?(word)
+          # @sg-ignore https://github.com/apiology/solargraph/pull/403
+          return super if head? && !api_map.var_at_location(locals, word, name_pin, location).nil?
+
+          binder_call_type(api_map, name_pin, locals, &definitions_type)
+        end
+
+        private
+
+        # The type of calling #word on name_pin.binder, which combines what
+        # the call returns on each receiver it can dispatch to. Each
+        # receiver's pins are inferred with name_pin bound to that receiver
+        # alone, so a `self` return type and #inferred_pins (incl.
+        # Class#new) see only it.
+        #
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @param locals [::Array<Pin::LocalVariable>]
+        # @yieldparam pins [::Array<Pin::Base>]
+        # @yieldparam name_pin [Pin::Base]
+        # @yieldreturn [Type]
+        # @return [Type]
+        def binder_call_type api_map, name_pin, locals
           binder = name_pin.binder
           # this is a q_call - i.e., foo&.bar - assume result of call
           # will be nil or result as if binder were not nil -
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
-
+          # @sg-ignore https://github.com/apiology/solargraph/pull/405
           binder = binder.without_nil if nullable?
-          # Resolve one unique type at a time, so a `self` return type narrows to the one that supplied the pin.
-          # @type [::Array<Pin::Base>]
-          resolved = []
-          unresolved_type = false
-          binder.each_unique_type do |context|
-            if context.duck_type? && context.name[1..] == word
-              # explicit: false skips arity checking; the duck type
-              # only tells us the method exists, not its signature
-              pin = Pin::DuckMethod.new(name: word, source: :chain, explicit: false)
-            else
-              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-              pin = stack.first
-            end
-            if pin.nil?
-              unresolved_type = true
-              next
-            end
-            # Bind name_pin to this type alone, so #inferred_pins (incl. Class#new) cannot see the others.
-            type_name_pin = Pin::ProxyType.anonymous(name_pin.context,
-                                                     closure: name_pin.closure,
-                                                     gates: name_pin.gates,
-                                                     binder: context,
-                                                     source: :chain)
-            resolved.concat inferred_pins([pin], api_map, type_name_pin, locals)
-          end
-          return [] if unresolved_type && !api_map.loose_unions
-          return [] if resolved.empty?
-          # Accumulating every type's result treats the binder as a union, which is the only
-          # multi-type binder ComplexType builds; dedup on rooted_tags rather than #tag, which
-          # reports only the first member and so collapses two distinct unions.
-          resolved.uniq { |pin| [pin.path, pin.return_type.rooted_tags] }
-        end
 
-        private
+          binder.call_type(word, api_map) do |receiver, pins|
+            receiver_pin = Pin::ProxyType.anonymous(name_pin.context,
+                                                    closure: name_pin.closure,
+                                                    gates: name_pin.gates,
+                                                    binder: receiver,
+                                                    source: :chain)
+            yield inferred_pins(pins, api_map, receiver_pin, locals), receiver_pin
+          end
+        end
 
         # Checks whether a single overload signature matches the call's
         # arguments/block and, if so, resolves its return type. Threaded

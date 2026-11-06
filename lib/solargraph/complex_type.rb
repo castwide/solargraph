@@ -3,7 +3,7 @@
 module Solargraph
   # A container for type data based on YARD type tags.
   #
-  class ComplexType
+  class ComplexType < Type
     GENERIC_TAG_NAME = 'generic'
     # @!parse
     #   include TypeMethods
@@ -13,8 +13,10 @@ module Solargraph
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
-    # @param types [Array<UniqueType, ComplexType>]
+    # @param types [Array<Type>]
     def initialize types = [UniqueType::UNDEFINED]
+      super()
+
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
       items = types.flat_map(&:items).uniq(&:to_s)
@@ -44,11 +46,11 @@ module Solargraph
     end
 
     # @param generics_to_resolve [Enumerable<String>]]
-    # @param context_type [ComplexType, ComplexType::UniqueType, nil]
+    # @param context_type [Type, nil]
     # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
     # @return [self]
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
-      return self unless generic?
+      return self unless any_generic?
 
       ComplexType.new(@items.map do |unique_type|
         unique_type.resolve_generics_from_context(generics_to_resolve,
@@ -69,7 +71,7 @@ module Solargraph
        (@items.length > 1 ? ')' : ''))
     end
 
-    # @param dst [ComplexType, ComplexType::UniqueType]
+    # @param dst [Type]
     # @return [ComplexType]
     def self_to_type dst
       object_type_dst = dst.reduce_class_type
@@ -93,18 +95,6 @@ module Solargraph
     # @return [Enumerable<UniqueType>]
     def each &block
       @items.each(&block)
-    end
-
-    # @yieldparam [UniqueType]
-    # @return [void]
-    # @overload each_unique_type()
-    #   @return [Enumerator<UniqueType>]
-    def each_unique_type &block
-      return enum_for(__method__) unless block_given?
-
-      @items.each do |item|
-        item.each_unique_type(&block)
-      end
     end
 
     # @param new_name [String, nil]
@@ -271,6 +261,74 @@ module Solargraph
     end
     private :duck_type_provides?
 
+    # Rebuilds this union with each named type replaced by what the
+    # block returns for it. A block returning nil makes the whole type
+    # unresolvable, since a union with a missing member is not one.
+    #
+    # @yieldparam named_type [ComplexType::UniqueType]
+    # @yieldreturn [ComplexType::UniqueType, nil]
+    # @return [ComplexType, nil]
+    def qualify_parts &block
+      parts = @items.map { |item| item.qualify_parts(&block) }
+      ComplexType.new(parts) unless parts.any?(&:nil?)
+    end
+
+    # The method stacks for +method_name+ of each alternative of this
+    # union, concatenated, so precedence orders each alternative's run;
+    # empty when a member does not resolve it and ApiMap#loose_unions is
+    # off.
+    #
+    # @param api_map [ApiMap]
+    # @param method_name [String]
+    # @return [Array<Pin::Method>]
+    def reachable_method_stack api_map, method_name
+      stacks = @items.map { |item| item.reachable_method_stack(api_map, method_name) }
+      return [] if !api_map.loose_unions && stacks.any?(&:empty?)
+
+      # Dedup on path *and* return type: alternatives can share a
+      # path (e.g. same generic method on different instantiations).
+      # @param p [Pin::Base]
+      stacks.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
+    end
+
+    # The union of what a call to +word+ returns on each alternative that
+    # resolves it; undefined if the call is undefined on any of them.
+    # Undefined, without yielding, when no member resolves +word+, or
+    # when one does not and ApiMap#loose_unions is off.
+    #
+    # @param word [String]
+    # @param api_map [ApiMap]
+    # @yieldparam receiver [ComplexType::UniqueType]
+    # @yieldparam pins [Array<Pin::Base>]
+    # @yieldreturn [ComplexType]
+    # @return [ComplexType]
+    def call_type word, api_map, &block
+      resolving = @items.reject { |item| item.reachable_method_stack(api_map, word).empty? }
+      return ComplexType::UNDEFINED if resolving.empty?
+      return ComplexType::UNDEFINED if !api_map.loose_unions && resolving.length < @items.length
+
+      results = resolving.map { |item| item.call_type(word, api_map, &block) }
+      return ComplexType::UNDEFINED if results.any?(&:undefined?)
+
+      combined = ComplexType.new(results)
+      # Move nil to the end by convention when combining several results
+      results.length > 1 ? combined.order_nil_last : combined
+    end
+
+    # The methods that might be reachable on a value of this union, of any
+    # visibility.
+    #
+    # Pooled, not intersected: a value is only one member, so what is
+    # certainly callable is what they all provide. Both callers want the
+    # wider set - completion offers candidates, and the macro test asks
+    # whether a pin might belong here.
+    #
+    # @param api_map [ApiMap]
+    # @return [Array<Pin::Method>]
+    def reachable_methods api_map
+      @items.flat_map { |item| item.reachable_methods(api_map) }.uniq
+    end
+
     # @return [String]
     def rooted_tags
       map(&:rooted_tag).join(', ')
@@ -294,6 +352,13 @@ module Solargraph
 
     def generic?
       any?(&:generic?)
+    end
+
+    # Whether any member mentions a generic type parameter anywhere.
+    #
+    # @return [Boolean]
+    def any_generic?
+      @items.any?(&:any_generic?)
     end
 
     # @return [self]
@@ -335,11 +400,68 @@ module Solargraph
       @items.any?(&:nil_type?)
     end
 
+    # Only a union of nothing but nil is the nil type; one that merely
+    # allows nil is #nullable?.
+    #
+    # @return [Boolean]
+    def nil_type?
+      !@items.empty? && @items.all?(&:nil_type?)
+    end
+
+    # A value of the union may be the void member, so one void member
+    # leaves the whole union with nothing usable to say.
+    #
+    # @return [Boolean]
+    def void?
+      @items.any?(&:void?)
+    end
+
+    # A value of the union may be the member we failed to resolve, so one
+    # undefined member makes the whole union undefined.
+    #
+    # @return [Boolean]
+    def undefined?
+      @items.any?(&:undefined?)
+    end
+
+    # The empty union is the bottom type, which is determined, so it is
+    # defined.
+    #
+    # @return [Boolean]
+    def defined?
+      !undefined?
+    end
+
+    # Pairs this union up with another type member by member, yields
+    # each pair, and reassembles the results into one union.
+    #
+    # @param other [ComplexType, ComplexType::UniqueType]
+    # @yieldparam mine [Type]
+    # @yieldparam theirs [Type]
+    # @yieldreturn [Type]
+    # @return [Type]
+    def combine_via other, &block
+      # @param members [Array<ComplexType::UniqueType>]
+      gather = ->(members) { ComplexType.union(*members) }
+      key = lambda(&:rooted_tags)
+      ComplexType.union(*Typedef::Pairing.combine_members(items, other.items, gather, key, &block))
+    end
+
     # @return [ComplexType]
     def without_nil
       new_items = @items.reject(&:nil_type?)
       return ComplexType::UNDEFINED if new_items.empty?
       ComplexType.new(new_items)
+    end
+
+    # Moves nil members to the end by convention. A union describes the
+    # same type in any order, so this changes only rendering and
+    # first-member delegation; the other members keep their order.
+    #
+    # @return [ComplexType]
+    def order_nil_last
+      nils, rest = @items.partition(&:nil_type?)
+      ComplexType.new(rest + nils)
     end
 
     # @return [Array<ComplexType>]
@@ -413,28 +535,28 @@ module Solargraph
       ComplexType.new(types)
     end
 
-    # @return [Array<Typedef::Type>]
+    # @return [Array<Typedef::Concrete>]
     def to_typedef_types
       # @todo Quick and dirty hack
-      return [Typedef::Type::ROOT] if to_s == 'Class<>'
+      return [Typedef::Concrete::ROOT] if to_s == 'Class<>'
 
       items.map(&:to_typedef_types)
     end
 
     def to_typedef_typeset
       # @todo Quick and dirty hack
-      return Typedef::Typeset.new([Typedef::Type::ROOT]) if to_s == 'Class<>'
-      if hash_parameters?
+      return Typedef::Union.new([Typedef::Concrete::ROOT]) if to_s == 'Class<>'
+      if hash_parameters? || name == 'Hash'
         top = Typedef.tokenize(name)
-        key = Typedef::Typeset.new(key_types.map(&:to_typedef_typeset))
-        val = Typedef::Typeset.new(value_types.map(&:to_typedef_typeset))
-        Typedef::Type.new(top, key, val)
+        key = Typedef::Union.new(key_types.map(&:to_typedef_typeset))
+        val = Typedef::Union.new(value_types.map(&:to_typedef_typeset))
+        Typedef::Concrete.new(top, key, val)
       elsif fixed_parameters? && !value_types.empty?
         top = Typedef.tokenize(name)
         vals = value_types.map(&:to_typedef_typeset)
         Typedef::Tuple.new(top, *vals)
       else
-        Typedef::Typeset.new(items.map(&:to_typedef_typeset))
+        Typedef::Union.new(items.map(&:to_typedef_typeset))
       end
     end
 
@@ -566,6 +688,19 @@ module Solargraph
         result
       end
 
+      # Builds a union of the given types, dropping duplicates. A lone
+      # type comes back as itself rather than as a union of one, so
+      # union(A, A) is A.
+      #
+      # @param types [Array<Type>]
+      # @return [Type]
+      def union *types
+        members = types.flat_map(&:items).uniq(&:rooted_tags)
+        return members.fetch(0) if members.length == 1
+
+        ComplexType.new(members)
+      end
+
       # @param strings [Array<String>]
       # @return [ComplexType]
       def try_parse *strings
@@ -592,8 +727,8 @@ module Solargraph
     # can reach the generic, which is bot.
     #
     # @param unique_type [UniqueType] A member of @items
-    # @param context_type [ComplexType, UniqueType, nil]
-    # @return [ComplexType, UniqueType, nil]
+    # @param context_type [Type, nil]
+    # @return [Type, nil]
     def destructure_context_type unique_type, context_type
       return context_type unless unique_type.generic? && context_type.is_a?(ComplexType) && @items.length > 1
 

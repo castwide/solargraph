@@ -5,7 +5,7 @@ module Solargraph
     # An individual type signature. A complex type can consist of multiple
     # unique types.
     #
-    class UniqueType
+    class UniqueType < Type
       include TypeMethods
       include Equality
 
@@ -80,6 +80,8 @@ module Solargraph
       # @param rooted [Boolean]
       # @param parameters_type [Symbol, nil]
       def initialize name, key_types = [], subtypes = [], rooted:, parameters_type: nil
+        super()
+
         if parameters_type.nil? && !(key_types.empty? && subtypes.empty?)
           raise 'You must supply parameters_type if you provide parameters'
         end
@@ -166,10 +168,28 @@ module Solargraph
         @non_literal_name ||= determine_non_literal_name
       end
 
+      # A lone type has one member, so there is one pair to make.
+      #
+      # @param other [Type]
+      # @yieldparam mine [self]
+      # @yieldparam theirs [Type]
+      # @yieldreturn [Type]
+      # @return [Type]
+      def combine_via other
+        yield self, other
+      end
+
       # @return [self]
       def without_nil
         return UniqueType::UNDEFINED if nil_type?
 
+        self
+      end
+
+      # A lone type has no members to reorder.
+      #
+      # @return [self]
+      def order_nil_last
         self
       end
 
@@ -282,6 +302,70 @@ module Solargraph
         end
       end
 
+      # A named type is its own only part, so the block decides it
+      # directly.
+      #
+      # @yieldparam named_type [ComplexType::UniqueType]
+      # @yieldreturn [ComplexType::UniqueType, nil]
+      # @return [ComplexType::UniqueType, nil]
+      def qualify_parts
+        yield self
+      end
+
+      # Every definition of +method_name+ on this type, of any visibility,
+      # highest precedence first; empty when the method does not resolve.
+      #
+      # @param api_map [ApiMap]
+      # @param method_name [String]
+      # @return [::Array<Pin::Method>]
+      def reachable_method_stack api_map, method_name
+        # explicit: false skips arity checking; the duck type
+        # only tells us the method exists, not its signature
+        if duck_type? && name[1..] == method_name
+          return [Pin::DuckMethod.new(name: method_name, source: :chain, explicit: false)]
+        end
+
+        ns_tag = namespace == '' ? '' : namespace_type.tag
+        api_map.get_method_stack(ns_tag, method_name, scope: scope)
+      end
+
+      # Yields this type and its definitions of +word+, and returns what
+      # the block gives; undefined, without yielding, when this type does
+      # not resolve +word+.
+      #
+      # @param word [String]
+      # @param api_map [ApiMap]
+      # @yieldparam receiver [ComplexType::UniqueType]
+      # @yieldparam pins [::Array<Pin::Base>]
+      # @yieldreturn [ComplexType]
+      # @return [ComplexType]
+      def call_type word, api_map
+        # A call dispatches to the highest-precedence definition only
+        pins = reachable_method_stack(api_map, word).first(1)
+        return ComplexType::UNDEFINED if pins.empty?
+
+        yield self, pins
+      end
+
+      # Every method reachable on a value of this type, of any visibility.
+      # A duck type contributes the one method it names, over everything
+      # public on Object; a type with no methods to offer contributes none.
+      #
+      # The namespace is not qualified here, since that can confuse similar
+      # names, e.g., `Foo` vs. `Other::Foo`.
+      #
+      # @param api_map [ApiMap]
+      # @return [Array<Pin::Method>]
+      def reachable_methods api_map
+        if duck_type?
+          return [Pin::DuckMethod.new(name: to_s[1..], source: :api_map)] +
+                 api_map.get_methods('Object')
+        end
+        return [] if undefined? || void?
+
+        api_map.get_methods(tag, scope: scope, visibility: %i[public protected private])
+      end
+
       def hash
         [self.class, @name, @key_types, @sub_types, @rooted, @all_params, @parameters_type].hash
       end
@@ -348,7 +432,7 @@ module Solargraph
         !all_params.empty?
       end
 
-      # @param types [Array<UniqueType, ComplexType>]
+      # @param types [Array<Type>]
       # @return [String]
       def rbs_union types
         if types.length == 1
@@ -374,6 +458,14 @@ module Solargraph
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
+      # A single type is one member, so whether it mentions a generic
+      # type parameter anywhere is #generic?.
+      #
+      # @return [Boolean]
+      def any_generic?
+        generic?
+      end
+
       def nullable?
         nil_type?
       end
@@ -390,9 +482,9 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [ComplexType, UniqueType, nil]
-      # @param resolved_generic_values [Hash{String => ComplexType, ComplexType::UniqueType}] Added to as types are encountered or resolved
-      # @return [UniqueType, ComplexType]
+      # @param context_type [Type, nil]
+      # @param resolved_generic_values [Hash{String => Type}] Added to as types are encountered or resolved
+      # @return [Type]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name
@@ -422,7 +514,7 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [UniqueType, ComplexType, nil]
+      # @param context_type [Type, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @yieldreturn [Array<ComplexType>]
       # @return [Array<ComplexType>]
@@ -451,7 +543,7 @@ module Solargraph
       #
       # @param definitions [Pin::Namespace, Pin::Method] The module/class/method which uses generic types
       # @param context_type [ComplexType] The receiver type
-      # @return [UniqueType, ComplexType]
+      # @return [Type]
       def resolve_generics definitions, context_type
         # Method-scoped generics bind per call site via
         # resolve_generics_from_context, not against a receiver's type params.
@@ -560,6 +652,8 @@ module Solargraph
         yield new_type
       end
 
+      # @param named_types [Hash{String => Type}]
+      # @return [Type]
       def expand named_types
         named_types[name] || self
       end
@@ -568,7 +662,7 @@ module Solargraph
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param gates [Array<String>] The namespaces from which to resolve names
-      # @return [self, ComplexType, UniqueType] The generated ComplexType
+      # @return [self, Type] The generated ComplexType
       def qualify api_map, *gates
         transform do |t|
           next t if t.name == GENERIC_TAG_NAME
@@ -629,29 +723,29 @@ module Solargraph
 
       def to_typedef_types
         # @todo Quick and dirty hack
-        return Typedef::Type.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
+        return Typedef::Concrete.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
 
         base = name
         base = "::#{base}" if rooted? && base =~ /^[A-Z]/
         params = all_params.map(&:to_typedef_types)
-        Typedef::Type.new(base, *params)
+        Typedef::Concrete.new(base, *params)
       end
 
       def to_typedef_typeset
         # @todo Quick and dirty hack
-        return Typedef::Type.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
+        return Typedef::Concrete.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
 
         base = name
         base = "::#{base}" if rooted? && base =~ /^[A-Z]/
         if all_params.empty?
-          Typedef::Type.new(base)
+          Typedef::Concrete.new(base)
         else
           params = if name == 'Hash'
                      all_params.map(&:to_typedef_typeset)
                    else
-                     [Typedef::Typeset.new([all_params.map(&:to_typedef_typeset)])]
+                     [Typedef::Union.new([all_params.map(&:to_typedef_typeset)])]
                    end
-          Typedef::Typeset.new([Typedef::Type.new(base, *params)])
+          Typedef::Union.new([Typedef::Concrete.new(base, *params)])
         end
       end
 

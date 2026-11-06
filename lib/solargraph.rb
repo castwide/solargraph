@@ -43,6 +43,7 @@ module Solargraph
   autoload :Library,          'solargraph/library'
   autoload :Diagnostics,      'solargraph/diagnostics'
   autoload :ComplexType,      'solargraph/complex_type'
+  autoload :Type,             'solargraph/type'
   autoload :Bench,            'solargraph/bench'
   autoload :Logging,          'solargraph/logging'
   autoload :TypeChecker,      'solargraph/type_checker'
