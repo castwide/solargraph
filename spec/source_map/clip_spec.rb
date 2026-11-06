@@ -822,6 +822,115 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('Class')
   end
 
+  it 'infers the receiver from an inherited <Class>.new that returns its own class' do
+    source = Solargraph::Source.load_string(%(
+      module Outer
+        class Base
+          # @return [Base]
+          def self.new(name); end
+        end
+
+        class Sub < Base; end
+      end
+      value = Outer::Sub.new('x')
+      value
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [10, 6])
+    expect(clip.infer.tag).to eq('Outer::Sub')
+  end
+
+  it 'keeps another documented type from an inherited factory .new' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        # @return [String]
+        def self.new; end
+      end
+
+      class Sub < Base; end
+      value = Sub.new
+      value
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [8, 6])
+    expect(clip.infer.tag).to eq('String')
+  end
+
+  it 'intentionally infers the subclass from an inherited .new documented to return the base class' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        # @return [Base]
+        def self.new; end
+      end
+
+      class Sub < Base; end
+      value = Sub.new
+      value
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [8, 6])
+    expect(clip.infer.tag).to eq('Sub')
+  end
+
+  it 'keeps the documented type from a generic class own .new on a parameterized receiver' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      class Foo
+        # @return [Foo]
+        def self.new; end
+      end
+
+      # @param klass [Class<Foo<String>>]
+      def make klass
+        value = klass.new
+        value
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [10, 8])
+    expect(clip.infer.tag).to eq('Foo')
+  end
+
+  it 'infers the receiver from an inherited .new documented to return a parameterized base class' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      class Base
+        # @return [Base<String>]
+        def self.new; end
+      end
+
+      class Sub < Base; end
+      value = Sub.new
+      value
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 6])
+    expect(clip.infer.tag).to eq('Sub')
+  end
+
+  it 'infers the receiver from an inherited .new documented to return a generic base class' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      class Base
+        # @return [Base<T>]
+        def self.new; end
+      end
+
+      class Sub < Base; end
+      value = Sub.new
+      value
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [9, 6])
+    expect(clip.infer.tag).to eq('Sub')
+  end
+
   it 'infers undefined from Class#new' do
     source = Solargraph::Source.load_string(%(
       cls = Class.new

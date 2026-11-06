@@ -455,6 +455,16 @@ module Solargraph
         result.concat inner_get_methods(rooted_tag, scope, visibility, deep, skip)
         unless %w[Class Class<Class>].include?(rooted_tag)
           result.map! do |pin|
+            # class Base
+            #   # @return [Base]
+            #   def self.new; end
+            # end
+            # class Sub < Base; end
+            # Sub.new # => Sub, not Base
+            if pin.name == 'new' && pin.scope == :class && pin.namespace != fqns &&
+               pin.return_type.qualify(self, *pin.gates).namespace == pin.namespace
+              next pin.proxy_with_signatures(ComplexType::SELF)
+            end
             next pin unless pin.path == 'Class#new'
             init_pin = get_method_stack(rooted_tag, 'initialize').first
             next pin unless init_pin
