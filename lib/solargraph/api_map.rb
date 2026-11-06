@@ -556,8 +556,11 @@ module Solargraph
                   type = namespace_pin.typify(self)
                   type = namespace_pin.probe(self) unless type.defined?
                   if type.defined?
-                    namespace_pin = store.get_path_pins(type.namespace).first
-                    get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
+                    # The constant's type describes the constant itself;
+                    # an instance of it is an instance of what it names
+                    # @sg-ignore flow sensitive typing should be able to handle redefinition
+                    type = type.reduce_class_type if scope == :instance
+                    type.reachable_method_stack(self, name).select { |p| visibility.include?(p.visibility) }
                   else
                     []
                   end
