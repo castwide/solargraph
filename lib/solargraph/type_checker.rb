@@ -260,6 +260,8 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         if pin.return_type.defined?
           declared = pin.typify(api_map)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1457
+          next if declared.duck_type?
           if declared.defined? && pin.assignment
             if rules.validate_tags?
               inferred = pin.probe(api_map)

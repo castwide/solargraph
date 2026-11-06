@@ -264,10 +264,8 @@ describe Solargraph::TypeChecker do
         end
         Foo.new.bar baz: String.new
       ))
-      messages = checker.problems.map(&:message)
-      expect(messages.length).to eq(2)
-      expect(messages).to include(a_string_including('Wrong argument type'))
-      expect(messages).to include(a_string_including('Declared type #unknown_method does not match'))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
     end
 
     it 'reports mismatched kwrestargs' do
