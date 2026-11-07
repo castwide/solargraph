@@ -92,7 +92,7 @@ module Solargraph
     def build_from_directory
       return unless bundled_directory?
 
-      if defined?(Bundler) && ENV['BUNDLE_GEMFILE']
+      if defined?(Bundler) && ENV['BUNDLE_GEMFILE'] == gemfile
         build_from_bundler_definition
       else
         build_from_gemfile_lock
@@ -356,6 +356,18 @@ module Solargraph
 
     def bundled_group_map
       @bundled_group_map ||= {}
+    end
+
+    # True if Solargraph should use the Bundler definition to find gem
+    # specifications.
+    #
+    # The SOLARGRAPH_WITH_BUNDLER environment variable forces Solargraph to use
+    # the Bundler definition when the active Gemfile is not the workspace
+    # Gemfile, e.g., when the environment was modified with Appraisal.
+    #
+    def use_bundler?
+      defined?(Bundler) &&
+        (ENV['BUNDLER_GEMFILE'] == gemfile || ENV['SOLARGRAPH_WITH_BUNDLER'] == 'true')
     end
   end
 end

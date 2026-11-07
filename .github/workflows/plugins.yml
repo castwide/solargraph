@@ -142,6 +142,7 @@ jobs:
     env:
       SOLARGRAPH_CACHE: ${{ github.workspace }}/../solargraph-rspec/vendor/solargraph/cache
       BUNDLE_PATH: ${{ github.workspace }}/../solargraph-rspec/vendor/bundle
+      SOLARGRAPH_WITH_BUNDLER: "true"
     steps:
     - uses: actions/checkout@v3
     - name: clone https://github.com/lekemula/solargraph-rspec/
