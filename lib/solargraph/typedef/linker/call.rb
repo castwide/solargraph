@@ -49,7 +49,7 @@ module Solargraph
         def method_call
           # @todo Quick and dirty hack to force UniqueType to ComplexType
           pins = ComplexType.new([receiver.context]).to_typedef_types
-                            .flat_map { |type| dictionary.api_map.typedef_type_methods(type) + private_kernel_methods(type) }
+                            .flat_map { |type| get_methods(type) }
                             .select { |pin| pin.name == link.word }
                             .map { |pin| find_matching_signature(pin, receiver) }
                             .map { |pin| expand_macros_from_arguments(pin) }
@@ -230,6 +230,32 @@ module Solargraph
         def private_kernel_methods type
           return [] unless link.head?
           api_map.get_methods('Kernel', scope: :instance, visibility: [:private])
+        end
+
+        # @param type [Typedef::Type]
+        def get_methods type
+          namespace = if type.class?
+            # @todo Handle multiple
+            type.params.first.to_s
+          else
+            type.base.to_s
+          end
+          scope = if type.class?
+            :class
+          else
+            :instance
+          end
+          visibility = method_visibility(type)
+          dictionary.api_map.get_methods(namespace, scope: scope, visibility: visibility)
+                    .select { |pin| pin.name == link.word }
+        end
+
+        # @param type [Typedef::Type]
+        # @return [Array<Symbol>]
+        def method_visibility type
+          return [:public, :private, :protected] if link.head?
+          return [:public, :protected] if type.to_complex_type.to_s == dictionary.closure.context.to_s
+          [:public]
         end
       end
     end
