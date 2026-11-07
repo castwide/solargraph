@@ -92,7 +92,7 @@ module Solargraph
     def build_from_directory
       return unless bundled_directory?
 
-      if defined?(Bundler) && ENV['BUNDLE_GEMFILE'] == gemfile
+      if use_bundler?
         build_from_bundler_definition
       else
         build_from_gemfile_lock
