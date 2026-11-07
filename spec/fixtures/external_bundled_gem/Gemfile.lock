@@ -7,7 +7,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     backport (1.2.0)
-    nokogiri (1.19.4-x64-mingw-ucrt)
+    nokogiri (1.19.7-x64-mingw-ucrt)
       racc (~> 1.4)
     racc (1.8.1)
     reverse_markdown (3.0.2)
@@ -24,7 +24,7 @@ DEPENDENCIES
 CHECKSUMS
   backport (1.2.0) sha256=912c7dfdd9ee4625d013ddfccb6205c3f92da69a8990f65c440e40f5b2fc7f75
   gem-with-yard-macros (0.1.0)
-  nokogiri (1.19.4-x64-mingw-ucrt) sha256=051da97b8eccfdb5444fed40246a35e10d7298b9efe759b4cd25455ea04c587e
+  nokogiri (1.19.7-x64-mingw-ucrt) sha256=9ab6ea96ab479a5ff391196de73b5abf660926ea7e4c57cb1f35adf754f1d066
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   reverse_markdown (3.0.2) sha256=818ebb92ce39dbb1a291690dd1ec9a6d62530d4725296b17e9c8f668f9a5b8af
 

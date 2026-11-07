@@ -85,16 +85,36 @@ module Solargraph
       directory && File.file?(gemfile) && File.file?(lockfile)
     end
 
-    # Load metagems by parsing the directory's Gemfile.lock if available.
+    # Load bundled metagems by reading the active bundler definition or parsing
+    # the directory's Gemfile.lock.
     #
-    # Parsing the lockfile is significantly faster and less intrusive than
-    # evaluating the bundle definition, which can execute arbitrary code from
-    # the Gemfile and emit output in the host process.
-    #
-    # @return [Array<Metagem>, nil]
+    # @return [void]
     def build_from_directory
-      return unless bundled_directory? && ENV['BUNDLE_GEMFILE'] != gemfile
+      return unless bundled_directory?
 
+      if defined?(Bundler) && ENV['BUNDLE_GEMFILE'] == gemfile
+        build_from_bundler_definition
+      else
+        build_from_gemfile_lock
+      end
+    rescue StandardError => e
+      Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"
+      @metagems = nil
+      @bundled_group_map = {}
+      nil
+    end
+
+    def build_from_bundler_definition
+      @metagems = Bundler.definition.specs.map do |spec|
+        Metagem.from_specification(spec)
+      end
+      groups = Bundler.definition.groups.to_h do |group|
+        [group, Bundler.definition.specs_for([group]).map(&:name)]
+      end
+      @bundled_group_map = groups.transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
+    end
+
+    def build_from_gemfile_lock
       require 'bundler'
       parser = Bundler::LockfileParser.new(File.read(lockfile))
       metagems = []
@@ -112,11 +132,6 @@ module Solargraph
       @bundled_group_map = {
         default: parser.dependencies.filter_map { |name, _dep| bundled_metagem_name_map[name] }
       }
-    rescue StandardError => e
-      Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"
-      @metagems = nil
-      @bundled_group_map = {}
-      nil
     end
 
     # Build a metagem from a locked specification.
