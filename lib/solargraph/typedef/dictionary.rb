@@ -63,10 +63,9 @@ module Solargraph
           pins, receiver = define_from_chain
           return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
 
-          typeset = Filter.new(api_map, pins, receiver)
-                          .typeset
-                          .resolve_rooted(api_map, receiver.gates)
-          bind_block_return_generics typeset, pins
+          Filter.new(api_map, pins, receiver, call_block: call_block_dictionary(chain.links.last))
+                .typeset
+                .resolve_rooted(api_map, receiver.gates)
         end
       end
 
@@ -92,51 +91,23 @@ module Solargraph
           pins = hitch(link, receiver)
           break if link == last_link
 
-          proxy = Filter.new(api_map, pins, receiver).proxy
+          proxy = Filter.new(api_map, pins, receiver, call_block: call_block_dictionary(link)).proxy
           return [[], receiver] if proxy.typedef_typeset.undefined?
           receiver = proxy
         end
         [pins, receiver]
       end
 
-      # Expands unresolved method generics supplied by a block. When a
-      # method such as Enumerable#map declares its block's return type as
-      # a generic (e.g., +Array<generic<U>>+), the value of that generic
-      # is determined by the block's inferred return type at the call
-      # site. Generics already resolved by the receiver (e.g., the
-      # element type of Enumerable[String]) are not overwritten.
+      # Provides the call-site block as a Dictionary for inferring the
+      # block's return type. The resolution of generics supplied by the
+      # block is performed by Expansions::Generics when Filter expands
+      # the pins for this call.
       #
-      # @param typeset [Typeset]
-      # @param pins [Array<Pin::Base>]
-      # @return [Typeset]
-      def bind_block_return_generics typeset, pins
-        return typeset unless typeset.generic?
-        link = chain&.links&.last
-        return typeset unless link.respond_to?(:block) && link.block
-        resolved_names = generic_names(typeset)
-        names = pins.select { |pin| pin.respond_to?(:block) && pin.block }
-                    .map { |pin| generic_names(pin.block.typedef_typeset) }
-                    .flatten.uniq
-        names.select! { |name| resolved_names.include?(name) }
-        return typeset if names.empty?
-        inferred = Dictionary.new(api_map, source_map, link.block).infer
-        return typeset if inferred.undefined?
-        typeset.expand(names.to_h { |name| [name, inferred] })
-      end
-
-      # @param node [Typeset, Type, Path, Token]
-      # @return [Array<String>]
-      def generic_names node
-        case node
-        when Typeset
-          node.types.flat_map { |type| generic_names type }
-        when Type
-          node.all.flat_map { |part| generic_names part }
-        when Token
-          node.generic? ? [node.name] : node.params.flat_map { |par| generic_names Typedef.tokenize(par) }
-        else
-          []
-        end
+      # @param link [Source::Chain::Link]
+      # @return [Dictionary, nil]
+      def call_block_dictionary link
+        return nil if link.nil? || !link.respond_to?(:block) || link.block.nil?
+        Dictionary.new(api_map, source_map, link.block)
       end
 
       # @param action [Symbol]

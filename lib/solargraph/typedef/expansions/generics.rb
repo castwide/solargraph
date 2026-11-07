@@ -6,10 +6,34 @@ module Solargraph
       # Contextual expansion of generic tokens
       #
       class Generics < Base
+        # @return [Dictionary, nil]
+        attr_reader :call_block
+
+        # @param api_map [ApiMap]
+        # @param pin [Pin::Base]
+        # @param receiver [Pin::Closure]
+        # @param call_block [Dictionary, nil] infers the return type of a
+        #   block passed to the call at the call site.
+        def initialize api_map, pin, receiver, call_block = nil
+          super(api_map, pin, receiver)
+          @call_block = call_block
+        end
+
+        # @param api_map [ApiMap]
+        # @param pin [Pin::Base]
+        # @param receiver [Pin::Closure]
+        # @param call_block [Dictionary, nil]
+        # @return [Typeset]
+        def self.expand api_map, pin, receiver, call_block = nil
+          new(api_map, pin, receiver, call_block).expand
+        end
+
         def expand
-          pin.typedef_typeset
-             .expand(zip_generic_values)
-             .expand(closure_generic_values)
+          expanded = pin.typedef_typeset
+                        .expand(zip_generic_values)
+                        .expand(closure_generic_values)
+          block_values = block_return_values(expanded)
+          block_values.empty? ? expanded : expanded.expand(block_values)
         end
 
         def names
@@ -37,6 +61,41 @@ module Solargraph
         end
 
         private
+
+        # Values for method generics supplied by a block passed at the call
+        # site. When a method such as Enumerable#map declares its block's
+        # return type as a generic (e.g., +Array<generic<U>>+), the value of
+        # that generic is determined by the block's inferred return type.
+        # Generics already resolved by the receiver (e.g., the element type
+        # of Enumerable[String]) are not overwritten.
+        #
+        # @param typeset [Typeset] the pin's typeset after receiver-based
+        #   expansion
+        # @return [Hash{String => Object}]
+        def block_return_values typeset
+          return {} if call_block.nil? || !typeset.generic?
+          return {} unless pin.respond_to?(:block) && pin.block
+          names = generic_names(pin.block.typedef_typeset) & generic_names(typeset)
+          return {} if names.empty?
+          inferred = call_block.infer
+          return {} if inferred.undefined?
+          names.to_h { |name| [name, inferred] }
+        end
+
+        # @param node [Typeset, Type, Path, Token]
+        # @return [Array<String>]
+        def generic_names node
+          case node
+          when Typeset
+            node.types.flat_map { |type| generic_names type }
+          when Type
+            node.all.flat_map { |part| generic_names part }
+          when Token
+            node.generic? ? [node.name] : node.params.flat_map { |par| generic_names Typedef.tokenize(par) }
+          else
+            []
+          end
+        end
 
         # @param pin [Pin::Base]
         def generics_from pin
