@@ -11,20 +11,13 @@ module Solargraph
     class Filter
       attr_reader :api_map, :pins, :receiver
 
-      # @return [Dictionary, nil]
-      attr_reader :call_block
-
       # @param api_map [ApiMap]
       # @param pins [Array<Pin::Base>]
       # @param receiver [Pin::Closure]
-      # @param call_block [Dictionary, nil] infers the return type of a
-      #   block passed to the call at the call site, used to resolve
-      #   generics supplied by the block.
-      def initialize api_map, pins, receiver, call_block: nil
+      def initialize api_map, pins, receiver
         @api_map = api_map
-        @call_block = call_block
         @pins = if receiver
-                  pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver, call_block).to_complex_type) }
+                  pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
                       .map { |pin| pin.proxy(expand_root(pin, receiver).to_complex_type) }
                       .map { |pin| expand_self(pin, receiver) }
                 else

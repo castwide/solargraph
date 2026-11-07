@@ -6,28 +6,6 @@ module Solargraph
       # Contextual expansion of generic tokens
       #
       class Generics < Base
-        # @return [Dictionary, nil]
-        attr_reader :call_block
-
-        # @param api_map [ApiMap]
-        # @param pin [Pin::Base]
-        # @param receiver [Pin::Closure]
-        # @param call_block [Dictionary, nil] infers the return type of a
-        #   block passed to the call at the call site.
-        def initialize api_map, pin, receiver, call_block = nil
-          super(api_map, pin, receiver)
-          @call_block = call_block
-        end
-
-        # @param api_map [ApiMap]
-        # @param pin [Pin::Base]
-        # @param receiver [Pin::Closure]
-        # @param call_block [Dictionary, nil]
-        # @return [Typeset]
-        def self.expand api_map, pin, receiver, call_block = nil
-          new(api_map, pin, receiver, call_block).expand
-        end
-
         def expand
           expanded = pin.typedef_typeset
                         .expand(zip_generic_values)
@@ -73,12 +51,17 @@ module Solargraph
         #   expansion
         # @return [Hash{String => Object}]
         def block_return_values typeset
-          return {} if call_block.nil? || !typeset.generic?
-          return {} unless pin.respond_to?(:block) && pin.block
+          return {} unless typeset.generic? && receiver.closure.is_a?(Pin::Block)
+          # return {} unless pin.respond_to?(:block) && pin.block
           names = generic_names(pin.block.typedef_typeset) & generic_names(typeset)
           return {} if names.empty?
-          inferred = call_block.infer
+          return {} unless receiver.closure.is_a?(Pin::Block)
+
+          chain = Parser::ParserGem::NodeChainer.chain(receiver.closure.node)
+          dictionary = Dictionary.new(api_map, receiver.closure.filename, chain.links.last.block)
+          inferred = dictionary.infer
           return {} if inferred.undefined?
+          
           names.to_h { |name| [name, inferred] }
         end
 
