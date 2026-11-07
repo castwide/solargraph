@@ -681,5 +681,41 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [2, 8]).infer
       expect(typeset.to_s).to eq('nil')
     end
+
+    it 'infers instance variables from superclasses' do
+      code = %(
+        class Superclass
+          def initialize
+            @foo = 'foo'
+          end
+        end
+        class Subclass < Superclass
+          def foo
+            @foo
+          end
+        end
+      )
+      typeset = dictionary_for(code, [8, 16]).infer
+      expect(typeset.to_s).to eq('String')
+    end
+
+    it 'infers instance variables from mixins' do
+      pending 'WIP'
+      code = %(
+        module Mixin
+          def foo
+            @foo = 'foo'
+          end
+        end
+        class User
+          include Mixin
+          def bar
+            @foo
+          end
+        end
+      )
+      typeset = dictionary_for(code, [9, 12]).infer
+      expect(typeset.to_s).to eq('String')
+    end
   end
 end
