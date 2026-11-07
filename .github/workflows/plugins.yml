@@ -183,7 +183,7 @@ jobs:
     - name: Solargraph generate RSpec gems YARD pins
       run: |
         cd ../solargraph-rspec
-        SOLARGRAPH_WITH_BUNDLER=true bundle exec appraisal solargraph bundle
+        SOLARGRAPH_WITH_BUNDLER=true bundle exec appraisal bundle exec solargraph bundle
     - name: Run specs
       run: |
         cd ../solargraph-rspec
