@@ -79,7 +79,8 @@ module Solargraph
         o, e, s = Open3.capture3(*cmd)
         if s.success?
           begin
-            hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
+            line = o.split("\n").last
+            hash = line ? JSON.parse(line) : {}
             return [] if hash.empty?
             hash['paths'].map { |path| File.join(base, path) }
           rescue StandardError => e
