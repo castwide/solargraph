@@ -254,6 +254,7 @@ module Solargraph
         # @return [Array<Symbol>]
         def method_visibility type
           return [:public, :private, :protected] if link.head?
+          # @todo Stop depending on complex types
           return [:public, :protected] if type.to_complex_type.to_s == dictionary.closure.context.to_s
           [:public]
         end

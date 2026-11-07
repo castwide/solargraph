@@ -672,5 +672,14 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [9, 14]).infer
       expect(typeset.to_s).to eq('Array[String]')
     end
+
+    it 'infers nil for empty methods' do
+      code = %(
+        def foo; end
+        foo
+      )
+      typeset = dictionary_for(code, [2, 8]).infer
+      expect(typeset.to_s).to eq('nil')
+    end
   end
 end
