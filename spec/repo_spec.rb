@@ -3,17 +3,6 @@
 require 'fileutils'
 
 describe Solargraph::Repo do
-  before(:all) do # rubocop:disable RSpec/BeforeAfterAll
-    FileUtils.rm_f File.join('spec', 'fixtures', 'external_bundled_gem', 'Gemfile.lock')
-    Solargraph.with_clean_env do
-      `cd #{File.join('spec', 'fixtures', 'external_bundled_gem')} && bundle install`
-    end
-  end
-
-  after(:all) do # rubocop:disable RSpec/BeforeAfterAll
-    FileUtils.rm_f File.join('spec', 'fixtures', 'external_bundled_gem', 'Gemfile.lock')
-  end
-
   context 'without a bundle' do
     let(:directory) { File.join('spec', 'fixtures', 'external_required_gem') }
 
@@ -69,6 +58,19 @@ describe Solargraph::Repo do
       # nokogiri is a transitive dependency of reverse_markdown
       meta = repo.find_by_name('nokogiri')
       expect(meta.name).to eq('nokogiri')
+    end
+
+    it 'skips unavailable gems' do
+      expect(repo.find_by_name('not_a_real_gem')).to be_nil
+    end
+  end
+
+  context 'with a gemspec' do
+    let(:directory) { File.join('spec', 'fixtures', 'external_gemspec') }
+    let(:repo) { described_class.new(directory) }
+
+    it 'includes development dependencies' do
+      expect(repo.bundled.map(&:name)).to include('rspec')
     end
   end
 end
