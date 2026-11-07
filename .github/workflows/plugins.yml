@@ -142,7 +142,6 @@ jobs:
     env:
       SOLARGRAPH_CACHE: ${{ github.workspace }}/../solargraph-rspec/vendor/solargraph/cache
       BUNDLE_PATH: ${{ github.workspace }}/../solargraph-rspec/vendor/bundle
-      SOLARGRAPH_WITH_BUNDLER: "true"
     steps:
     - uses: actions/checkout@v3
     - name: clone https://github.com/lekemula/solargraph-rspec/
@@ -184,15 +183,11 @@ jobs:
     - name: Solargraph generate RSpec gems YARD pins
       run: |
         cd ../solargraph-rspec
-        # solargraph-rspec's specs don't pass a workspace, so it
-        # doesn't know where to look for the RBS collection - let's
-        # not load one so that the solargraph gems command below works
-
-        bundle exec appraisal solargraph bundle
+        SOLARGRAPH_WITH_BUNDLER=true bundle exec appraisal solargraph bundle
     - name: Run specs
       run: |
         cd ../solargraph-rspec
-        bundle exec appraisal rspec --format progress
+        SOLARGRAPH_WITH_BUNDLER=true bundle exec appraisal rspec --format progress
 
   run_solargraph_rails_specs:
     # check out solargraph-rails as well as this project, and point the former to use the latter as a local gem
