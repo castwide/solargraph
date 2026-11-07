@@ -420,7 +420,7 @@ module Solargraph
         top = Typedef.tokenize(name)
         key = Typedef::Typeset.new(key_types.map(&:to_typedef_typeset))
         val = Typedef::Typeset.new(value_types.map(&:to_typedef_typeset))
-        Typedef::Type.new(top, key, val)
+        Typedef::Typeset.new([Typedef::Type.new(top, key, val)])
       elsif fixed_parameters? && !value_types.empty?
         top = Typedef.tokenize(name)
         vals = value_types.map(&:to_typedef_typeset)
