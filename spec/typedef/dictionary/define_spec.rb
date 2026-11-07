@@ -109,5 +109,21 @@ describe Solargraph::Typedef::Dictionary do
       pins = dictionary_for(code, [3, 8]).define
       expect(pins.map(&:path)).to eq(['Correct'])
     end
+
+    it 'includes private Kernel methods' do
+      code = 'puts string'
+      pins = dictionary_for(code, [0, 0]).define
+      expect(pins.map(&:path)).to eq(['Kernel#puts'])
+    end
+
+    it 'includes private Kernel methods from namespaces' do
+      code = %(
+        class Example
+          puts string
+        end
+      )
+      pins = dictionary_for(code, [2, 10]).define
+      expect(pins.map(&:path)).to eq(['Kernel#puts'])
+    end
   end
 end
