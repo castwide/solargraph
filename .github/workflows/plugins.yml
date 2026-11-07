@@ -187,8 +187,7 @@ jobs:
         # doesn't know where to look for the RBS collection - let's
         # not load one so that the solargraph gems command below works
 
-        rspec_gems=$(bundle exec appraisal ruby -r './lib/solargraph-rspec' -e 'puts Solargraph::Rspec::Gems.gem_names.join(" ")' 2>/dev/null | tail -n1)
-        bundle exec appraisal solargraph gems $rspec_gems
+        bundle exec appraisal solargraph bundle
     - name: Run specs
       run: |
         cd ../solargraph-rspec
