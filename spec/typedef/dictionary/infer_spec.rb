@@ -717,5 +717,17 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [9, 12]).infer
       expect(typeset.to_s).to eq('String')
     end
+
+    it 'preserves hash value when it is a union without brackets' do
+      pending 'Inferred type contains NilClass'
+      code = %(
+        # @type [Hash{String => Array, Hash, Integer, nil}]
+        raw_data = {}
+        a = raw_data['domains']
+        a
+      )
+      typeset = dictionary_for(code, [4, 8]).infer
+      expect(typeset.to_s).to eq('Array | Hash | Integer | nil')
+    end
   end
 end
