@@ -40,7 +40,9 @@ module Solargraph
           class EvalNode < Parser::NodeProcessor::Base
             # @return [Boolean] continue processing the next processor of the same node.
             def process
-              StringEvalDefinitions.process node, region, pins if METHODS.include?(node.children[1])
+              # s(:send, receiver, method_name, *args)
+              node => [:send, _, Symbol => method_name, *]
+              StringEvalDefinitions.process node, region, pins if METHODS.include?(method_name)
               true
             end
           end
@@ -53,14 +55,16 @@ module Solargraph
             # @param pins [Array<Pin::Base>]
             # @return [void]
             def process node, region, pins
-              string = node.children[2]
-              return unless string.is_a?(AST::Node)
+              # s(:send, receiver, :module_eval, string, *args)
+              node => [:send, ::Parser::AST::Node | nil => receiver, Symbol => method_name, *args]
+              return unless args in [::Parser::AST::Node => string, *]
               parts = string_parts(string)
               return if parts.nil?
-              receiver = node.children[0]
-              return unless receiver.nil? || (receiver.is_a?(AST::Node) && (receiver.type == :self || constant_path?(receiver)))
-              target = receiver.is_a?(AST::Node) && receiver.type == :const ? Parser::NodeMethods.unpack_name(receiver) : nil
-              scope = node.children[1] == :instance_eval ? :class : :instance
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              return unless receiver.nil? || (receiver in [:self]) || constant_path?(receiver)
+              target = Parser::NodeMethods.unpack_name(receiver) if receiver in [:const, *]
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              scope = method_name == :instance_eval ? :class : :instance
               template = build_template(parts, region, target, scope)
               return if template.nil?
               if template.params.empty?
@@ -133,13 +137,15 @@ module Solargraph
             # @return [Array<String, Symbol>, nil] nil if the string interpolates
             #   anything but a local variable
             def string_parts node
-              return [node.children[0].to_s] if node.type == :str
-              return unless node.type == :dstr
+              return string_part(node) if node in [:str, *]
+              # s(:dstr, *children)
+              return unless node in [:dstr, *children]
               # @type [Array<String, Symbol>]
               parts = []
-              node.children.each do |child|
-                return nil unless child.is_a?(AST::Node)
-                part = child.type == :dstr ? string_parts(child) : string_part(child)
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              children.each do |child|
+                return nil unless child.is_a?(::Parser::AST::Node)
+                part = string_part(child)
                 return nil if part.nil?
                 parts.concat part
               end
@@ -149,13 +155,13 @@ module Solargraph
             # @param node [::Parser::AST::Node]
             # @return [Array<String, Symbol>, nil]
             def string_part node
-              return [node.children[0].to_s] if node.type == :str
-              return unless node.type == :begin && node.children.length == 1
-              lvar = node.children[0]
-              return unless lvar.is_a?(AST::Node) && lvar.type == :lvar
-              name = lvar.children[0]
-              return unless name.is_a?(Symbol)
-              [name]
+              if node in [:str, String => value, *]
+                [value]
+              elsif node in [:dstr, *]
+                string_parts(node)
+              elsif node in [:begin, [:lvar, Symbol => name]] # "#{name}" - s(:begin, s(:lvar, name))
+                [name]
+              end
             end
 
             # Find where each interpolated variable gets its values. Every block
@@ -193,13 +199,14 @@ module Solargraph
               if source.nil?
                 return false unless %i[arg optarg kwarg kwoptarg].include?(decls[var.to_s])
                 template.params[var] = var.to_s
-              elsif source.type == :array
+              elsif source in [:array, *]
                 list = literal_values(source)
                 return false if list.nil?
                 template.values[var] = list
               else
-                param = source.children[0].to_s
-                return false unless source.type == :lvar && %i[arg restarg].include?(decls[param])
+                return false unless source in [:lvar, Symbol => name]
+                param = name.to_s
+                return false unless %i[arg restarg].include?(decls[param])
                 template.params[var] = param
                 template.iterated.push var
               end
@@ -217,38 +224,25 @@ module Solargraph
               loops = {}
               closure = region.closure
               while closure.is_a?(Pin::Block)
-                node = closure.node
-                return unless node.is_a?(AST::Node) && node.type == :block
-                call, args = node.children
-                return unless each_call?(call) && args.is_a?(AST::Node) && args.children.length == 1
-                arg = args.children[0]
-                receiver = call.children[0]
-                return unless arg.is_a?(AST::Node) && arg.type == :arg && receiver.is_a?(AST::Node)
-                var = arg.children[0]
-                loops[var] ||= receiver if var.is_a?(Symbol)
+                # receiver.each { |var| ... } - s(:block, s(:send, receiver, :each), s(:args, s(:arg, var)), body)
+                return unless closure.node in [:block, [:send, ::Parser::AST::Node => receiver, :each],
+                                               [:args, [:arg, Symbol => var]], *]
+                loops[var] ||= receiver
                 closure = closure.closure
               end
               loops
             end
 
-            # @param call [::Parser::AST::Node, nil]
-            # @return [Boolean]
-            def each_call? call
-              return false if call.nil?
-              call.type == :send && call.children[1] == :each && call.children.length == 2
-            end
-
             # True for `Foo::Bar` and `::Foo`, false for `obj.klass::Foo`, whose
             # namespace is not known from the source.
             #
-            # @param node [::Parser::AST::Node]
+            # @param node [::Parser::AST::Node, nil]
             # @return [Boolean]
             def constant_path? node
-              return false unless node.type == :const
-              base = node.children[0]
-              return true if base.nil?
-              return false unless base.is_a?(AST::Node)
-              base.type == :cbase || constant_path?(base)
+              # s(:const, base, name)
+              return false unless node in [:const, base, *]
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              base.nil? || (base in [:cbase]) || constant_path?(base)
             end
 
             # @param region [Parser::Region]
@@ -263,8 +257,9 @@ module Solargraph
             # @return [Array<String>, nil] nil unless every element is a literal
             def literal_values array
               array.children.map do |child|
-                return nil unless child.is_a?(AST::Node) && %i[str sym].include?(child.type)
-                child.children[0].to_s
+                return nil unless child in [:str | :sym, value, *]
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                value.to_s
               end
             end
 

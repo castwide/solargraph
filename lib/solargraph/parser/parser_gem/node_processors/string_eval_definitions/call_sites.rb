@@ -31,7 +31,8 @@ module Solargraph
               return [] if names.empty?
               api_map.source_maps.flat_map do |source_map|
                 source_map.method_call_nodes.flat_map do |node|
-                  next [] unless node.type == :send && names.include?(node.children[1].to_s)
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                  next [] unless (node in [:send, _, Symbol => method_name, *]) && names.include?(method_name.to_s)
                   pins_for_call(source_map, node)
                 end
               end
@@ -60,7 +61,8 @@ module Solargraph
               callee = callees.find { |pin| pin.is_a?(Pin::Method) && templates?(pin) }
               return [] unless callee.is_a?(Pin::Method)
               params = literal_arguments(callee, node)
-              receiver = receiver_namespace(node.children[0], closure, locals)
+              node => [:send, ::Parser::AST::Node | nil => receiver_node, *]
+              receiver = receiver_namespace(receiver_node, closure, locals)
               callee.call_site_templates.flat_map do |template|
                 next [] unless template.is_a?(Template)
                 target = target_namespace(template, receiver)
@@ -79,17 +81,22 @@ module Solargraph
             # @return [Hash{String => Array<String>}]
             def literal_arguments callee, node
               # @type [Array<::Parser::AST::Node>]
-              positional = node.children.drop(2).grep(::Parser::AST::Node)
-              last = positional.last
-              keywords = last&.type == :hash ? positional.pop : nil
+              # s(:send, receiver, method_name, *args)
+              node => [:send, _, _, *args]
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              positional = args.grep(::Parser::AST::Node)
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              keywords = positional.pop if positional.last in [:hash, *]
               # @type [Hash{String => Array<String>}]
               result = {}
               callee.parameters.each do |param|
                 case param.decl
                 when :arg, :optarg
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                   value = positional.shift
                   result[param.name] = literal_values(value) if value
                 when :restarg
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                   result[param.name] = positional.flat_map { |value| literal_values(value) }
                   positional = []
                 when :kwarg, :kwoptarg
@@ -102,10 +109,15 @@ module Solargraph
             # @param node [Object]
             # @return [Array<String>]
             def literal_values node
-              return [] unless node.is_a?(AST::Node)
-              return [node.children[0].to_s] if %i[str sym].include?(node.type)
-              return node.children.flat_map { |child| literal_values(child) } if node.type == :array
-              []
+              if node in ::Parser::AST::Node[:str | :sym, String | Symbol => value, *]
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                [value.to_s]
+              elsif node in ::Parser::AST::Node[:array, *elements]
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                elements.flat_map { |child| literal_values(child) }
+              else
+                []
+              end
             end
 
             # @param hash [::Parser::AST::Node, nil]
@@ -114,9 +126,10 @@ module Solargraph
             def keyword_value hash, name
               return if hash.nil?
               hash.children.each do |pair|
-                next unless pair.is_a?(AST::Node) && pair.type == :pair
-                key, value = pair.children
-                return value if key.is_a?(AST::Node) && key.type == :sym && key.children[0].to_s == name
+                # key: value - s(:pair, s(:sym, key), value)
+                next unless pair in [:pair, [:sym, Symbol => key], value]
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                return value if key.to_s == name
               end
               nil
             end
@@ -128,7 +141,7 @@ module Solargraph
             # @param locals [Array<Pin::LocalVariable>]
             # @return [String, nil]
             def receiver_namespace receiver, closure, locals
-              type = if receiver.nil? || receiver.type == :self
+              type = if receiver.nil? || (receiver in [:self])
                        closure.binder
                      else
                        Parser::ParserGem::NodeChainer.chain(receiver).infer_uncached(api_map, closure, locals)
