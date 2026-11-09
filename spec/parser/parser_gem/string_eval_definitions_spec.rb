@@ -248,6 +248,21 @@ describe Solargraph::Parser::ParserGem::NodeProcessors::StringEvalDefinitions do
     expect(map.get_path_pins('Base#staff?')).not_to be_empty
   end
 
+  it 'maps array and keyword arguments at call sites' do
+    map = map_code(%(
+      class Base
+        def self.flags(names, suffix:)
+          names.each do |name|
+            class_eval "def \#{name}_\#{suffix}; end"
+          end
+        end
+        flags %i[admin staff], suffix: :role
+      end
+    ))
+    expect(map.get_path_pins('Base#admin_role')).not_to be_empty
+    expect(map.get_path_pins('Base#staff_role')).not_to be_empty
+  end
+
   it 'maps onto the evaluated constant when the call has a typed receiver' do
     map = map_code(%(
       module Routing
