@@ -122,17 +122,24 @@ module Solargraph
               # @return [Template, nil]
               def from_send send, def_node, blocks
                 return nil unless definer?(send)
-                return nil if def_node.nil?
-                return nil unless %i[def defs].include?(def_node.type)
-                args = def_node.type == :def ? def_node.children[1] : def_node.children[2]
+                # s(:def, name, args, body) or s(:defs, receiver, name, args, body)
+                args = if def_node in [:def, _, ::Parser::AST::Node => def_args, *]
+                         def_args
+                       elsif def_node in [:defs, _, _, ::Parser::AST::Node => defs_args, *]
+                         defs_args
+                       end
                 return nil if args.nil?
                 positions = positional_parameters(args)
                 return nil if positions.empty?
                 # @type [Hash{::Symbol => ::Symbol}]
                 each_vars = {}
                 blocks.each { |block| each_vars.update(each_variable(block, positions)) }
-                own = blocks.last
-                block_args = own.children[1] if own && own.children[0].equal?(send)
+                # s(:block, call, args, body), when the block is define_method's own
+                block_args = nil
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                if (blocks.last in [_, call, block_params, *]) && call.equal?(send)
+                  block_args = block_params
+                end
                 build send, positions, each_vars, block_args
               end
 
@@ -148,9 +155,11 @@ module Solargraph
                 result = {}
                 return result unless Parser.is_ast_node?(args)
                 args.children.take(MAX_POSITIONS).each_with_index do |arg, index|
-                  break unless %i[arg optarg restarg].include?(arg.type)
-                  result[arg.children.first.to_s.to_sym] = [index, arg.type]
-                  break if arg.type == :restarg
+                  # s(:arg, name), s(:optarg, name, default) or s(:restarg, name)
+                  break unless arg in [:arg | :optarg | :restarg => type, Symbol => param, *]
+                  result[param] = [index, type]
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                  break if type == :restarg
                 end
                 result
               end
@@ -158,10 +167,9 @@ module Solargraph
               # @param node [::Parser::AST::Node]
               # @return [Boolean]
               def definer? node
-                return false unless Parser.is_ast_node?(node) && node.type == :send
-                receiver, method_name = node.children
-                return false unless DEFINERS.key?(method_name.to_s.to_sym)
-                receiver.nil? || (Parser.is_ast_node?(receiver) && receiver.type == :self)
+                # define_method(name) - s(:send, nil, :define_method, name, *args)
+                return false unless node in [:send, nil | [:self], Symbol => method_name, *]
+                DEFINERS.key?(method_name)
               end
 
               # The block variable of +param.each { |var| ... }+, mapped to +param+.
@@ -170,25 +178,22 @@ module Solargraph
               # @param positions [Hash{::Symbol => ::Array(Integer, ::Symbol)}]
               # @return [Hash{::Symbol => ::Symbol}]
               def each_variable node, positions
-                call, args = node.children
-                receiver, method_name = call.children
-                return {} unless call.type == :send && method_name.to_s == 'each' && call.children.length == 2
-                return {} unless Parser.is_ast_node?(receiver) && receiver.type == :lvar
-                param = receiver.children.first.to_s.to_sym
-                return {} unless positions.key?(param) && args.children.length == 1
-                var = block_variable(args.children.first)
+                # s(:block, s(:send, s(:lvar, param), :each), s(:args, arg), body)
+                return {} unless node in [_, [:send, [:lvar, Symbol => param], :each], [:args, arg], *]
+                return {} unless positions.key?(param)
+                var = block_variable(arg)
                 var ? { var => param } : {}
               end
 
               # @param arg [::Parser::AST::Node, nil]
               # @return [::Symbol, nil]
               def block_variable arg
-                return nil if arg.nil?
-                return arg.children.first.to_s.to_sym if arg.type == :arg
-                return nil unless arg.type == :procarg0 && arg.children.length == 1
-                inner = arg.children.first
-                return block_variable(inner) if Parser.is_ast_node?(inner)
-                inner.to_s.to_sym
+                # |var| - s(:arg, var); a lone |var| - s(:procarg0, s(:arg, var)) or s(:procarg0, var)
+                if arg in [:procarg0, ::Parser::AST::Node => inner]
+                  block_variable(inner)
+                elsif arg in [:arg | :procarg0, Symbol => var]
+                  var
+                end
               end
 
               # @param send [::Parser::AST::Node] the define_method call
@@ -198,9 +203,9 @@ module Solargraph
               #   parameters, if its body is a literal block
               # @return [Template, nil]
               def build send, positions, each_vars, block_args
-                _receiver, method_name, name = send.children
-                return nil unless Parser.is_ast_node?(name) && name.type == :lvar
-                var = name.children.first.to_s.to_sym
+                # define_method(var) - s(:send, receiver, method_name, s(:lvar, var), *args)
+                send => [:send, _, Symbol => method_name, *args]
+                return nil unless args in [[:lvar, Symbol => var], *]
                 iterated = each_vars[var]
                 param = positions[iterated || var]
                 return nil if param.nil?
@@ -211,7 +216,7 @@ module Solargraph
                   return nil if type == :restarg
                   mode = :name
                 end
-                new(position: position, mode: mode, scope: DEFINERS.fetch(method_name.to_s.to_sym),
+                new(position: position, mode: mode, scope: DEFINERS.fetch(method_name),
                     parameters: block_parameters(block_args))
               end
 
@@ -221,9 +226,12 @@ module Solargraph
                 return UNKNOWN_PARAMETERS if args.nil?
                 args.children.filter_map do |arg|
                   variable = block_variable(arg)
-                  next [:arg, variable.to_s] if arg.type == :procarg0 && variable
-                  decl = PARAMETER_DECLS[arg.type]
-                  [decl, arg.children.first.to_s] if decl
+                  next [:arg, variable.to_s] if (arg in [:procarg0, *]) && variable
+                  # s(:optarg, name, default); s(:restarg) for a bare *
+                  arg => [Symbol => type, *rest]
+                  decl = PARAMETER_DECLS[type]
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                  [decl, rest.first.to_s] if decl
                 end
               end
             end
@@ -233,29 +241,38 @@ module Solargraph
             # @param call [::Parser::AST::Node]
             # @return [::Array<String>]
             def names_from call
-              args = call.children.drop(2).reject { |arg| arg.type == :block_pass }
+              # s(:send, receiver, method_name, *args)
+              call => [:send, _, _, *call_args]
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              args = call_args.reject { |arg| arg in [:block_pass, *] }
               # A trailing hash is keyword arguments, not a name
-              args.pop if args.last&.type == :hash
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              args.pop if args.last in [:hash, *]
               # Splatted arguments make the positions unknowable
-              return [] if args.take(position + 1).any? { |arg| arg.type == :splat }
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              return [] if args.take(position + 1).any? { |arg| arg in [:splat, *] }
               case mode
               when :name
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 [literal_name(args[position])].compact
               when :splat
-                args.drop(position).take_while { |arg| arg.type != :splat }.filter_map { |arg| literal_name(arg) }
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                args.drop(position).take_while { |arg| !(arg in [:splat, *]) }.filter_map { |arg| literal_name(arg) }
               else
-                array = args[position]
-                return [] if array.nil? || array.type != :array
-                array.children.filter_map { |arg| literal_name(arg) }
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                return [] unless args[position] in [:array, *elements]
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                elements.filter_map { |arg| literal_name(arg) }
               end
             end
 
             # @param node [::Parser::AST::Node, nil]
             # @return [String, nil]
             def literal_name node
-              return nil if node.nil?
-              return nil unless %i[sym str].include?(node.type)
-              name = node.children.first.to_s
+              return nil unless node in [:sym | :str, Symbol | String => value]
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              name = value.to_s
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               name.empty? ? nil : name
             end
           end

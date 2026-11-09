@@ -36,11 +36,11 @@ module Solargraph
             # @return [Array<Pin::Method>]
             def call_pins source_map, template_pins
               source_map.method_call_nodes.flat_map do |node|
-                next [] unless node.type == :send
-                candidates = template_pins[node.children[1].to_s]
+                # s(:send, receiver, method_name, *args), called on self
+                next [] unless node in [:send, nil | [:self], Symbol => method_name, *]
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                candidates = template_pins[method_name.to_s]
                 next [] unless candidates
-                receiver = node.children[0]
-                next [] unless receiver.nil? || receiver.type == :self
                 namespace = class_level_namespace(source_map.locate_closure_pin(node.location.line, node.location.column))
                 next [] unless namespace
                 match = candidates.find { |pin| callable_from?(pin, namespace) }

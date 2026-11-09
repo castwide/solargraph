@@ -17,7 +17,9 @@ module Solargraph
           class DefinerNode < Parser::NodeProcessor::Base
             # @return [Boolean] continue processing the next processor of the same node.
             def process
-              return true unless Template::DEFINERS.key?(node.children[1])
+              # s(:send, receiver, method_name, *args)
+              node => [:send, _, Symbol => method_name, *]
+              return true unless Template::DEFINERS.key?(method_name)
               # @type [::Array<::Parser::AST::Node>]
               blocks = []
               closure = region.closure
