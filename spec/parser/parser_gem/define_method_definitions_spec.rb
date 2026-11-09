@@ -363,4 +363,29 @@ describe Solargraph::Parser::ParserGem::NodeProcessors::DefineMethodDefinitions 
     end
     expect(template_calls.call(200)).to be <= 2 * template_calls.call(100)
   end
+
+  it 'keeps one copy of a template when combining a pin with its copy' do
+    source = Solargraph::SourceMap.load_string(%(
+      class Base
+        def self.flag(name)
+          define_method(name) { true }
+        end
+      end
+    ), 'test.rb')
+    pin = source.pins.find { |p| p.path == 'Base.flag' }
+    copy = Marshal.load(Marshal.dump(pin))
+    expect(pin.combine_with(copy).call_site_templates.length).to eq(1)
+  end
+
+  it 'reads a block variable that a parser wraps in procarg0' do
+    # Parsers built with emit_procarg0 write |type| as s(:procarg0, s(:arg, :type))
+    node = ->(type, *children) { Parser::AST::Node.new(type, children) }
+    send = node.call(:send, nil, :define_method, node.call(:lvar, :type))
+    block = node.call(:block, node.call(:send, node.call(:lvar, :types), :each),
+                      node.call(:args, node.call(:procarg0, node.call(:arg, :type))), send)
+    def_node = node.call(:defs, node.call(:self), :add, node.call(:args, node.call(:restarg, :types)), block)
+    template = Solargraph::Parser::ParserGem::NodeProcessors::DefineMethodDefinitions::Template
+               .from_send(send, def_node, [block])
+    expect(template&.mode).to eq(:splat)
+  end
 end
