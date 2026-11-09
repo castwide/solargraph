@@ -115,7 +115,7 @@ module Solargraph
       end
 
       def rest?
-        %i[restarg kwrestarg].include?(decl)
+        %i[restarg kwrestarg forward_args].include?(decl)
       end
 
       def block?
@@ -194,6 +194,14 @@ module Solargraph
           end
         end
         super
+      end
+
+      def typedef_typeset
+        tag = param_tag
+        return super unless tag
+
+        type = ComplexType.try_parse(*tag.types)
+        type.to_typedef_typeset
       end
 
       # The parameter's zero-based location in the block's signature.

@@ -46,8 +46,9 @@ module Solargraph
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
+      # @param expansions [Hash]
       def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '',
-                     docstring: nil, directives: nil, combine_priority: nil
+                     docstring: nil, directives: nil, combine_priority: nil, expansions: {}
         @location = location
         @type_location = type_location
         @closure = closure
@@ -60,9 +61,23 @@ module Solargraph
         @combine_priority = combine_priority
         # @type [ComplexType, ComplexType::UniqueType, nil]
         @binder = nil
+        @expansions = expansions
 
         assert_source_provided
         assert_location_provided
+      end
+
+      def typedef_path
+        Typedef::Path.new(path.to_s, rooted: return_type.rooted?)
+      end
+
+      # @return [Typedef::Typeset]
+      def typedef_typeset
+        return_type.to_typedef_typeset
+      end
+
+      def expansions
+        @expansions ||= {}
       end
 
       # @return [void]
@@ -158,7 +173,17 @@ module Solargraph
       # @param other [self]
       # @return [Pin::Closure, nil]
       def combine_closure other
-        choose_pin_attr_with_same_name(other, :closure)
+        chosen = choose_pin_attr_with_same_name(other, :closure)
+        return chosen unless chosen.is_a?(Pin::Namespace) && chosen.generics.empty?
+
+        # Combined types may name type parameters only the other closure declares
+        own = closure
+        return own if own.is_a?(Pin::Namespace) && !own.generics.empty?
+
+        theirs = other.closure
+        return theirs if theirs.is_a?(Pin::Namespace) && !theirs.generics.empty?
+
+        chosen
       end
 
       # @param other [self]
@@ -435,6 +460,7 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [self]
       def resolve_generics definitions, context_type
+        definitions = declaring_definitions(definitions)
         transform_types { |t| t&.resolve_generics(definitions, context_type) }
       end
 
@@ -491,7 +517,7 @@ module Solargraph
           # @sg-ignore Translate to something flow sensitive typing understands
           name == other.name &&
           # @sg-ignore flow sensitive typing needs to handle attrs
-          (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
+          (closure.equal?(other.closure) || closure&.nearly?(other.closure)) &&
           # @sg-ignore Translate to something flow sensitive typing understands
           (comments == other.comments ||
            # @sg-ignore Translate to something flow sensitive typing understands
@@ -580,7 +606,7 @@ module Solargraph
 
       # @todo Candidate for deprecation (see ApiMap#process_macros)
       def maybe_macros?
-        comments.include?('@macro')        
+        comments.include?('@macro')
       end
 
       def macros_names?
@@ -711,6 +737,18 @@ module Solargraph
         end
       end
 
+      def generics
+        @generics ||= []
+      end
+
+      def typedef_generics
+        @typedef_generics ||= if generics.empty?
+                                docstring.tags(:generic).map(&:name)
+                              else
+                                generics
+                              end
+      end
+
       protected
 
       # @sg-ignore def should infer as symbol - "Not enough arguments to Module#protected"
@@ -730,6 +768,19 @@ module Solargraph
       attr_writer :docstring, :directives
 
       private
+
+      # Declarations of a reopened generic may spell its parameters
+      # differently, so bind by position against this pin's own one.
+      #
+      # @param definitions [Pin::Namespace, nil]
+      # @return [Pin::Namespace, nil]
+      def declaring_definitions definitions
+        own = closure
+        return definitions unless definitions.is_a?(Pin::Namespace) && own.is_a?(Pin::Namespace)
+        return definitions unless own.path == definitions.path && !own.generics.empty?
+
+        own
+      end
 
       # @return [void]
       def parse_comments
@@ -794,7 +845,7 @@ module Solargraph
       end
 
       def collect_macro_names
-        "#{comments}\n".scan(/\s*?@macro +(\S+).*?[\n]/).map { |match| match[0] }
+        "#{comments}\n".scan(/\s*?@macro +(\S+).*?\n/).map { |match| match[0] }
       end
     end
   end

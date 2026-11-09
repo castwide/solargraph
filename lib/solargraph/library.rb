@@ -589,7 +589,7 @@ module Solargraph
     def cache_next_gemspec
       return if @cache_progress
 
-      spec = api_map.unloaded_gems.first
+      spec = (api_map.unloaded_gems - cache_errors).first
       return end_cache_progress unless spec
 
       pending = api_map.unloaded_gems.length - cache_errors.length - 1
@@ -612,8 +612,12 @@ module Solargraph
 
           cmd = [workspace.command_path, 'cache', spec.name]
           cmd.push('--directory', workspace.directory) if workspace.directory
-          _o, e, s = Open3.capture3(*cmd)
-          if s.success?
+          begin
+            _o, e, s = Open3.capture3(*cmd)
+          rescue SystemCallError => e
+            # The command could not start, e.g. Errno::ENOENT - handled below
+          end
+          if s&.success?
             logger.info "Cached #{spec.name} #{spec.version}"
           else
             cache_errors.add spec

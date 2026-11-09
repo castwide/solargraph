@@ -29,6 +29,10 @@ module Solargraph
         super || closure&.location
       end
 
+      def path
+        closure.path
+      end
+
       def typify api_map
         # @sg-ignore Need to add nil check here
         if return_type.defined?

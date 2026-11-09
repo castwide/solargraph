@@ -50,9 +50,10 @@ module Solargraph
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
       return self unless generic?
 
-      ComplexType.new(@items.map do |i|
-        i.resolve_generics_from_context(generics_to_resolve, context_type,
-                                        resolved_generic_values: resolved_generic_values)
+      ComplexType.new(@items.map do |unique_type|
+        unique_type.resolve_generics_from_context(generics_to_resolve,
+                                                  destructure_context_type(unique_type, context_type),
+                                                  resolved_generic_values: resolved_generic_values)
       end)
     end
 
@@ -416,6 +417,31 @@ module Solargraph
       ComplexType.new(types)
     end
 
+    # @return [Array<Typedef::Type>]
+    def to_typedef_types
+      # @todo Quick and dirty hack
+      return [Typedef::Type::ROOT] if to_s == 'Class<>'
+
+      items.map(&:to_typedef_types)
+    end
+
+    def to_typedef_typeset
+      # @todo Quick and dirty hack
+      return Typedef::Typeset.new([Typedef::Type::ROOT]) if to_s == 'Class<>'
+      if hash_parameters?
+        top = Typedef.tokenize(name)
+        key = Typedef::Typeset.new(key_types.map(&:to_typedef_typeset))
+        val = Typedef::Typeset.new(value_types.map(&:to_typedef_typeset))
+        Typedef::Type.new(top, key, val)
+      elsif fixed_parameters? && !value_types.empty?
+        top = Typedef.tokenize(name)
+        vals = value_types.map(&:to_typedef_typeset)
+        Typedef::Tuple.new(top, *vals)
+      else
+        Typedef::Typeset.new(items.map(&:to_typedef_typeset))
+      end
+    end
+
     protected
 
     def equality_fields
@@ -564,6 +590,25 @@ module Solargraph
     BOT = ComplexType.parse('bot')
 
     private
+
+    # Narrows what a generic member binds against: context members this type
+    # already matches concretely are dropped. Nothing left over means no value
+    # can reach the generic, which is bot.
+    #
+    # @param unique_type [UniqueType] A member of @items
+    # @param context_type [ComplexType, UniqueType, nil]
+    # @return [ComplexType, UniqueType, nil]
+    def destructure_context_type unique_type, context_type
+      return context_type unless unique_type.generic? && context_type.is_a?(ComplexType) && @items.length > 1
+
+      concrete_items = @items.reject(&:generic?)
+      return context_type if concrete_items.empty?
+
+      remaining_items = context_type.items.reject { |ct| concrete_items.any? { |ci| ci.name == ct.name } }
+      return BOT if remaining_items.empty?
+
+      ComplexType.new(remaining_items)
+    end
 
     # @todo This is a quick and dirty hack that forces `self` keywords
     #   to reference an instance of their class and never the class itself.

@@ -75,6 +75,9 @@ Style/ClassVars:
 Style/StderrPuts:
   Enabled: false
 
+Style/DirectiveScope:
+  Enabled: false
+
 #
 # Set a relaxed standard on harder-to-address item for ease of
 # contribution - if you are good at refactoring, we welcome PRs to
