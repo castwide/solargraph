@@ -180,7 +180,7 @@ module Solargraph
               decls = method_pin ? method_pin.parameters.to_h { |param| [param.name, param.decl] } : {}
               template = Template.new(parts: parts, params: {}, iterated: [], values: {},
                                       target: target, gates: region.closure.gates, scope: scope)
-              vars = parts.select { |part| part.is_a?(Symbol) }.uniq
+              vars = parts.grep(Symbol).uniq
               # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
               template if vars.all? { |var| bind(template, var, loops[var], decls) }
             end

@@ -45,7 +45,7 @@ module Solargraph
 
             # @param pin [Pin::Method]
             def templates? pin
-              pin.call_site_templates.any? { |template| template.is_a?(Template) }
+              pin.call_site_templates.any?(Template)
             end
 
             # @param source_map [SourceMap]
