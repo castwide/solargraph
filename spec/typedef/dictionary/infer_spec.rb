@@ -20,6 +20,19 @@ describe Solargraph::Typedef::Dictionary do
       expect(typeset.to_s).to eq('String | nil')
     end
 
+    it 'resolves methods on a declared literal receiver' do
+      code = %(
+        class Foo
+          # @return [:foo]
+          def sym; end
+        end
+        Foo.new.sym.to_proc
+      )
+
+      typeset = dictionary_for(code, [5, 20]).infer
+      expect(typeset.to_s).to eq('Proc')
+    end
+
     it 'infers local variables' do
       code = %(
         x = 0

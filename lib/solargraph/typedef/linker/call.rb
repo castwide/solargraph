@@ -48,7 +48,7 @@ module Solargraph
 
         def method_call
           # @todo Quick and dirty hack to force UniqueType to ComplexType
-          pins = ComplexType.new([receiver.context]).to_typedef_types
+          pins = ComplexType.new([receiver.context]).non_literal_type.to_typedef_types
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                             .select { |pin| pin.name == link.word }
                             .map { |pin| find_matching_signature(pin, receiver) }
