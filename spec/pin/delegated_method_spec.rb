@@ -39,4 +39,46 @@ describe Solargraph::Pin::DelegatedMethod do
 
     expect(pin.return_type.to_s).to eq('String')
   end
+
+  it 'resolves a delegation to the class to the class method' do
+    source = Solargraph::Source.load_string(%(
+      require 'forwardable'
+
+      class Foo
+        extend Forwardable
+
+        def_delegator :class, :bar
+
+        # @return [String]
+        def self.bar
+          'bar'
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    pin = api_map.get_method_stack('Foo', 'bar').first
+
+    expect(pin.typify(api_map).to_s).to eq('String')
+  end
+
+  it 'leaves delegations that lead back to each other undefined' do
+    source = Solargraph::Source.load_string(%(
+      require 'forwardable'
+
+      class Foo
+        extend Forwardable
+
+        def_delegator :itself, :bar, :baz
+        def_delegator :itself, :baz, :bar
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    pin = api_map.get_method_stack('Foo', 'bar').first
+
+    expect(pin.probe(api_map)).to be_undefined
+  end
 end
