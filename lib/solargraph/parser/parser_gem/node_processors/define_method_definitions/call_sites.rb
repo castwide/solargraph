@@ -16,7 +16,7 @@ module Solargraph
             # @return [Array<Pin::Method>]
             def pins
               template_pins = api_map.call_site_template_pins.transform_values do |pins|
-                pins.select { |pin| pin.call_site_templates.any? { |t| t.is_a?(Template) } }
+                pins.select { |pin| pin.call_site_templates.any?(Template) }
               end
               template_pins.reject! { |_name, pins| pins.empty? }
               return [] if template_pins.empty?
