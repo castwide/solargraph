@@ -719,7 +719,6 @@ describe Solargraph::Typedef::Dictionary do
     end
 
     it 'preserves hash value when it is a union without brackets' do
-      pending 'Inferred type contains NilClass'
       code = %(
         # @type [Hash{String => Array, Hash, Integer, nil}]
         raw_data = {}
@@ -728,6 +727,19 @@ describe Solargraph::Typedef::Dictionary do
       )
       typeset = dictionary_for(code, [4, 8]).infer
       expect(typeset.to_s).to eq('Array | Hash | Integer | nil')
+    end
+
+    it 'infers generic yield parameters from mixins' do
+      code = %(
+        # @type [Enumerable<String>]
+        a = ['a', 'b', 'c']
+        # Generic parameter comes from `_Each#each`
+        a.each do |s|
+          s
+        end
+      )
+      typeset = dictionary_for(code, [5, 10]).infer
+      expect(typeset.to_s).to eq('String')
     end
   end
 end

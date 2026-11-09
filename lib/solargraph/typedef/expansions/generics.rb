@@ -30,15 +30,49 @@ module Solargraph
           @closure_generic_values ||= begin
             closure_names = closure_generic_names
             type = find_matching_receiver_type(closure_names)
-            if type
-              closure_names.map { |name| "generic<#{name}>" }.zip(type.params).to_h
-            else
-              {}
-            end
+            positional = if type
+                           closure_names.map { |name| "generic<#{name}>" }.zip(type.params).to_h
+                         else
+                           {}
+                         end
+            positional.merge(receiver_namespace_generic_values) { |_name, existing, _by_name| existing }
           end
         end
 
         private
+
+        # Generic values for the type parameters of the receiver's own
+        # namespaces, matched by name rather than by position.
+        #
+        # Methods reached through included modules and interfaces carry the
+        # generics of the namespace that declares them. RBS, for example,
+        # defines +Enumerable[E]+ as +Enumerable[E] < _Each[E]+, so the +each+
+        # pin of an +Enumerable[String]+ receiver comes from +_Each+ and names
+        # its block parameter +generic<E>+. Such a generic cannot be derived by
+        # zipping positions, since the declaring namespace's parameters rarely
+        # line up with the receiver's, so every flat type in the receiver binds
+        # its own namespace's parameters by name.
+        #
+        # @return [Hash{String => Object}]
+        def receiver_namespace_generic_values
+          return {} if receiver.nil?
+          typeset = receiver.typedef_typeset
+          return {} if typeset.nil?
+          values = {}
+          typeset.flat_types.each do |type|
+            next if type.params.empty?
+            namespace_pin = api_map.get_path_pins(type.base.to_s).grep(Pin::Namespace).first
+            next if namespace_pin.nil?
+            namespace_pin.generics.each_with_index do |name, index|
+              param = type.params[index]
+              next if param.nil?
+              values["generic<#{name}>"] ||= param
+            end
+          end
+          values
+        rescue StandardError => _e
+          {}
+        end
 
         # Values for method generics supplied by a block passed at the call
         # site. When a method such as Enumerable#map declares its block's
