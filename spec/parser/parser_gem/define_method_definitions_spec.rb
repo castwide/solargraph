@@ -1,4 +1,4 @@
-describe Solargraph::Convention::DefineMethodMacros do
+describe Solargraph::Parser::ParserGem::NodeProcessors::DefineMethodDefinitions do
   # @param code [String]
   # @return [Solargraph::ApiMap]
   def map_code code
@@ -22,7 +22,7 @@ describe Solargraph::Convention::DefineMethodMacros do
     expect(map.get_path_pins('Base#notice').first).to be_a(Solargraph::Pin::Method)
   end
 
-  it 'generates methods in subclasses from an inherited macro' do
+  it 'generates methods in subclasses from an inherited class method' do
     map = map_code(%(
       class Base
         def self.add_flash_types(*types)
@@ -174,7 +174,7 @@ describe Solargraph::Convention::DefineMethodMacros do
   end
 
   it 'generates methods from a call in a block at module level' do
-    macro = Solargraph::SourceMap.load_string(%(
+    definer = Solargraph::SourceMap.load_string(%(
       module Flash
         module ClassMethods
           def add_flash_types(*types)
@@ -184,7 +184,7 @@ describe Solargraph::Convention::DefineMethodMacros do
           end
         end
       end
-    ), 'macro.rb')
+    ), 'definer.rb')
     call = Solargraph::SourceMap.load_string(%(
       module Flash
         included do
@@ -196,7 +196,7 @@ describe Solargraph::Convention::DefineMethodMacros do
       end
     ), 'call.rb')
     map = Solargraph::ApiMap.new
-    map.catalog Solargraph::Bench.new(source_maps: [macro, call])
+    map.catalog Solargraph::Bench.new(source_maps: [definer, call])
     expect(map.get_path_pins('Flash#alert').first.location.filename).to eq('call.rb')
     expect(map.get_method_stack('Base', 'notice')).not_to be_empty
   end
@@ -320,7 +320,7 @@ describe Solargraph::Convention::DefineMethodMacros do
   end
 
   it 'ignores parameters past the positional limit' do
-    params = (0..Solargraph::Convention::DefineMethodMacros::Macro::MAX_POSITIONS).map { |i| "p#{i}" }
+    params = (0..Solargraph::Parser::ParserGem::NodeProcessors::DefineMethodDefinitions::Template::MAX_POSITIONS).map { |i| "p#{i}" }
     map = map_code(%(
       class Base
         def self.flag(#{params.join(', ')})
@@ -335,7 +335,7 @@ describe Solargraph::Convention::DefineMethodMacros do
   end
 
   it 'ignores define_method calls past the block depth limit' do
-    depth = Solargraph::Convention::DefineMethodMacros::Macro::MAX_BLOCK_DEPTH
+    depth = Solargraph::Parser::ParserGem::NodeProcessors::DefineMethodDefinitions::Template::MAX_BLOCK_DEPTH
     map = map_code(%(
       class Base
         def self.shallow(name)
@@ -353,14 +353,14 @@ describe Solargraph::Convention::DefineMethodMacros do
   end
 
   it 'examines each define_method call in a method once' do
-    macro = Solargraph::Convention::DefineMethodMacros::Macro.singleton_class
-    macro_calls = lambda do |count|
+    template = Solargraph::Parser::ParserGem::NodeProcessors::DefineMethodDefinitions::Template.singleton_class
+    template_calls = lambda do |count|
       code = "class Base\n  def self.setup(unused)\n#{"    define_method(:m) { nil }\n" * count}  end\nend\n"
       calls = 0
-      trace = TracePoint.new(:call) { |tp| calls += 1 if tp.defined_class == macro }
+      trace = TracePoint.new(:call) { |tp| calls += 1 if tp.defined_class == template }
       trace.enable { Solargraph::SourceMap.load_string(code, 'test.rb').pins }
       calls
     end
-    expect(macro_calls.call(200)).to be <= 2 * macro_calls.call(100)
+    expect(template_calls.call(200)).to be <= 2 * template_calls.call(100)
   end
 end

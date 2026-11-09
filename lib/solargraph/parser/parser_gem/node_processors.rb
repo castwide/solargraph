@@ -34,6 +34,7 @@ module Solargraph
         autoload :ClassDefinition,  'solargraph/parser/parser_gem/node_processors/class_definition'
         autoload :StructDefinition, 'solargraph/parser/parser_gem/node_processors/struct_definition'
         autoload :DataDefinition,   'solargraph/parser/parser_gem/node_processors/data_definition'
+        autoload :DefineMethodDefinitions, 'solargraph/parser/parser_gem/node_processors/define_method_definitions'
       end
     end
 
@@ -46,7 +47,7 @@ module Solargraph
       register :def,          ParserGem::NodeProcessors::DefNode
       register :defs,         ParserGem::NodeProcessors::DefsNode
       register :if,           ParserGem::NodeProcessors::IfNode
-      register :send,         Convention::DefineMethodMacros::NodeProcessors::DefinerNode
+      register :send,         ParserGem::NodeProcessors::DefineMethodDefinitions::DefinerNode
       register :send,         ParserGem::NodeProcessors::SendNode
       register :class,        ParserGem::NodeProcessors::StructDefinition::StructNode
       register :class,        ParserGem::NodeProcessors::DataDefinition::DataNode

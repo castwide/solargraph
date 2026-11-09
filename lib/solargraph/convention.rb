@@ -9,7 +9,6 @@ module Solargraph
     autoload :Gemfile, 'solargraph/convention/gemfile'
     autoload :Gemspec, 'solargraph/convention/gemspec'
     autoload :Rakefile, 'solargraph/convention/rakefile'
-    autoload :DefineMethodMacros, 'solargraph/convention/define_method_macros'
 
     # @type [Set<Convention::Base>]
     @@conventions = Set.new
@@ -70,22 +69,8 @@ module Solargraph
       result
     end
 
-    # Pins derived from a cataloged ApiMap as a whole, e.g., methods that
-    # calls to macros define.
-    #
-    # @param api_map [ApiMap]
-    # @return [Environ]
-    def self.for_catalog api_map
-      result = Environ.new
-      @@conventions.each do |conv|
-        result.merge conv.catalog(api_map)
-      end
-      result
-    end
-
     register Gemfile
     register Gemspec
     register Rakefile
-    register DefineMethodMacros
   end
 end

@@ -107,27 +107,4 @@ describe Solargraph::Convention do
 
     described_class.unregister updated_dummy_convention
   end
-
-  it 'adds the pins conventions derive from the cataloged map' do
-    convention = Class.new(Solargraph::Convention::Base) do
-      def catalog api_map
-        pins = api_map.call_site_template_pins.fetch('flag', []).map do |pin|
-          Solargraph::Pin::Method.new(name: 'generated', closure: pin.closure, scope: :instance, source: :spec)
-        end
-        Solargraph::Environ.new(pins: pins)
-      end
-    end
-    source = Solargraph::SourceMap.load_string(%(
-      class Base
-        def self.flag; end
-      end
-    ), 'test.rb')
-    source.pins.find { |pin| pin.path == 'Base.flag' }.call_site_templates.push :template
-    described_class.register convention
-    api_map = Solargraph::ApiMap.new
-    api_map.catalog Solargraph::Bench.new(source_maps: [source])
-    expect(api_map.get_path_pins('Base#generated')).not_to be_empty
-  ensure
-    described_class.unregister convention
-  end
 end

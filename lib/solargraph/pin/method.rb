@@ -39,8 +39,9 @@ module Solargraph
         @call_site_templates = call_site_templates if call_site_templates
       end
 
-      # Summaries, recorded by conventions, of the methods that a call to
-      # this method defines; the conventions map them at each call site.
+      # Summaries, recorded while mapping the method's body, of the methods
+      # that a call to this method defines; ApiMap maps them at each call
+      # site.
       #
       # @return [::Array<Object>]
       def call_site_templates
