@@ -360,4 +360,29 @@ describe Solargraph::Parser::ParserGem::NodeProcessors::StringEvalDefinitions do
     expect(copy.call_site_templates).not_to be_empty
     expect(copy.call_site_templates).to eq(pin.call_site_templates)
   end
+
+  it 'maps strings built from adjacent literals' do
+    map = map_code(%(
+      class Foo
+        %w(bar).each do |name|
+          class_eval "def \#{name}_one; end; " "def \#{name}_two; end"
+        end
+      end
+    ))
+    expect(map.get_path_pins('Foo#bar_one')).not_to be_empty
+    expect(map.get_path_pins('Foo#bar_two')).not_to be_empty
+  end
+
+  it 'keeps one copy of a template when combining pins' do
+    source = Solargraph::SourceMap.load_string(%(
+      class Base
+        def self.flag(name)
+          class_eval "def \#{name}?; true; end"
+        end
+      end
+    ), 'test.rb')
+    pin = source.pins.find { |p| p.path == 'Base.flag' }
+    copy = Marshal.load(Marshal.dump(pin))
+    expect(pin.combine_with(copy).call_site_templates.length).to eq(1)
+  end
 end
