@@ -70,8 +70,6 @@ module Solargraph
             end
           end
           values
-        rescue StandardError => _e
-          {}
         end
 
         # Values for method generics supplied by a block passed at the call

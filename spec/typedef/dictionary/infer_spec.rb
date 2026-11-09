@@ -741,5 +741,19 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [5, 10]).infer
       expect(typeset.to_s).to eq('String')
     end
+
+    it 'infers nil with conditional reassignments' do
+      code = %(
+        bar = nil
+        if baz
+          bar = :foo
+        elsif qux
+          bar = 123
+        end
+        bar
+      )
+      typeset = dictionary_for(code, [7, 8]).infer
+      expect(typeset.to_s).to eq('Integer | Symbol | nil')
+    end
   end
 end
