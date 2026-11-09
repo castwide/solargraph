@@ -29,16 +29,6 @@ module Solargraph
         EMPTY_ENVIRON
       end
 
-      # The Environ for a cataloged ApiMap, for pins that depend on more
-      # than one source, e.g., methods that calls to macros define.
-      # Subclasses can override this method.
-      #
-      # @param api_map [ApiMap]
-      # @return [Environ]
-      def catalog api_map
-        EMPTY_ENVIRON
-      end
-
       # Provides any additional method pins based on e the described object.
       #
       # @param api_map [ApiMap]

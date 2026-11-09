@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Solargraph::Convention::StringEvalDefinitions do
+describe Solargraph::Parser::ParserGem::NodeProcessors::StringEvalDefinitions do
   # @param code [String]
   # @return [Solargraph::ApiMap]
   def map_code code
