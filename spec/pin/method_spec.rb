@@ -139,6 +139,12 @@ describe Solargraph::Pin::Method do
     expect(Marshal.load(Marshal.dump(pin)).call_site_templates).to eq([:one])
   end
 
+  it 'allocates call site templates only when they are used' do
+    pin = described_class.new(name: 'foo')
+    expect(pin.instance_variable_defined?(:@call_site_templates)).to be(false)
+    expect(pin.call_site_templates).to eq([])
+  end
+
   it 'shares call site templates with module_function copies' do
     source = Solargraph::SourceMap.load_string(%(
       module Before

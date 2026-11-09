@@ -23,10 +23,10 @@ module Solargraph
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
       # @param context [ComplexType, ComplexType::UniqueType, nil]
-      # @param call_site_templates [::Array<Object>]
+      # @param call_site_templates [::Array<Object>, nil]
       # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
-                     context: nil, call_site_templates: [], **splat
+                     context: nil, call_site_templates: nil, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -36,7 +36,7 @@ module Solargraph
         @signatures = signatures
         @anon_splat = anon_splat
         @context = context if context
-        @call_site_templates = call_site_templates
+        @call_site_templates = call_site_templates if call_site_templates
       end
 
       # Summaries, recorded by conventions, of the methods that a call to
