@@ -50,27 +50,16 @@ module Solargraph
       %i[comments parameters return_type signatures].each do |method|
         define_method(method) do
           # @sg-ignore Need to set context correctly in define_method blocks
-          @resolved_method ? @resolved_method.send(method) : super()
+          follow(method) { super() }
         end
       end
-
-      # Paths of the delegations being followed, to stop at a cycle
-      @@resolving = []
 
       %i[typify realize infer probe].each do |method|
         # @param api_map [ApiMap]
         define_method(method) do |api_map|
           resolve_method(api_map)
-          # A delegation that leads back to itself stays unresolved
           # @sg-ignore Need to set context correctly in define_method blocks
-          return super(api_map) if !@resolved_method || @@resolving.include?(path)
-
-          begin
-            @@resolving.push path
-            @resolved_method.send(method, api_map)
-          ensure
-            @@resolving.pop
-          end
+          follow(method, api_map) { super(api_map) }
         end
       end
 
@@ -81,6 +70,27 @@ module Solargraph
       end
 
       private
+
+      # Paths of the delegations being followed, to stop at a cycle
+      @@following = []
+
+      # Sends the method to the resolved method, or yields when unresolved
+      # or when following it would lead back to this delegation
+      #
+      # @param method [Symbol]
+      # @param args [Array<ApiMap>]
+      # @yieldreturn [String, ComplexType, ComplexType::UniqueType, ::Array<Signature>, ::Array<Parameter>, Base, nil]
+      # @return [String, ComplexType, ComplexType::UniqueType, ::Array<Signature>, ::Array<Parameter>, Base, nil]
+      def follow method, *args
+        return yield if !@resolved_method || @@following.include?(path)
+
+        @@following.push path
+        begin
+          @resolved_method.send(method, *args)
+        ensure
+          @@following.pop
+        end
+      end
 
       # Resolves the receiver chain and method name to a method pin, resetting any previously resolution.
       #
@@ -109,8 +119,8 @@ module Solargraph
 
         receiver_path, method_scope =
           # @sg-ignore Need to add nil check here
-          if @receiver_chain.constant? || receiver_type.name == 'Class'
-            # HACK: the `return_type` of a constant or `class` call is Class<Whatever>, but looking up a method expects
+          if @receiver_chain.constant?
+            # HACK: the `return_type` of a constant is Class<Whatever>, but looking up a method expects
             # the arguments `"Whatever"` and `scope: :class`.
             # @sg-ignore Need to add nil check here
             [receiver_type.to_s.sub(/^Class<(.+)>$/, '\1'), :class]
