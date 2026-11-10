@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'tmpdir'
+
 describe Solargraph::Plugin::ActiveSupport do
   # @param namespace [String]
   # @param code [String]
@@ -164,6 +166,55 @@ describe Solargraph::Plugin::ActiveSupport do
       it 'skips without activesupport gem' do
         pins = api_map.get_methods('Consumer', scope: :class)
         expect(pins.map(&:path)).not_to include('Example::ClassMethods#foo')
+      end
+    end
+
+    context 'when a gem concern declares a class_attribute in its included block' do
+      around do |example|
+        Dir.mktmpdir do |dir|
+          @gem_dir = dir
+          example.run
+        end
+      end
+
+      # @return [Array<Solargraph::Pin::Base>]
+      def gem_pins
+        FileUtils.mkdir_p File.join(@gem_dir, 'lib')
+        File.write File.join(@gem_dir, 'lib', 'jobs.rb'), %(
+          module Jobs
+            module QueueName
+              extend ActiveSupport::Concern
+
+              included do
+                class_attribute :queue_name
+              end
+            end
+
+            class Base
+              include QueueName
+            end
+          end
+        )
+        metagem = Solargraph::Metagem.new(name: 'jobs', full_path: @gem_dir, spec_file: nil,
+                                          source: "source at #{@gem_dir}", version: '1.0.0',
+                                          require_paths: ['lib'], dependencies: ['activesupport'])
+        Solargraph::Collection::Gem.new(metagem).pins
+      end
+
+      before do
+        # Map the gem before stubbing gem names, which would also reach the gem's own catalog
+        pins = gem_pins
+        # rubocop:disable-next RSpec/AnyInstance
+        allow_any_instance_of(Solargraph::External).to receive(:configured_gem_names).and_return(['activesupport'])
+        # rubocop:disable-next RSpec/AnyInstance
+        allow_any_instance_of(Solargraph::External).to receive(:pins) { pins.clone }
+      end
+
+      it 'adds the accessor to the includer' do
+        pending 'needs https://github.com/castwide/solargraph/pull/1446'
+
+        names = api_map.get_methods('Jobs::Base', scope: :class).map(&:name)
+        expect(names).to include('queue_name')
       end
     end
   end
