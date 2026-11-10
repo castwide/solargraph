@@ -7,11 +7,9 @@ module Solargraph
       #
       class Generics < Base
         def expand
-          expanded = pin.typedef_typeset
-                        .expand(zip_generic_values)
-                        .expand(closure_generic_values)
-          block_values = block_return_values(expanded)
-          block_values.empty? ? expanded : expanded.expand(block_values)
+          pin.typedef_typeset
+             .expand(zip_generic_values)
+             .expand(closure_generic_values)
         end
 
         def names
@@ -70,46 +68,6 @@ module Solargraph
             end
           end
           values
-        end
-
-        # Values for method generics supplied by a block passed at the call
-        # site. When a method such as Enumerable#map declares its block's
-        # return type as a generic (e.g., +Array<generic<U>>+), the value of
-        # that generic is determined by the block's inferred return type.
-        # Generics already resolved by the receiver (e.g., the element type
-        # of Enumerable[String]) are not overwritten.
-        #
-        # @param typeset [Typeset] the pin's typeset after receiver-based
-        #   expansion
-        # @return [Hash{String => Object}]
-        def block_return_values typeset
-          return {} unless typeset.generic? && receiver.closure.is_a?(Pin::Block)
-          # return {} unless pin.respond_to?(:block) && pin.block
-          names = generic_names(pin.block.typedef_typeset) & generic_names(typeset)
-          return {} if names.empty?
-          return {} unless receiver.closure.is_a?(Pin::Block)
-
-          chain = Parser::ParserGem::NodeChainer.chain(receiver.closure.node)
-          dictionary = Dictionary.new(api_map, receiver.closure.filename, chain.links.last.block)
-          inferred = dictionary.infer
-          return {} if inferred.undefined?
-          
-          names.to_h { |name| [name, inferred] }
-        end
-
-        # @param node [Typeset, Type, Path, Token]
-        # @return [Array<String>]
-        def generic_names node
-          case node
-          when Typeset
-            node.types.flat_map { |type| generic_names type }
-          when Type
-            node.all.flat_map { |part| generic_names part }
-          when Token
-            node.generic? ? [node.name] : node.params.flat_map { |par| generic_names Typedef.tokenize(par) }
-          else
-            []
-          end
         end
 
         # @param pin [Pin::Base]

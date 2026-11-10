@@ -755,5 +755,14 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [7, 8]).infer
       expect(typeset.to_s).to eq('Integer | Symbol | nil')
     end
+
+    it 'infers from block return values' do
+      code = %(
+        x = Mutex.new.synchronize { 1 }
+        x
+      )
+      typeset = dictionary_for(code, [2, 8]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
   end
 end

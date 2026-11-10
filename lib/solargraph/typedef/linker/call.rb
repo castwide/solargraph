@@ -56,6 +56,7 @@ module Solargraph
                             .map { |pin| find_matching_signature(pin, receiver) }
                             .map { |pin| expand_macros_from_arguments(pin) }
                             .map { |pin| expand_generic_parameters_from_arguments(pin) }
+                            .map { |pin| expand_generic_parameters_from_block(pin) }
           return pins unless link.nullable? && receiver.typedef_typeset.nullable?
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
@@ -108,6 +109,70 @@ module Solargraph
           end
           expanded = pin.typedef_typeset.expand(named_values)
           pin.proxy(expanded.to_complex_type)
+        end
+
+        # Expands the generic parameters of a method call using the block
+        # passed at the call site.
+        #
+        # Some methods declare return types that are determined entirely by
+        # their blocks, e.g., +Mutex#synchronize+ is +( +{ () -> generic<X> }
+        # -> generic<X> )+. Neither the receiver nor the arguments supply a
+        # value for +X+, so it has to be inferred from the block itself.
+        #
+        # Only the generics shared by the block's return type and the method's
+        # return type are bound, leaving generics resolved by the receiver or
+        # the arguments untouched.
+        #
+        # @param pin [Pin::Method, Pin::Signature]
+        # @return [Pin::Base]
+        def expand_generic_parameters_from_block pin
+          return pin unless link.with_block?
+          return pin unless pin.is_a?(Pin::Callable)
+          return pin if pin.block.nil?
+
+          typeset = pin.typedef_typeset
+          return pin unless typeset.generic?
+
+          names = (generic_names(pin.block.typedef_typeset) & generic_names(typeset)).uniq
+          return pin if names.empty?
+          return pin if block_passed_by_reference?
+
+          inferred = Dictionary.new(api_map, source_map, link.block).infer
+          return pin if inferred.undefined?
+
+          named_values = names.to_h { |name| [name, inferred] }
+          pin.proxy(typeset.expand(named_values).to_complex_type)
+        end
+
+        # Blocks that are not written at the call site cannot be inferred, e.g.
+        # +&:to_s+ passes a symbol and +&blk+ passes a variable, and calls
+        # without a block have no block chain at all.
+        #
+        # @return [Boolean]
+        def block_passed_by_reference?
+          return true if link.block.nil? || link.block.node.nil?
+
+          link.block.links.any? do |block_link|
+            block_link.is_a?(Source::Chain::BlockSymbol) || block_link.is_a?(Source::Chain::BlockVariable)
+          end
+        end
+
+        # The names, e.g., +generic<X>+, of the generic tokens within a
+        # Typedef node.
+        #
+        # @param node [Typedef::Typeset, Typedef::Type, Typedef::Path, Typedef::Token]
+        # @return [Array<String>]
+        def generic_names node
+          case node
+          when Typedef::Typeset
+            node.types.flat_map { |type| generic_names type }
+          when Typedef::Type
+            node.all.flat_map { |part| generic_names part }
+          when Typedef::Token
+            node.generic? ? [node.name] : node.params.flat_map { |par| generic_names Typedef.tokenize(par) }
+          else
+            []
+          end
         end
 
         # Expands the return type of a method call using YARD macros.
