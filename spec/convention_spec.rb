@@ -107,4 +107,78 @@ describe Solargraph::Convention do
 
     described_class.unregister updated_dummy_convention
   end
+
+  describe 'source transformation' do
+    # Lines starting with "> " are Ruby; every other line is prose. The
+    # transform keeps line count and line lengths so positions map 1:1.
+    let(:fake_convention) do
+      Class.new(Solargraph::Convention::Base) do
+        def transform_source filename, code
+          return unless filename.end_with?('.fake')
+          code.gsub(/^(?:> |(.))/) { Regexp.last_match(1) ? '#' : '  ' }
+        end
+      end
+    end
+
+    let(:fake_code) do
+      <<~FAKE
+        Prose about foo
+        > def foo; end
+        > foo
+      FAKE
+    end
+
+    before { described_class.register fake_convention }
+
+    after { described_class.unregister fake_convention }
+
+    it 'resolves definitions on the transformed code' do
+      library = Solargraph::Library.new
+      library.attach Solargraph::Source.load_string(fake_code, 'test.fake', 0)
+      locations = library.definitions_at('test.fake', 2, 2).map(&:location)
+      expect(locations.map(&:filename).uniq).to eq(['test.fake'])
+      expect(locations.map { |loc| loc.range.start.line }.uniq).to eq([1])
+    end
+
+    it 'transforms the original text again after an edit' do
+      source = Solargraph::Source.load_string("Prose\n> def foo; end\nfoo\n", 'test.fake', 0)
+      change = Solargraph::Source::Change.new(Solargraph::Range.from_to(2, 0, 2, 0), '> ')
+      updater = Solargraph::Source::Updater.new('test.fake', 1, [change])
+      library = Solargraph::Library.new
+      library.attach source.synchronize(updater)
+      locations = library.definitions_at('test.fake', 2, 2).map(&:location)
+      expect(locations.map { |loc| loc.range.start.line }.uniq).to eq([1])
+    end
+
+    it 'does not transform the Ruby code in directives of a transformed file' do
+      source = Solargraph::Source.load_string(<<~FAKE, 'test.fake')
+        > class Documented
+        # @!parse def parsed; end
+        # @!method generated
+        > end
+      FAKE
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+      expect(api_map.get_path_pins('Documented#parsed')).not_to be_empty
+      expect(api_map.get_path_pins('Documented#generated')).not_to be_empty
+    end
+
+    it 'leaves files that no convention claims untouched' do
+      source = Solargraph::Source.load_string(fake_code, 'test.txt')
+      expect(source.code).to eq(fake_code)
+    end
+
+    it 'never transforms Ruby files' do
+      greedy_convention = Class.new(Solargraph::Convention::Base) do
+        def transform_source _filename, _code
+          'transformed = true'
+        end
+      end
+      described_class.register greedy_convention
+      source = Solargraph::Source.load_string('foo = 1', 'test.rb')
+      expect(source.code).to eq('foo = 1')
+    ensure
+      described_class.unregister greedy_convention
+    end
+  end
 end

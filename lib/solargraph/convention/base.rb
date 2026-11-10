@@ -29,6 +29,22 @@ module Solargraph
         EMPTY_ENVIRON
       end
 
+      # Turn the text of a file this convention understands into Ruby code
+      # for Solargraph to parse, e.g. to map a non-Ruby file onto Ruby.
+      # Subclasses can override this method.
+      #
+      # The result must keep positions intact: the same number of lines,
+      # each with the same length as in the original text. Edits still apply
+      # to the original text, which gets transformed again after each change.
+      #
+      # @param filename [String]
+      # @param code [String]
+      # @return [String, nil] The transformed code, or nil to leave the file
+      #   untouched
+      def transform_source filename, code
+        nil
+      end
+
       # Provides any additional method pins based on e the described object.
       #
       # @param api_map [ApiMap]
