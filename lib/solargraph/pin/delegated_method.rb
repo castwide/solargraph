@@ -38,13 +38,13 @@ module Solargraph
       def location
         return super if super
 
-        @resolved_method&.send(:location)
+        follow(:location) { super() }
       end
 
       def type_location
         return super if super
 
-        @resolved_method&.send(:type_location)
+        follow(:type_location) { super() }
       end
 
       %i[comments parameters return_type signatures].each do |method|
@@ -77,10 +77,11 @@ module Solargraph
       # Sends the method to the resolved method, or yields when unresolved
       # or when following it would lead back to this delegation
       #
-      # @param method [Symbol]
+      # @generic T
+      # @param method [::Symbol]
       # @param args [Array<ApiMap>]
-      # @yieldreturn [String, ComplexType, ComplexType::UniqueType, ::Array<Signature>, ::Array<Parameter>, Base, nil]
-      # @return [String, ComplexType, ComplexType::UniqueType, ::Array<Signature>, ::Array<Parameter>, Base, nil]
+      # @yieldreturn [generic<T>]
+      # @return [generic<T>]
       def follow method, *args
         return yield if !@resolved_method || @@following.include?(path)
 
