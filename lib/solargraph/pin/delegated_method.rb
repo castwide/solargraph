@@ -71,7 +71,7 @@ module Solargraph
 
       private
 
-      # Paths of the delegations being followed, to stop at a cycle
+      # The method and pin of each delegation being followed, to stop at a cycle
       @@following = []
 
       # Sends the method to the resolved method, or yields when unresolved
@@ -83,9 +83,10 @@ module Solargraph
       # @yieldreturn [generic<T>]
       # @return [generic<T>]
       def follow method, *args
-        return yield if !@resolved_method || @@following.include?(path)
+        key = [method, object_id]
+        return yield if !@resolved_method || @@following.include?(key)
 
-        @@following.push path
+        @@following.push key
         begin
           @resolved_method.send(method, *args)
         ensure
