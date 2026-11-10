@@ -39,4 +39,41 @@ describe Solargraph::Pin::DelegatedMethod do
 
     expect(pin.return_type.to_s).to eq('String')
   end
+
+  context 'with a Forwardable delegation' do
+    let(:api_map) do
+      source = Solargraph::Source.load_string(%(
+        require 'forwardable'
+
+        class Inner
+          # Counts the widgets.
+          # @return [Integer]
+          def count_widgets; 1; end
+        end
+
+        class Outer
+          extend Forwardable
+          def_delegator :inner, :count_widgets
+
+          # @return [Inner]
+          def inner; Inner.new; end
+        end
+
+        Outer.new.count_widgets
+      ), 'test.rb')
+      Solargraph::ApiMap.new.tap { |map| map.map source }
+    end
+
+    let(:clip) { api_map.clip_at('test.rb', [17, 20]) }
+
+    it 'documents the delegation with the target method docs' do
+      expect(clip.define.first.documentation).to include('Counts the widgets.')
+    end
+
+    it 'documents the delegation after completion read its docs' do
+      clip.complete.pins.find { |pin| pin.name == 'count_widgets' }.documentation
+
+      expect(clip.define.first.documentation).to include('Counts the widgets.')
+    end
+  end
 end

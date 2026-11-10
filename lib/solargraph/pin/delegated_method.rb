@@ -47,7 +47,7 @@ module Solargraph
         @resolved_method&.send(:type_location)
       end
 
-      %i[comments parameters return_type signatures].each do |method|
+      %i[comments docstring documentation parameters return_type signatures].each do |method|
         define_method(method) do
           # @sg-ignore Need to set context correctly in define_method blocks
           @resolved_method ? @resolved_method.send(method) : super()
