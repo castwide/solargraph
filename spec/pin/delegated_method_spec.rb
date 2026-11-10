@@ -66,6 +66,28 @@ describe Solargraph::Pin::DelegatedMethod do
     expect(pin.return_type.to_s).to eq('String')
   end
 
+  it 'resolves a Forwardable delegation to the class to the class method' do
+    source = Solargraph::Source.load_string(%(
+      require 'forwardable'
+
+      class Foo
+        extend Forwardable
+
+        def_delegator :class, :bar
+
+        # @return [String]
+        def self.bar
+          'bar'
+        end
+      end
+
+      Foo.new.bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    expect(api_map.clip_at('test.rb', [14, 14]).infer.to_s).to eq('String')
+  end
+
   context 'with a constant receiver' do
     let(:api_map) { Solargraph::ApiMap.new }
 
