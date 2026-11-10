@@ -1,0 +1,3 @@
+source 'https://rubygems.org'
+
+gem 'gem-with-delegated-rbs', path: '../gem-with-delegated-rbs'

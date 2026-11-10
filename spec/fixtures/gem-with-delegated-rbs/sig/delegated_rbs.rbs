@@ -1,3 +1,10 @@
 class DelegatedRbs
   def name: () -> String
+
+  def label: () -> String
+
+  # Title of the delegator.
+  def title: () -> String
+
+  def size: () -> untyped
 end
