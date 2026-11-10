@@ -240,6 +240,40 @@ describe Solargraph::LanguageServer::Host do
     expect(source.send(:repaired)).to eq('Foo::Bar ')
   end
 
+  it 'transforms opened and changed files with conventions' do
+    fake_convention = Class.new(Solargraph::Convention::Base) do
+      def transform_source filename, code
+        code.gsub(/^(?:> |(.))/) { Regexp.last_match(1) ? '#' : '  ' } if filename.end_with?('.fake')
+      end
+    end
+    Solargraph::Convention.register fake_convention
+    uri = Solargraph::LanguageServer::UriHelpers.file_to_uri('/test.fake')
+    host = described_class.new
+    host.prepare ''
+    host.open uri, "> def foo; end\nfoo\n", 1
+    host.change({
+                  'textDocument' => { 'uri' => uri, 'version' => 2 },
+                  'contentChanges' => [
+                    {
+                      'range' => { 'start' => { 'line' => 1, 'character' => 0 },
+                                   'end' => { 'line' => 1, 'character' => 0 } },
+                      'text' => '> '
+                    }
+                  ]
+                })
+    locations = host.definitions_at(uri, 1, 2).map(&:location)
+    expect(locations.map { |loc| loc.range.start.line }.uniq).to eq([0])
+
+    host.change({
+                  'textDocument' => { 'uri' => uri, 'version' => 3 },
+                  'contentChanges' => [{ 'text' => "> def foo; end\n> foo\n> foo\n" }]
+                })
+    locations = host.definitions_at(uri, 2, 2).map(&:location)
+    expect(locations.map { |loc| loc.range.start.line }.uniq).to eq([0])
+  ensure
+    Solargraph::Convention.unregister fake_convention
+  end
+
   describe '#locate_pins' do
     it 'locates #initialize for Class#new calls' do
       code = %(
