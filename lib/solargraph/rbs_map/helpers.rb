@@ -16,9 +16,13 @@ module Solargraph
           in_orig.add orig_pin.path
           rbs_pin = rbs_api_map.get_path_pins(orig_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
           next orig_pin unless rbs_pin
-          # A DelegatedMethod or MethodAlias from gem source can't be
-          # combined; prefer the RBS signature unless it is untyped.
-          next(rbs_pin.return_type.defined? ? rbs_pin : orig_pin) unless orig_pin.instance_of?(Pin::Method)
+
+          unless orig_pin.instance_of?(Pin::Method)
+            # A DelegatedMethod or MethodAlias from gem source can't be
+            # combined; prefer the RBS signature unless it is untyped.
+            preferred_pin = rbs_pin.return_type.defined? ? rbs_pin : orig_pin
+            next preferred_pin
+          end
 
           unless rbs_pin
             # @sg-ignore https://github.com/castwide/solargraph/pull/1114
