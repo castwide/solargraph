@@ -11,10 +11,8 @@ module Solargraph
         #
         class DocumentGems < Base
           def process
-            cmd = [host.command_path, 'gems']
-            cmd.push '--rebuild' if params['rebuild']
-            _, s = Open3.capture2(*cmd)
-            if s == 0
+            statuses = commands.map { |cmd| Open3.capture2(*cmd).last }
+            if statuses.all?(&:success?)
               set_result({
                            status: 'ok'
                          })
@@ -23,6 +21,24 @@ module Solargraph
               set_result({
                            status: 'err'
                          })
+            end
+          end
+
+          private
+
+          # One command per workspace, so each caches its gems in the
+          # directory for its own plugins.
+          #
+          # @return [Array<Array<String>>]
+          def commands
+            cmd = [host.command_path, 'gems']
+            cmd.push '--rebuild' if params['rebuild']
+            workspaces = host.libraries.map(&:workspace).reject { |workspace| ['', '*'].include?(workspace.directory) }
+            return [cmd] if workspaces.empty?
+
+            workspaces.map do |workspace|
+              cmd + ['--directory', workspace.directory,
+                     "--plugins=#{workspace.plugin_paths.join(File::PATH_SEPARATOR)}"]
             end
           end
         end
