@@ -533,6 +533,49 @@ describe Solargraph::Plugin::ActiveSupport do
         api_map = Solargraph::ApiMap.load(write_workspace)
         expect(api_map.get_method_stack('Foo', 'bar', scope: :class).map(&:path)).to eq(['Foo.bar'])
       end
+
+      it 'types accessors from a gem that reaches activesupport through another gem' do
+        workspace_dir = write_workspace
+        { 'middle' => 'activesupport', 'outer' => 'middle' }.each do |name, dependency|
+          gem_dir = File.join(@root, name)
+          FileUtils.mkdir_p File.join(gem_dir, 'lib')
+          File.write File.join(gem_dir, "#{name}.gemspec"), %(
+            Gem::Specification.new do |s|
+              s.name = '#{name}'
+              s.version = '0.0.1'
+              s.summary = 'stand-in'
+              s.authors = ['stand-in']
+              s.files = ['lib/#{name}.rb']
+              s.add_dependency '#{dependency}'
+            end
+          )
+          File.write File.join(gem_dir, 'lib', "#{name}.rb"), "module #{name.capitalize}; end\n"
+        end
+        File.write File.join(@root, 'outer', 'lib', 'outer.rb'), %(
+          module Outer
+            class Base
+              # The label of the base
+              # @return [String]
+              class_attribute :label
+            end
+          end
+        )
+        File.write File.join(workspace_dir, 'Gemfile'), %(
+          source 'https://rubygems.org'
+          gem 'activesupport', path: '../activesupport'
+          gem 'middle', path: '../middle'
+          gem 'outer', path: '../outer'
+        )
+        File.write File.join(workspace_dir, 'app.rb'), "require 'outer'\nOuter::Base.label\n"
+        Solargraph.with_clean_env do
+          _out, err, status = Open3.capture3('bundle', 'lock', '--local', chdir: workspace_dir)
+          raise "bundle lock failed: #{err}" unless status.success?
+        end
+
+        clip = Solargraph::ApiMap.load(workspace_dir).clip_at(File.join(workspace_dir, 'app.rb'), [1, 14])
+        expect(clip.infer.to_s).to eq('String')
+        expect(clip.define.map(&:documentation).join).to include('The label of the base')
+      end
     end
   end
 end

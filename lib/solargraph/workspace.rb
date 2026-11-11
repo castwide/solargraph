@@ -23,7 +23,8 @@ module Solargraph
     # @param config [Config, nil]
     # @param server [Hash]
     # @param metagem [Metagem, nil] the gem whose source the workspace is
-    def initialize directory = '', config = nil, server = {}, metagem: nil
+    # @param repo [Repo, nil] the gems that resolve the metagem's dependencies
+    def initialize directory = '', config = nil, server = {}, metagem: nil, repo: nil
       raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
 
       @directory = if ['*', ''].include?(directory)
@@ -36,17 +37,26 @@ module Solargraph
       load_sources
       @gemnames = []
       @metagem = metagem
+      @repo = repo
       require_plugins
     end
 
     # Names of the gems the workspace's code can use beyond those its bundle
     # and requires provide: for a gem's source, the gem and its runtime
-    # dependencies
+    # dependencies, including the dependencies the repo resolves transitively
     #
     # @return [Array<String>]
     def available_gem_names
       return [] unless @metagem
-      [@metagem.name] + @metagem.dependencies
+      names = [@metagem.name]
+      queue = @metagem.dependencies.dup
+      until queue.empty?
+        name = queue.shift
+        next if names.include?(name)
+        names.push name
+        queue.concat(@repo&.find_by_name(name)&.dependencies || [])
+      end
+      names
     end
 
     # The require paths associated with the workspace.

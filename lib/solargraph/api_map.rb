@@ -242,7 +242,7 @@ module Solargraph
 
       api_map.external.unloaded_gems.each do |metagem|
         out&.puts "Caching gem #{metagem.name} (#{metagem.cache_name})"
-        Collection::Gem.load metagem
+        Collection::Gem.load metagem, api_map.external.repo
       end
       load(directory, loose_unions: loose_unions)
     end

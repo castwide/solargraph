@@ -16,6 +16,9 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :extra_gem_names
 
+    # @return [Repo]
+    attr_reader :repo
+
     # @param directory [String]
     # @param requires [Array<String>]
     # @param extra_gem_names [Array<String>]
@@ -163,7 +166,7 @@ module Solargraph
         unloaded_gems.add metagem
       else
         loaded_gems.add metagem
-        base_pins = Collection::Gem.load(metagem)
+        base_pins = Collection::Gem.load(metagem, @repo)
         rbsc_pins = rbs_collection.load(metagem)
         if rbsc_pins.empty?
           pins.concat base_pins
