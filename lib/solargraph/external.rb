@@ -13,19 +13,27 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :requires
 
+    attr_reader :extra_gem_names
+
     # @return [Hash{String => String, nil}]
     attr_reader :plugins
 
     # @param directory [String, nil]
     # @param requires [Array<String>]
+    # @param extra_gem_names [Array<String>]
     # @param plugins [Hash{String => String, nil}] the workspace's plugins,
     #   which select the gem cache directory (see {Workspace#plugins})
-    def initialize directory, requires, plugins: {}
+    def initialize directory, requires, extra_gem_names = [], plugins: {}
       @repo = Repo.new(directory)
       @directory = directory
       @requires = requires
+      @extra_gem_names = extra_gem_names
       @plugins = plugins
       update!
+    end
+
+    def configured_gem_names
+      loaded_gems.map(&:name) + unloaded_gems.map(&:name) + extra_gem_names
     end
 
     def unresolved_requires
@@ -44,6 +52,10 @@ module Solargraph
       @unloaded_gems ||= Set.new
     end
 
+    def unfound_gem_names
+      @unfound_gem_names ||= []
+    end
+
     def loaded_stdlibs
       @loaded_stdlibs ||= Set.new
     end
@@ -59,10 +71,11 @@ module Solargraph
 
     # @param new_requires [Array<String>]
     # @return [Boolean]
-    def update new_requires
-      return false if requires == new_requires && !cache_changed?
+    def update new_requires, new_gem_names = []
+      return false if requires == new_requires && new_gem_names == extra_gem_names && !cache_changed?
 
       requires.replace new_requires
+      extra_gem_names.replace new_gem_names
       update!
       true
     end
@@ -88,6 +101,7 @@ module Solargraph
       @generation = generation + 1
       clear_all
       load_requires
+      load_gem_names
       # load_rbs_collection
     end
 
@@ -116,6 +130,14 @@ module Solargraph
       @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
+    def load_gem_names
+      extra_gem_names.uniq.each do |gem|
+        metagem = @repo.find_by_name(gem)
+        next unfound_gem_names.push(gem) unless metagem
+        process_gem metagem
+      end
+    end
+
     def rbs_collection
       @rbs_collection ||= RbsCollection.new(rbs_collection_lockfile)
     end
@@ -134,6 +156,7 @@ module Solargraph
       loaded_gems.clear
       unloaded_gems.clear
       loaded_stdlibs.clear
+      unfound_gem_names.clear
     end
 
     # @param metagem [Metagem]
