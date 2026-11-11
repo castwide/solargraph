@@ -126,7 +126,7 @@ module Solargraph
     end
 
     def external
-      @external ||= External.new(workspace&.directory, [], plugins: workspace&.plugins || {})
+      @external ||= External.new(workspace&.directory, [], plugin_versions: workspace&.plugin_versions || {})
     end
 
     def unresolved_requires
@@ -239,7 +239,7 @@ module Solargraph
 
       api_map.external.unloaded_gems.each do |metagem|
         out&.puts "Caching gem #{metagem.name} (#{metagem.cache_name})"
-        Collection::Gem.load metagem, api_map.external.plugins
+        Collection::Gem.load metagem, api_map.external.plugin_versions
       end
       load(directory, loose_unions: loose_unions)
     end

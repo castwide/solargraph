@@ -598,20 +598,20 @@ module Solargraph
         cmd = [workspace.command_path, 'cache', spec.name]
         # Load the plugins this workspace keys its gem_dir on, so the
         # cache lands in the gem_dir it reads.
-        cmd.push("--plugins=#{workspace.plugin_paths.join(File::PATH_SEPARATOR)}")
+        cmd.push("--plugins=#{workspace.plugins.join(File::PATH_SEPARATOR)}")
         cmd.push('--directory', workspace.directory) if workspace.directory
         begin
           _o, e, s = Open3.capture3(*cmd)
         rescue SystemCallError => e
           # The command could not start, e.g. Errno::ENOENT - handled below
         end
-        if s&.success? && Collection::Gem.cached?(spec, workspace.plugins)
+        if s&.success? && Collection::Gem.cached?(spec, workspace.plugin_versions)
           logger.info "Cached #{spec.name} #{spec.version}"
         elsif s&.success?
           # The command cached the gem for other plugins than this
           # workspace's; running it again would do the same, forever
           cache_errors.add spec
-          logger.warn "Caching gemspec #{spec.name} #{spec.version} left no cache in #{CacheDir.gem_dir(workspace.plugins)}"
+          logger.warn "Caching gemspec #{spec.name} #{spec.version} left no cache in #{CacheDir.gem_dir(workspace.plugin_versions)}"
         else
           cache_errors.add spec
           logger.warn "Error caching gemspec #{spec.name} #{spec.version}"

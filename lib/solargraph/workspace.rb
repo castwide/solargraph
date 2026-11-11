@@ -34,22 +34,22 @@ module Solargraph
       @server = server
       load_sources
       @gemnames = []
-      @plugins = require_plugins!
+      @plugin_versions = require_plugins!
     end
 
     # The gem name and version of each configured plugin that loaded, which
     # selects this workspace's {CacheDir.gem_dir}.
     #
     # @return [Hash{String => String, nil}]
-    attr_reader :plugins
+    attr_reader :plugin_versions
 
-    # The plugin require paths configured when the workspace was created,
-    # which produced {plugins}. A later config reload does not change them,
-    # so the cache subprocess loads the same set and writes to the same
+    # The plugins configured when the workspace was created, which produced
+    # {plugin_versions}. A later config reload does not change them, so the
+    # cache subprocess loads the same set and writes to the same
     # {CacheDir.gem_dir}.
     #
     # @return [Array<String>]
-    attr_reader :plugin_paths
+    attr_reader :plugins
 
     # The require paths associated with the workspace.
     #
@@ -236,8 +236,8 @@ module Solargraph
 
     # @return [Hash{String => String, nil}]
     def require_plugins!
-      @plugin_paths = config.plugins.dup
-      Config.require_plugins! plugin_paths
+      @plugins = config.plugins.dup
+      Config.require_plugins! plugins
     end
 
     # @return [String, nil]

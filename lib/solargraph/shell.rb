@@ -116,7 +116,7 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
-      plugins = require_plugins!
+      plugin_versions = require_plugins!
       repo = Solargraph::Repo.new(options[:directory])
 
       gems.each do |gem|
@@ -126,7 +126,7 @@ module Solargraph
           FileUtils.rm_rf CacheDir.stdlib_dir
         else
           metagem = repo.find_by_name(gem)
-          Solargraph::Collection::Gem.uncache(metagem, plugins) if metagem
+          Solargraph::Collection::Gem.uncache(metagem, plugin_versions) if metagem
         end
       end
     end
@@ -163,7 +163,7 @@ module Solargraph
     # @return [void]
     # @param [Array<Object>] gem_names
     def cache *gem_names
-      plugins = require_plugins!
+      plugin_versions = require_plugins!
       repo = Solargraph::Repo.new(options[:directory])
       metagems = if gem_names.empty?
                    if repo.bundled?
@@ -193,9 +193,9 @@ module Solargraph
                    end
                  end
       metagems.each do |metagem|
-        Collection::Gem.uncache(metagem, plugins) if options[:rebuild]
+        Collection::Gem.uncache(metagem, plugin_versions) if options[:rebuild]
         puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
-        Collection::Gem.load(metagem, plugins)
+        Collection::Gem.load(metagem, plugin_versions)
       end
       puts "Documentation cached for #{metagems.count} gems."
     end
@@ -542,8 +542,8 @@ module Solargraph
     # Plugins given with --plugins must all load: one that did not would
     # change the gem cache directory from the one the caller reads.
     #
-    # @return [Hash{String => String, nil}] the plugins that loaded, for
-    #   {CacheDir.gem_dir}
+    # @return [Hash{String => String, nil}] the gem name and version of each
+    #   plugin that loaded, for {CacheDir.gem_dir}
     def require_plugins!
       return Workspace::Config.new(options[:directory] || Dir.pwd).require_plugins! if options[:plugins].nil?
 

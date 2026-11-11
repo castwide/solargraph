@@ -26,11 +26,12 @@ module Solargraph
     # The gem directory for a set of plugins. Plugins can change the pins
     # mapped from gem source, so each set of plugin versions gets its own.
     #
-    # @param plugins [Hash{String => String, nil}] plugin gem names and versions
+    # @param plugin_versions [Hash{String => String, nil}] plugin gem names
+    #   and versions
     # @return [String]
-    def gem_dir plugins = {}
-      return File.join(work_dir, 'gems') if plugins.empty?
-      key = plugins.sort.map { |name, version| [name, version].compact.join('-') }.join('+')
+    def gem_dir plugin_versions = {}
+      return File.join(work_dir, 'gems') if plugin_versions.empty?
+      key = plugin_versions.sort.map { |name, version| [name, version].compact.join('-') }.join('+')
       File.join(work_dir, "gems-#{key.tr(File::SEPARATOR, '_')}")
     end
 

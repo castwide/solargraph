@@ -38,7 +38,7 @@ module Solargraph
 
             workspaces.map do |workspace|
               cmd + ['--directory', workspace.directory,
-                     "--plugins=#{workspace.plugin_paths.join(File::PATH_SEPARATOR)}"]
+                     "--plugins=#{workspace.plugins.join(File::PATH_SEPARATOR)}"]
             end
           end
         end

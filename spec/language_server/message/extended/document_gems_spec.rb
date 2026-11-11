@@ -4,8 +4,8 @@ describe Solargraph::LanguageServer::Message::Extended::DocumentGems do
   let(:host) { Solargraph::LanguageServer::Host.new }
   let(:success) { instance_double(Process::Status, success?: true) }
 
-  def library_in directory, plugin_paths
-    workspace = instance_double(Solargraph::Workspace, directory: directory, plugin_paths: plugin_paths)
+  def library_in directory, plugins
+    workspace = instance_double(Solargraph::Workspace, directory: directory, plugins: plugins)
     instance_double(Solargraph::Library, workspace: workspace)
   end
 
