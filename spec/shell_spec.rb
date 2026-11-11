@@ -182,9 +182,16 @@ describe Solargraph::Shell do
       expect(Solargraph::Collection::Gem).to have_received(:load).with(metagem, { 'cache_probe_plugin' => nil })
     end
 
-    it 'warns about a plugin it cannot load' do
+    it 'fails when a plugin it is given cannot load' do
+      expect do
+        capture_both { described_class.new([], directory: temp_dir, plugins: 'missing_probe_plugin').cache('nonexistentgem8675309') }
+      end.to raise_error(Thor::Error, /missing_probe_plugin/)
+    end
+
+    it 'warns about a configured plugin it cannot load' do
+      File.write(File.join(temp_dir, '.solargraph.yml'), "plugins:\n  - missing_probe_plugin\n")
       allow(Solargraph.logger).to receive(:warn)
-      capture_both { described_class.new([], directory: temp_dir, plugins: 'missing_probe_plugin').cache('nonexistentgem8675309') }
+      capture_both { described_class.new([], directory: temp_dir).cache('nonexistentgem8675309') }
       expect(Solargraph.logger).to have_received(:warn).with("Failed to load plugin 'missing_probe_plugin'")
     end
   end

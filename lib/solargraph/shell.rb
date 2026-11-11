@@ -542,13 +542,17 @@ module Solargraph
 
     # Plugins change the pins mapped from gem source and the gem cache
     # directory, so the language server's cache subprocess needs them too.
+    # Plugins given with --plugins must all load: one that did not would
+    # change the gem cache directory from the one the caller reads.
     #
     # @return [Hash{String => String, nil}] the plugins that loaded, for
     #   {CacheDir.gem_dir}
     def require_plugins
       return Workspace::Config.new(options[:directory] || Dir.pwd).require_plugins if options[:plugins].nil?
 
-      Workspace::Config.require_plugins options[:plugins].split(File::PATH_SEPARATOR)
+      Workspace::Config.require_plugins options[:plugins].split(File::PATH_SEPARATOR), strict: true
+    rescue LoadError => e
+      raise Thor::Error, "Failed to load plugin: #{e.message}"
     end
 
     # @param pin [Solargraph::Pin::Base]
