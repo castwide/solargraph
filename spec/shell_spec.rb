@@ -137,6 +137,47 @@ describe Solargraph::Shell do
     end
   end
 
+  context 'with a plugin that adds pins to gem files' do
+    let(:plugin_lib) { File.join(__dir__, 'fixtures', 'cache_probe_plugin', 'lib') }
+    let(:cache_dir) { Dir.mktmpdir }
+    let(:metagem) { Solargraph::Repo.new(temp_dir).find_by_name('backport') }
+
+    around do |example|
+      with_env_var('SOLARGRAPH_CACHE', cache_dir) { example.run }
+    end
+
+    before do
+      $LOAD_PATH.unshift plugin_lib
+      Solargraph::Collection.clear_mem_cache
+    end
+
+    after do
+      Solargraph::Convention.unregister SolargraphCacheProbePlugin::Convention if defined?(SolargraphCacheProbePlugin)
+      $LOAD_PATH.delete plugin_lib
+      $LOADED_FEATURES.delete_if { |path| path.end_with?('solargraph_cache_probe_plugin.rb') }
+      Solargraph::Collection.clear_mem_cache
+      FileUtils.rm_rf cache_dir
+    end
+
+    # @param plugins [String] the --plugins option
+    # @return [Array<String>] the names of the cached gem's pins
+    def cached_pin_names plugins
+      capture_both { described_class.new([], directory: temp_dir, plugins: plugins).cache('backport') }
+      key = Solargraph::Workspace::Config.require_plugins(plugins.split(File::PATH_SEPARATOR))
+      Solargraph::Convention.unregister SolargraphCacheProbePlugin::Convention if defined?(SolargraphCacheProbePlugin)
+      Solargraph::Collection.clear_mem_cache
+      Solargraph::Collection::Gem.load(metagem, key).map(&:name)
+    end
+
+    it 'caches the pins the plugin adds' do
+      expect(cached_pin_names('solargraph_cache_probe_plugin')).to include('cache_probe_plugin_method')
+    end
+
+    it 'caches no plugin pins without the plugin' do
+      expect(cached_pin_names('')).not_to include('cache_probe_plugin_method')
+    end
+  end
+
   context 'with a plugin configured in the workspace' do
     let(:plugin_dir) { Dir.mktmpdir }
 
