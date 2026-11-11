@@ -94,6 +94,47 @@ describe Solargraph::RbsMap::Conversions do
       end
     end
 
+    context 'with a reopen that only adds annotations' do
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            def bar: () -> String | (Integer) -> String
+          end
+
+          class Foo
+            %a{pure}
+            %a{example}
+            def bar: ...
+          end
+        RBS
+      end
+
+      it 'adds the annotations to the one method pin and keeps its signatures' do
+        pins = api_map.get_path_pins('Foo#bar')
+        expect(pins.length).to eq(1)
+        expect(pins.first.annotations).to eq(Set['pure', 'example'])
+        expect(pins.first.signatures.length).to eq(2)
+      end
+    end
+
+    context 'with RBS that annotates a core method' do
+      let(:rbs) do
+        <<~RBS
+          class Array[unchecked out E]
+            %a{example}
+            def sample: ...
+          end
+        RBS
+      end
+
+      it 'adds the annotation to the core method and keeps its signatures' do
+        pins = api_map.get_path_pins('Array#sample')
+        expect(pins.length).to eq(1)
+        expect(pins.first.annotations).to include('example')
+        expect(pins.first.signatures.length).to be > 1
+      end
+    end
+
     context 'with a module reopened under a differently spelled type parameter' do
       subject(:method_pin) { api_map.get_method_stack('StringBox', 'declared_second').first }
 

@@ -212,6 +212,7 @@ module Solargraph
               break if type.defined?
             end
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
+            type = without_nil_elements(type) if p.removes_nil? && type.defined?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
               result = process_macro(p, api_map, name_pin.context, locals)
@@ -240,6 +241,23 @@ module Solargraph
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
+        end
+
+        # @param type [ComplexType] the return type of a method annotated
+        #   %a{solargraph:removes-nil}
+        # @return [ComplexType]
+        def without_nil_elements type
+          ComplexType.new(type.items.map { |unique_type| without_nil_subtypes(unique_type) })
+        end
+
+        # @param type [ComplexType::UniqueType]
+        # @return [ComplexType::UniqueType]
+        def without_nil_subtypes type
+          non_nil_items = type.subtypes.map do |subtype|
+            subtype.items.reject { |item| item.nil_type? || item.name == 'NilClass' }
+          end
+          subtypes = non_nil_items.reject(&:empty?).map { |items| ComplexType.new(items) }
+          subtypes.empty? ? type : type.recreate(new_subtypes: subtypes)
         end
 
         # @param api_map [ApiMap]

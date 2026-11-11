@@ -120,4 +120,17 @@ describe Solargraph::RbsMap::Core do
     clip = api_map.clip_at('test.rb', [2, 6])
     expect(clip.infer.to_s).to eq('String')
   end
+
+  it 'copies %a{solargraph:removes-nil} onto core compact methods' do
+    store = Solargraph::ApiMap::Store.new(core.pins)
+    flags = %w[Array#compact Enumerable#compact Hash#compact Array#compact!].to_h do |path|
+      [path, store.get_path_pins(path).first.removes_nil?]
+    end
+    expect(flags).to eq('Array#compact' => true, 'Enumerable#compact' => true, 'Hash#compact' => true, 'Array#compact!' => false)
+  end
+
+  it 'keeps the core signatures of annotated methods' do
+    store = Solargraph::ApiMap::Store.new(core.pins)
+    expect(store.get_path_pins('Array#compact').first.signatures).not_to be_empty
+  end
 end
