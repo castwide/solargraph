@@ -12,9 +12,11 @@ module Solargraph
       @@path_source_cache = {}
 
       # @param metagem [Metagem]
-      def initialize metagem
+      # @param repo [Repo, nil] the gems that resolve the metagem's dependencies
+      def initialize metagem, repo = nil
         super()
         @metagem = metagem
+        @repo = repo
       end
 
       def cache_file
@@ -48,7 +50,7 @@ module Solargraph
         source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
 
         # Generating an ApiMap is necessary for processing macros
-        bench = Bench.new(source_maps: source_maps)
+        bench = Bench.new(source_maps: source_maps, workspace: Workspace.new(metagem: metagem, repo: @repo))
         source_pins = ApiMap.new.catalog(bench).pins.select { |pin| files.include?(pin.filename) }
 
         rbs_pins = RbsMap::Gem.pins(metagem)

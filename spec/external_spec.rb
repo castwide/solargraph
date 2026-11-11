@@ -74,6 +74,12 @@ describe Solargraph::External do
     end
   end
 
+  it 'loads extra gem names and tracks unfound ones' do
+    external = described_class.new(directory, [], %w[backport not_a_valid_gem])
+    expect(external.loaded_gems.map(&:name)).to include('backport')
+    expect(external.unfound_gem_names).to eq(['not_a_valid_gem'])
+  end
+
   it 'tracks unresolved requires' do
     external = described_class.new(directory, ['not_a_valid_path'])
     expect(external.unresolved_requires).to eq(['not_a_valid_path'])
