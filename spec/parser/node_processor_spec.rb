@@ -71,6 +71,26 @@ describe Solargraph::Parser::NodeProcessor do
     described_class.deregister(:def, dummy_processor2)
   end
 
+  it 'finds the enclosing closure pin from a custom processor' do
+    found = []
+    processor = Class.new(Solargraph::Parser::NodeProcessor::Base) do
+      define_method(:process) do
+        found.push closure_pin(position), block_pin(position)
+      end
+    end
+
+    described_class.register(:def, processor)
+    node = parse(%(
+      class Foo
+        def bar; end
+      end
+    ))
+    described_class.process(node)
+    described_class.deregister(:def, processor)
+
+    expect(found.map(&:path)).to eq(%w[Foo#bar Foo#bar])
+  end
+
   it 'parses RBS parameters for classes' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo < Array #[String]
