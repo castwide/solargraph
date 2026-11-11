@@ -19,7 +19,7 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::Parameter, Pin::LocalVariable>]
         def resolve api_map, name_pin, locals
-          type = ComplexType::UniqueType.new('Array', rooted: true)
+          type = ComplexType::UniqueType.intern('Array', rooted: true)
           [Pin::ProxyType.anonymous(type, source: :chain)]
         end
       end
