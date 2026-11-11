@@ -34,7 +34,7 @@ module Solargraph
       @server = server
       load_sources
       @gemnames = []
-      @plugins = require_plugins
+      @plugins = require_plugins!
     end
 
     # The gem name and version of each configured plugin that loaded, which
@@ -235,9 +235,9 @@ module Solargraph
     end
 
     # @return [Hash{String => String, nil}]
-    def require_plugins
+    def require_plugins!
       @plugin_paths = config.plugins.dup
-      Config.require_plugins plugin_paths
+      Config.require_plugins! plugin_paths
     end
 
     # @return [String, nil]

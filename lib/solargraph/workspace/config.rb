@@ -115,8 +115,8 @@ module Solargraph
       #
       # @return [Hash{String => String, nil}] the gem name and version of
       #   each plugin that loaded, for {CacheDir.gem_dir}
-      def require_plugins
-        Config.require_plugins plugins
+      def require_plugins!
+        Config.require_plugins! plugins
       end
 
       # Require plugins by require path.
@@ -126,7 +126,7 @@ module Solargraph
       #   load instead of leaving it out
       # @return [Hash{String => String, nil}] the gem name and version of
       #   each plugin that loaded, for {CacheDir.gem_dir}
-      def self.require_plugins paths, strict: false
+      def self.require_plugins! paths, strict: false
         paths.each_with_object({}) do |path, loaded|
           require path
           # @sg-ignore Unresolved call to name on Gem::BasicSpecification, Hash{String => Gem::BasicSpecification}

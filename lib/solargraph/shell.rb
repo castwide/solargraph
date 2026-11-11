@@ -116,7 +116,7 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
-      plugins = require_plugins
+      plugins = require_plugins!
       repo = Solargraph::Repo.new(options[:directory])
 
       gems.each do |gem|
@@ -163,7 +163,7 @@ module Solargraph
     # @return [void]
     # @param [Array<Object>] gem_names
     def cache *gem_names
-      plugins = require_plugins
+      plugins = require_plugins!
       repo = Solargraph::Repo.new(options[:directory])
       metagems = if gem_names.empty?
                    if repo.bundled?
@@ -544,10 +544,10 @@ module Solargraph
     #
     # @return [Hash{String => String, nil}] the plugins that loaded, for
     #   {CacheDir.gem_dir}
-    def require_plugins
-      return Workspace::Config.new(options[:directory] || Dir.pwd).require_plugins if options[:plugins].nil?
+    def require_plugins!
+      return Workspace::Config.new(options[:directory] || Dir.pwd).require_plugins! if options[:plugins].nil?
 
-      Workspace::Config.require_plugins options[:plugins].split(File::PATH_SEPARATOR), strict: true
+      Workspace::Config.require_plugins! options[:plugins].split(File::PATH_SEPARATOR), strict: true
     rescue LoadError => e
       raise Thor::Error, "Failed to load plugin: #{e.message}"
     end

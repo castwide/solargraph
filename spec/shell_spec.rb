@@ -163,7 +163,7 @@ describe Solargraph::Shell do
     # @return [Array<String>] the names of the cached gem's pins
     def cached_pin_names plugins
       capture_both { described_class.new([], directory: temp_dir, plugins: plugins).cache('backport') }
-      key = Solargraph::Workspace::Config.require_plugins(plugins.split(File::PATH_SEPARATOR))
+      key = Solargraph::Workspace::Config.require_plugins!(plugins.split(File::PATH_SEPARATOR))
       Solargraph::Convention.unregister SolargraphCacheProbePlugin::Convention if defined?(SolargraphCacheProbePlugin)
       Solargraph::Collection.clear_mem_cache
       Solargraph::Collection::Gem.load(metagem, key).map(&:name)
