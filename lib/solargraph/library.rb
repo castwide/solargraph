@@ -481,15 +481,12 @@ module Solargraph
     def next_map
       return false if mapped?
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
-      if src
-        Logging.logger.debug "Mapping #{src.filename}"
-        # @sg-ignore OK if src.filename is nil
-        source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        # @sg-ignore OK if src.filename is nil
-        source_map_hash[src.filename]
-      else
-        false
-      end
+      return false if src.nil?
+      Logging.logger.debug "Mapping #{src.filename}"
+      # @sg-ignore OK if src.filename is nil
+      mutex.synchronize { source_map_hash[src.filename] = Solargraph::SourceMap.map(src) }
+      # @sg-ignore OK if src.filename is nil
+      source_map_hash[src.filename]
     end
 
     # @return [self]
@@ -615,6 +612,14 @@ module Solargraph
         end_cache_progress
         catalog
         sync_catalog
+      rescue StandardError => e
+        logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
+        logger.warn e
+      ensure
+        # The progress notification has to be closed even if caching failed.
+        # Clients have no way to dismiss a notification that never receives an
+        # end.
+        end_cache_progress
       end
     end
 
