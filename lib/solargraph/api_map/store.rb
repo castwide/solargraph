@@ -228,7 +228,10 @@ module Solargraph
       # @param fqns [String] The fully qualified namespace
       # @return [Array<String>] Array of ancestor namespaces including the original
       def get_ancestors fqns
-        return [] if fqns.nil? || fqns.empty?
+        return [] if fqns.nil?
+        # Top-level methods live in the root namespace and Ruby defines
+        # them on Object
+        return ['', *get_ancestors('Object')] if fqns.empty?
 
         ancestors = [fqns]
         visited = Set.new
