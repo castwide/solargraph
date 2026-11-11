@@ -189,6 +189,7 @@ module Solargraph
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
           pins.each do |pin|
             new_pin = (path_pin_hash[pin.path.sub('#initialize', '.new')].first if pin.path.end_with?('#initialize'))
+            pin.annotations = pin.annotations | ovr.annotations if pin.is_a?(Pin::Method)
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
               # @sg-ignore Wrong argument type for
               #   YARD::Docstring#delete_tags: name expected String,

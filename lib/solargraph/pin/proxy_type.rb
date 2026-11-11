@@ -7,13 +7,22 @@ module Solargraph
       # @param gates [Array<String>, nil] Namespaces to try while resolving non-rooted types
       # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @param gates [Array<String>, nil]
+      # @param receiver_path [::Array<String>, nil] see #receiver_path
       # @param [Hash{Symbol => Object}] splat
-      def initialize return_type: ComplexType::UNDEFINED, binder: nil, gates: nil, **splat
+      def initialize return_type: ComplexType::UNDEFINED, binder: nil, gates: nil, receiver_path: nil, **splat
         super(**splat)
         @gates = gates
         @return_type = return_type
         @binder = binder if binder
+        @receiver_path = receiver_path
       end
+
+      # Dotted words of the chain this pin is the receiver of, e.g.
+      # ['pin', 'location'] in 'pin.location.filename', or nil if not
+      # all variables and attr_readers; see Chain#define
+      #
+      # @return [::Array<String>, nil]
+      attr_reader :receiver_path
 
       def context
         @return_type
