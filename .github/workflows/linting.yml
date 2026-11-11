@@ -65,8 +65,6 @@ jobs:
         run: |
           bundle exec overcommit --sign
           SOLARGRAPH_ASSERTS=on bundle exec overcommit --run --diff origin/master
-        # @todo Temporary, expect to revert in 0.60
-        continue-on-error: true
   rubocop:
     name: rubocop
     runs-on: ubuntu-latest
