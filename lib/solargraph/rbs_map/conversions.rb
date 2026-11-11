@@ -55,6 +55,7 @@ module Solargraph
         end
         # Register up front so expansion does not depend on declaration order.
         core_aware_environment(loader, fallback: environment).type_alias_decls.each_value do |entry|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1415
           type_alias_decls[entry.decl.name.to_s] = entry.decl
         end
         # @sg-ignore Need a downcast here
