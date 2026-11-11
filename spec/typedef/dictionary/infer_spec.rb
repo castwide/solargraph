@@ -790,7 +790,6 @@ describe Solargraph::Typedef::Dictionary do
     end
 
     it 'infers type parameters from Array#map' do
-      pending 'TBD'
       code = %(
         def foo
           blah = ['foo'].map { 1 }

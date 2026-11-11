@@ -11,6 +11,7 @@ module Solargraph
           when Pin::Parameter
             signature_type || yieldparam_type || ComplexType::UNDEFINED.to_typedef_typeset
           else
+            return Typeset::UNDEFINED if pin_defines_itself?
             node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
             call_chain = Parser.chain(node)
             chain_inferred = Dictionary.new(api_map, pin.filename, call_chain).infer
@@ -22,6 +23,17 @@ module Solargraph
         end
 
         private
+
+        # True when the pin acquires its type from its own value instead of
+        # from a block, e.g. a variable assigned from a method call that takes
+        # a block. Such pins are inferred from their assignments by
+        # {Inference}, and expanding them from the block would return the
+        # block's return type instead.
+        #
+        # @return [Boolean]
+        def pin_defines_itself?
+          pin.is_a?(Pin::BaseVariable) && !pin.assignment.nil?
+        end
 
         def source_map
           api_map.source_map(pin.filename)
