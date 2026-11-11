@@ -168,6 +168,9 @@ module Solargraph
           end
           return ComplexType::UNDEFINED
         end
+        value = assigned_value
+        return maybe_nil(value.infer(api_map, name_pin, locals), api_map) if value
+
         type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
         out = maybe_nil(type, api_map)
         logger.debug do
@@ -196,6 +199,15 @@ module Solargraph
 
       def defined?
         !undefined?
+      end
+
+      # True if the chain ends in an attribute or index assignment
+      # (`a.b = c`, `a[b] = c`)
+      #
+      # @return [Boolean]
+      def assignment?
+        last = links.last
+        last.is_a?(Chain::Call) && last.assignment?
       end
 
       # @return [Boolean]
@@ -255,6 +267,17 @@ module Solargraph
       include Logging
 
       private
+
+      # The right-hand side of an attribute or index assignment, which
+      # is the value of the whole expression
+      #
+      # @return [Chain, nil]
+      def assigned_value
+        last = links.last
+        return unless last.is_a?(Chain::Call) && last.assignment?
+
+        last.arguments.last
+      end
 
       # @param pins [::Array<Pin::Base>]
       # @param name_pin [Pin::Base]
