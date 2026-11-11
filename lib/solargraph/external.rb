@@ -167,7 +167,6 @@ module Solargraph
         unloaded_gems.add metagem
       else
         loaded_gems.add metagem
-        # @sg-ignore Argument forwarding with (...) is not modelled - https://github.com/castwide/solargraph/issues/1108
         base_pins = Collection::Gem.load(metagem, plugins)
         rbsc_pins = rbs_collection.load(metagem)
         if rbsc_pins.empty?

@@ -126,7 +126,6 @@ module Solargraph
           FileUtils.rm_rf CacheDir.stdlib_dir
         else
           metagem = repo.find_by_name(gem)
-          # @sg-ignore Argument forwarding with (...) is not modelled - https://github.com/castwide/solargraph/issues/1108
           Solargraph::Collection::Gem.uncache(metagem, plugins) if metagem
         end
       end
@@ -194,10 +193,8 @@ module Solargraph
                    end
                  end
       metagems.each do |metagem|
-        # @sg-ignore Argument forwarding with (...) is not modelled - https://github.com/castwide/solargraph/issues/1108
         Collection::Gem.uncache(metagem, plugins) if options[:rebuild]
         puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
-        # @sg-ignore Argument forwarding with (...) is not modelled - https://github.com/castwide/solargraph/issues/1108
         Collection::Gem.load(metagem, plugins)
       end
       puts "Documentation cached for #{metagems.count} gems."

@@ -239,7 +239,6 @@ module Solargraph
 
       api_map.external.unloaded_gems.each do |metagem|
         out&.puts "Caching gem #{metagem.name} (#{metagem.cache_name})"
-        # @sg-ignore Argument forwarding with (...) is not modelled - https://github.com/castwide/solargraph/issues/1108
         Collection::Gem.load metagem, api_map.external.plugins
       end
       load(directory, loose_unions: loose_unions)
