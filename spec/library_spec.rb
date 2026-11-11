@@ -752,7 +752,7 @@ describe Solargraph::Library do
     end
   end
 
-  describe '#cache_next_gemspec' do
+  describe '#cache_next_gemspec with plugins configured' do
     let(:dir) { File.realpath(Dir.mktmpdir) }
 
     before do
@@ -776,8 +776,7 @@ describe Solargraph::Library do
 
       library = described_class.new(workspace)
       gemspec = instance_double(Gem::Specification, name: 'gem_1', version: Gem::Version.new('1.0.0'))
-      allow(library.send(:api_map)).to receive(:unloaded_gems).and_return([gemspec])
-      allow(Solargraph::Yardoc).to receive(:processing?).and_return(false)
+      allow(library.send(:api_map)).to receive(:unloaded_gems).and_return(Set[gemspec])
       cache_job = nil
       allow(Thread).to receive(:new) { |&block| cache_job = block }
       allow(Open3).to receive(:capture3).and_return(['', '', instance_double(Process::Status, success?: true)])
