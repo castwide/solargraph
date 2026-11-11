@@ -56,18 +56,17 @@ module Solargraph
         # @return [Array<Chain::Link>]
         def generate_links n
           return [] unless n.is_a?(::Parser::AST::Node)
-          return generate_links(n.children[0]) if n.type == :splat
+          return generate_links(n.children.fetch(0)) if n.type == :splat
           # @type [Array<Chain::Link>]
           result = []
           if n.type == :block
-            result.concat NodeChainer.chain(n.children[0], @filename, n).links
+            result.concat NodeChainer.chain(n.children.fetch(0), @filename, n).links
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
-              result.concat generate_links(n.children[0])
+              result.concat generate_links(n.children.fetch(0))
               result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             elsif n.children[0].nil?
-              # @sg-ignore Need to add nil check here
-              n.children[2..].map do |c|
+              n.children.drop(2).map do |c|
                 NodeChainer.chain(c, @filename, n)
               end
               result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
@@ -76,7 +75,7 @@ module Solargraph
             end
           elsif n.type == :csend
             if n.children[0].is_a?(::Parser::AST::Node)
-              result.concat generate_links(n.children[0])
+              result.concat generate_links(n.children.fetch(0))
               result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
             elsif n.children[0].nil?
               result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
@@ -110,8 +109,8 @@ module Solargraph
             # s(:or_asgn,
             #   s(:ivasgn, :@bar),
             #   s(:int, 123))
-            lhs_chain = NodeChainer.chain n.children[0] # s(:ivasgn, :@bar)
-            rhs_chain = NodeChainer.chain n.children[1] # s(:int, 123)
+            lhs_chain = NodeChainer.chain n.children.fetch(0) # s(:ivasgn, :@bar)
+            rhs_chain = NodeChainer.chain n.children.fetch(1) # s(:int, 123)
             or_link = Chain::Or.new([lhs_chain, rhs_chain])
             # this is just for a call chain, so we don't need to record the assignment
             result.push(or_link)
@@ -121,16 +120,16 @@ module Solargraph
           elsif n.type == :and
             result.concat generate_links(n.children.last)
           elsif n.type == :or
-            result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename),
-                                       NodeChainer.chain(n.children[1], @filename, n)])
+            result.push Chain::Or.new([NodeChainer.chain(n.children.fetch(0), @filename),
+                                       NodeChainer.chain(n.children.fetch(1), @filename, n)])
           elsif n.type == :if
             then_clause = if n.children[1]
-                            NodeChainer.chain(n.children[1], @filename, n)
+                            NodeChainer.chain(n.children.fetch(1), @filename, n)
                           else
                             Source::Chain.new([Source::Chain::Literal.new('nil', nil)], n)
                           end
             else_clause = if n.children[2]
-                            NodeChainer.chain(n.children[2], @filename, n)
+                            NodeChainer.chain(n.children.fetch(2), @filename, n)
                           else
                             Source::Chain.new([Source::Chain::Literal.new('nil', nil)], n)
                           end
@@ -197,11 +196,9 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node]
-        # @sg-ignore Need to add nil check here
         # @return [Array<Source::Chain>]
         def node_args node
-          # @sg-ignore Need to add nil check here
-          node.children[2..].map do |child|
+          node.children.drop(2).map do |child|
             NodeChainer.chain(child, @filename, node)
           end
         end
