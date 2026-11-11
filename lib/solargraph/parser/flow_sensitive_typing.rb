@@ -190,8 +190,61 @@ module Solargraph
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
+      # The type a variable in locals has wherever an expression is
+      # truthy, e.g. `Foo` for `c` of type `Foo, Integer` in
+      # `c.is_a?(Foo)`
+      #
+      # @param variable [Pin::LocalVariable]
+      # @param type [ComplexType] The variable's type outside the expression
+      # @param expression_node [Parser::AST::Node]
+      # @param api_map [ApiMap]
+      #
+      # @return [ComplexType]
+      def type_where_true variable, type, expression_node, api_map
+        truthy = Range.from_node(expression_node)
+        return type if truthy.nil?
+
+        process_expression(expression_node, [truthy], [])
+        # Downcasts that hold only within part of the expression,
+        # like the left side of `a.is_a?(Foo) || a.zero?` on its right
+        # side, have other presences
+        downcasts = locals.select { |pin| pin.name == variable.name && pin.presence == truthy }
+        downcasts.each { |pin| type = pin.adjust_type(api_map, type) }
+        type
+      end
+
       class << self
         include Logging
+
+        # The type of the elements a `select` or `filter` call keeps:
+        # the type its block's only parameter has wherever the block
+        # body is truthy, e.g. `Foo` for `{ |c| c.is_a?(Foo) }`
+        #
+        # @param block_body [Parser::AST::Node]
+        # @param element_type [ComplexType]
+        # @param api_map [ApiMap]
+        #
+        # @return [ComplexType]
+        def narrowed_select_element_type block_body, element_type, api_map
+          block_pin = api_map.get_block_pins.find { |pin| block_body_of(pin)&.equal?(block_body) }
+          return element_type if block_pin.nil? || block_pin.parameters.length != 1
+
+          param = block_pin.parameters.fetch(0)
+          return element_type unless param.arg?
+
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1437
+          new([param], [], block_pin, block_pin).type_where_true(param, element_type, block_body, api_map)
+        end
+
+        private
+
+        # @param block_pin [Pin::Block]
+        # @return [Parser::AST::Node, nil]
+        def block_body_of block_pin
+          return unless block_pin.node in [:block, _call, _args, ::Parser::AST::Node => body]
+
+          body
+        end
       end
 
       include Logging
