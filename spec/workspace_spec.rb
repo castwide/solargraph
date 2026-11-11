@@ -53,7 +53,8 @@ describe Solargraph::Workspace do
 
   it 'raises an exception for workspace size limits' do
     config = instance_double(Solargraph::Workspace::Config,
-                             calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: Solargraph::Workspace::Config::MAX_FILES)
+                             calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: Solargraph::Workspace::Config::MAX_FILES,
+                             plugins: [])
 
     expect do
       described_class.new('.', config)
@@ -144,5 +145,32 @@ describe Solargraph::Workspace do
     expect do
       described_class.new('./path', config)
     end.not_to raise_error
+  end
+
+  context 'with a plugin that transforms sources' do
+    let(:plugin_path) { File.join(dir_path, 'fake_plugin.rb') }
+    let(:fake_path) { File.join(dir_path, 'test.fake') }
+
+    before do
+      stub_const('FakeTransformConvention', Class.new(Solargraph::Convention::Base) do
+        def transform_source filename, code
+          code.gsub(/^(?:> |(.))/) { Regexp.last_match(1) ? '#' : '  ' } if filename.end_with?('.fake')
+        end
+      end)
+      File.write plugin_path, "Solargraph::Convention.register FakeTransformConvention\n"
+      File.write fake_path, "Prose about foo\n> def foo; end\n"
+      File.write File.join(dir_path, '.solargraph.yml'), <<~YAML
+        include:
+          - "**/*.fake"
+        plugins:
+          - #{plugin_path}
+      YAML
+    end
+
+    after { Solargraph::Convention.unregister FakeTransformConvention }
+
+    it 'loads the files the plugin claims transformed' do
+      expect(workspace.source(fake_path)).to be_transformed
+    end
   end
 end
