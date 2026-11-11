@@ -270,6 +270,7 @@ describe Solargraph::LanguageServer::Host do
                 })
     locations = host.definitions_at(uri, 2, 2).map(&:location)
     expect(locations.map { |loc| loc.range.start.line }.uniq).to eq([0])
+    expect(host).to be_transformed(uri)
   ensure
     Solargraph::Convention.unregister fake_convention
   end

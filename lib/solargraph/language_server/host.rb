@@ -530,6 +530,15 @@ module Solargraph
         library.read_text(filename)
       end
 
+      # True if a convention transformed the open file into Ruby code (see
+      # Source#transformed?).
+      #
+      # @param uri [String]
+      # @return [Boolean]
+      def transformed? uri
+        open?(uri) && sources.find(uri).transformed?
+      end
+
       # @param uri [String]
       # @return [Hash]
       def formatter_config uri
