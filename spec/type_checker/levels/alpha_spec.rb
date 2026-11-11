@@ -87,8 +87,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'accepts ivar assignments and references with no intermediate calls as safe' do
-      pending 'flow sensitive typing improvements'
-
       checker = type_checker(%(
         class Foo
           def initialize
@@ -114,7 +112,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'knows that ivar references with intermediate calls are not safe' do
+    it 'assumes calls between an ivar assignment and its read do not reassign it' do
       checker = type_checker(%(
         class Foo
           def initialize
@@ -136,8 +134,7 @@ describe Solargraph::TypeChecker do
         end
       ))
 
-      expect(checker.problems.map(&:message)).to eq(['Foo#bar return type could not be inferred',
-                                                     'Unresolved call to round on Integer, nil'])
+      expect(checker.problems.map(&:message)).to eq([])
     end
 
     it 'understands &. in return position' do

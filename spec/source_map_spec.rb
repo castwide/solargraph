@@ -80,6 +80,23 @@ describe Solargraph::SourceMap do
     expect(pin).to be_a(Solargraph::Pin::Block)
   end
 
+  it 'locates closure pins after a rescue clause with an empty body' do
+    map = described_class.load_string(%(
+      class Foo
+        def bar
+          baz
+        rescue StandardError
+        end
+
+        def qux
+          1
+        end
+      end
+    ), 'test.rb')
+    pin = map.locate_closure_pin(8, 10)
+    expect(pin.path).to eq('Foo#qux')
+  end
+
   it 'scopes local variables correctly from root def methods' do
     map = described_class.load_string(%(
       x = 'string'

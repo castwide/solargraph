@@ -15,6 +15,7 @@ module Solargraph
             methpin = Solargraph::Pin::Method.new(
               location: get_node_location(node),
               closure: region.closure,
+              compound_statement: region.compound_statement,
               name: name,
               context: method_context,
               comments: comments_for(node),
@@ -51,7 +52,7 @@ module Solargraph
             else
               pins.push methpin
             end
-            process_children region.update(closure: methpin, scope: methpin.scope)
+            process_children region.update(closure: methpin, scope: methpin.scope, compound_statement: methpin)
           end
         end
       end

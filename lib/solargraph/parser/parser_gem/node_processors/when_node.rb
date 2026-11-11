@@ -8,13 +8,16 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            pins.push Solargraph::Pin::CompoundStatement.new(
+            cs = Solargraph::Pin::CompoundStatement.new(
               location: get_node_location(node),
               closure: region.closure,
+              compound_statement: region.compound_statement,
+              conditional: true,
               node: node,
               source: :parser
             )
-            process_children
+            pins.push cs
+            process_children region.update(compound_statement: cs)
           end
         end
       end
