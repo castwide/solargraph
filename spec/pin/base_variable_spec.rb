@@ -1,6 +1,24 @@
 # frozen_string_literal: true
 
 describe Solargraph::Pin::BaseVariable do
+  it 'keeps each union member\'s own element type in a multiple assignment' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [Array<Integer>, Array<String>]
+        def pair; end
+
+        def run
+          first, second = pair
+          second
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map(source)
+    clip = api_map.clip_at('test.rb', Solargraph::Position.new(7, 10))
+    expect(clip.infer.rooted_tags).to eq('::Integer, ::String')
+  end
+
   it 'checks assignments for equality' do
     smap = Solargraph::SourceMap.load_string('foo = "foo"')
     pin1 = smap.locals.first
