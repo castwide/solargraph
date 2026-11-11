@@ -80,6 +80,7 @@ module Solargraph
                                                      gates: name_pin.gates,
                                                      binder: context,
                                                      source: :chain)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             resolved.concat inferred_pins([pin], api_map, type_name_pin, locals)
           end
           return [] if unresolved_type && !api_map.loose_unions

@@ -122,7 +122,7 @@ module Solargraph
             if rng
               Cursor.new(source, rng.ending)
             else
-              pos = Position.new(position.line, [position.column - 1, 0].max)
+              pos = Position.new(position.line, position.column.positive? ? position.column - 1 : 0)
               Cursor.new(source, pos)
             end
           end

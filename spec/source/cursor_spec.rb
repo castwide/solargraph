@@ -133,4 +133,13 @@ describe Solargraph::Source::Cursor do
     a = source.cursor_at(Solargraph::Position.new(1, 16))
     expect(a.recipient.node).to eq(r.node)
   end
+
+  it 'falls back to the preceding column when the recipient node has no range' do
+    source = Solargraph::Source.load_string(%(
+      recipient(argument)
+    ))
+    a = source.cursor_at(Solargraph::Position.new(1, 16))
+    allow(Solargraph::Range).to receive(:from_node).with(a.recipient_node).and_return(nil)
+    expect(a.recipient.position).to eq(Solargraph::Position.new(1, 15))
+  end
 end
