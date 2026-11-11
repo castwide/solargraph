@@ -98,4 +98,45 @@ describe Solargraph::Parser::NodeProcessor do
 
     expect(map.pins.last.type.to_s).to eq('Array')
   end
+
+  it 'creates block pins with synthesized parameters for numbered blocks' do
+    map = Solargraph::SourceMap.load_string(%(
+      [1, 2].each { _2 }
+    ), 'test.rb')
+
+    block = map.pins.find { |pin| pin.is_a?(Solargraph::Pin::Block) }
+    expect(block).not_to be_nil
+    expect(block.parameters.map(&:name)).to eq(%w[_1 _2])
+    expect(map.locals.map(&:name)).to include('_1', '_2')
+  end
+
+  it 'creates block pins with a synthesized parameter for implicit `it` blocks' do
+    map = Solargraph::SourceMap.load_string(%(
+      [1, 2].each { it }
+    ), 'test.rb')
+
+    block = map.pins.find { |pin| pin.is_a?(Solargraph::Pin::Block) }
+    expect(block).not_to be_nil
+    expect(block.parameters.map(&:name)).to eq(['it'])
+  end
+
+  it 'leaves a parameterless block without parameters' do
+    map = Solargraph::SourceMap.load_string(%(
+      [1, 2].each { puts 'x' }
+    ), 'test.rb')
+
+    block = map.pins.find { |pin| pin.is_a?(Solargraph::Pin::Block) }
+    expect(block).not_to be_nil
+    expect(block.parameters).to be_empty
+  end
+
+  it 'gives each nested block its own implicit `it` parameter' do
+    map = Solargraph::SourceMap.load_string(%(
+      [[1]].each { it.each { it } }
+    ), 'test.rb')
+
+    blocks = map.pins.grep(Solargraph::Pin::Block)
+    expect(blocks.length).to eq(2)
+    expect(blocks.map { |b| b.parameters.map(&:name) }).to eq([['it'], ['it']])
+  end
 end
