@@ -16,6 +16,14 @@ module Solargraph
           super(**splat)
           @keyword = keyword
         end
+
+        private
+
+        # @return [void]
+        def preassign_ivars
+          super
+          @keyword = :include
+        end
       end
     end
   end

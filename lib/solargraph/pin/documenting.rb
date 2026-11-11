@@ -111,6 +111,15 @@ module Solargraph
         return text if left.nil? || left.zero?
         text.lines.map { |line| line[left..] }.join
       end
+
+      private
+
+      # The ivar this module owns, for Base#preassign_ivars.
+      #
+      # @return [void]
+      def preassign_documenting_ivars
+        @documentation = nil
+      end
     end
   end
 end

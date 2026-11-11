@@ -109,6 +109,14 @@ module Solargraph
 
       private
 
+      # The ivars this module owns, for Base#preassign_ivars; the same set
+      # reset_conversions clears.
+      #
+      # @return [void]
+      def preassign_conversions_ivars
+        reset_conversions
+      end
+
       # @return [String, nil]
       def generate_link
         this_path = path || name || return_type.tag

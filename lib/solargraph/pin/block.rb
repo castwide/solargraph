@@ -93,6 +93,13 @@ module Solargraph
 
       private
 
+      # @return [void]
+      def preassign_ivars
+        super
+        @receiver = nil
+        @rebind = nil
+      end
+
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def maybe_rebind api_map
