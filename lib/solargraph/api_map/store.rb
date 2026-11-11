@@ -303,6 +303,11 @@ module Solargraph
         index.macro_method_name_pins
       end
 
+      # @return [Hash{String => Array<Pin::Method>}]
+      def call_site_template_pins
+        index.call_site_template_pins
+      end
+
       private
 
       # @return [Index]

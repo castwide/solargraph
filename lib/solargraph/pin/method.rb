@@ -23,9 +23,10 @@ module Solargraph
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
       # @param context [ComplexType, ComplexType::UniqueType, nil]
+      # @param call_site_templates [::Array<Object>, nil]
       # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
-                     context: nil, **splat
+                     context: nil, call_site_templates: nil, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -35,6 +36,16 @@ module Solargraph
         @signatures = signatures
         @anon_splat = anon_splat
         @context = context if context
+        @call_site_templates = call_site_templates if call_site_templates
+      end
+
+      # Summaries, recorded while mapping the method's body, of the methods
+      # that a call to this method defines; ApiMap maps them at each call
+      # site.
+      #
+      # @return [::Array<Object>]
+      def call_site_templates
+        @call_site_templates ||= []
       end
 
       # @param other [Pin::Method]
@@ -68,6 +79,7 @@ module Solargraph
           parameters: parameters,
           signatures: sigs,
           anon_splat: assert_same(other, :anon_splat?),
+          call_site_templates: (call_site_templates + other.call_site_templates).uniq,
           return_type: nil # pulled from signatures on first call
         }.merge(attrs)
         super(other, new_attrs)
