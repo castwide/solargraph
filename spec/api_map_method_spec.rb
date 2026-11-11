@@ -21,6 +21,20 @@ describe Solargraph::ApiMap do
   describe '#qualify' do
     let(:external_requires) { ['yaml'] }
 
+    it 'resolves a constant that aliases a namespace' do
+      source = Solargraph::Source.load_string(%(
+        class Foo; end
+
+        module Bar
+          Baz = ::Foo
+        end
+      ), 'test.rb')
+
+      api_map = described_class.new.map(source)
+
+      expect(api_map.qualify('Bar::Baz')).to eq('Foo')
+    end
+
     it 'understands alias namespaces resolving types' do
       source = Solargraph::Source.load_string(%(
         class Foo
