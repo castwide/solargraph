@@ -605,8 +605,13 @@ module Solargraph
         rescue SystemCallError => e
           # The command could not start, e.g. Errno::ENOENT - handled below
         end
-        if s&.success?
+        if s&.success? && Collection::Gem.cached?(spec, workspace.plugins)
           logger.info "Cached #{spec.name} #{spec.version}"
+        elsif s&.success?
+          # The command cached the gem for other plugins than this
+          # workspace's; running it again would do the same, forever
+          cache_errors.add spec
+          logger.warn "Caching gemspec #{spec.name} #{spec.version} left no cache in #{CacheDir.gem_dir(workspace.plugins)}"
         else
           cache_errors.add spec
           logger.warn "Error caching gemspec #{spec.name} #{spec.version}"

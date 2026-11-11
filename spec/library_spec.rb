@@ -731,6 +731,18 @@ describe Solargraph::Library do
       expect(Open3).to have_received(:capture3).once
     end
 
+    it 'does not retry a gem its cache command left uncached' do
+      status = instance_double(Process::Status, success?: true)
+      allow(Open3).to receive(:capture3).and_return(['', '', status])
+      allow(Solargraph::Collection::Gem).to receive(:cached?).and_return(false)
+
+      library.catalog
+      library.send(:sync_catalog)
+      join_cache_threads
+
+      expect(Open3).to have_received(:capture3).once
+    end
+
     it 'finishes caching when an unexpected error is raised' do
       allow(Open3).to receive(:capture3).and_raise('cache failed')
 
@@ -780,6 +792,7 @@ describe Solargraph::Library do
       cache_job = nil
       allow(Thread).to receive(:new) { |&block| cache_job = block }
       allow(Open3).to receive(:capture3).and_return(['', '', instance_double(Process::Status, success?: true)])
+      allow(Solargraph::Collection::Gem).to receive(:cached?).and_return(true)
       allow(library).to receive(:catalog)
       allow(library).to receive(:sync_catalog)
 
