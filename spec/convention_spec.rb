@@ -163,9 +163,25 @@ describe Solargraph::Convention do
       expect(api_map.get_path_pins('Documented#generated')).not_to be_empty
     end
 
+    it 'keeps the original text on a transformed source' do
+      source = Solargraph::Source.load_string(fake_code, 'test.fake')
+      expect(source).to be_transformed
+      expect(source.original_code).to eq(fake_code)
+    end
+
+    it 'keeps the original text after an edit' do
+      source = Solargraph::Source.load_string("Prose\n> def foo; end\nfoo\n", 'test.fake', 0)
+      change = Solargraph::Source::Change.new(Solargraph::Range.from_to(2, 0, 2, 0), '> ')
+      updated = source.synchronize(Solargraph::Source::Updater.new('test.fake', 1, [change]))
+      expect(updated).to be_transformed
+      expect(updated.original_code).to eq("Prose\n> def foo; end\n> foo\n")
+    end
+
     it 'leaves files that no convention claims untouched' do
       source = Solargraph::Source.load_string(fake_code, 'test.txt')
       expect(source.code).to eq(fake_code)
+      expect(source).not_to be_transformed
+      expect(source.original_code).to be_nil
     end
 
     it 'never transforms Ruby files' do

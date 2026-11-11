@@ -19,6 +19,18 @@ module Solargraph
     # @return [String, nil]
     attr_reader :filename
 
+    # The text a convention transformed into the code, if any (see
+    # Convention::Base#transform_source)
+    #
+    # @return [String, nil]
+    attr_reader :original_code
+
+    # True if a convention transformed the text of the file into the code.
+    # Ruby tooling such as diagnostics and formatting skips these sources.
+    def transformed?
+      !original_code.nil?
+    end
+
     # @return [String]
     def code
       finalize
