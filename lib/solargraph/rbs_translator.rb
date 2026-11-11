@@ -21,7 +21,7 @@ module Solargraph
     # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
     # @return [ComplexType]
     def self.to_complex_type type, type_alias_decls: {}
-      ComplexType.try_parse(type_to_tag(type, type_alias_decls))
+      to_type(type, type_alias_decls)
     end
 
     # @param param_type [RBS::Types::Function::Param]
@@ -132,43 +132,44 @@ module Solargraph
       # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
       # @param expanding_aliases [Array<String>] Names of aliases already
       #   being expanded in this call chain, to detect recursive aliases
-      # @return [String]
-      def type_to_tag type, type_alias_decls = {}, expanding_aliases = []
+      # @return [ComplexType]
+      def to_type type, type_alias_decls = {}, expanding_aliases = []
         case type
         when RBS::Types::Optional
           # @sg-ignore flow sensitive typing should support case/when
-          "#{type_to_tag(type.type, type_alias_decls, expanding_aliases)}, nil"
+          ComplexType.new([to_type(type.type, type_alias_decls, expanding_aliases), ComplexType::NIL])
         when RBS::Types::Bases::Bool
-          '::Boolean'
+          ComplexType::BOOLEAN
         when RBS::Types::Tuple
           # @sg-ignore flow sensitive typing should support case/when
-          "::Array(#{type.types.map { |t| type_to_tag(t, type_alias_decls, expanding_aliases) }.join(', ')})"
+          members = type.types.map { |member| to_type(member, type_alias_decls, expanding_aliases) }
+          named_type('Array', members, parameters_type: :fixed)
         when RBS::Types::Literal
           # @sg-ignore flow sensitive typing should support case/when
-          type.literal.inspect
-        when RBS::Types::Union
+          named_type(type.literal.inspect)
+        when RBS::Types::Union, RBS::Types::Intersection
+          # An intersection reads as the union of its members until
+          # Solargraph has an intersection type.
           # @sg-ignore flow sensitive typing should support case/when
-          type.types.map { |t| type_to_tag(t, type_alias_decls, expanding_aliases) }.join(', ')
+          ComplexType.new(type.types.map { |member| to_type(member, type_alias_decls, expanding_aliases) })
         when RBS::Types::Record
           # @todo Better record support
-          '::Hash'
+          named_type('Hash')
         when RBS::Types::Bases::Nil
-          'nil'
+          ComplexType::NIL
         when RBS::Types::Bases::Void
-          'void'
+          ComplexType::VOID
         when RBS::Types::Variable
           # @sg-ignore flow sensitive typing should support case/when
-          "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
+          parameter = ComplexType::UniqueType.new(type.name.to_s, rooted: false)
+          named_type(ComplexType::GENERIC_TAG_NAME, [parameter])
         when RBS::Types::Bases::Self, RBS::Types::Bases::Instance
-          'self'
+          ComplexType::SELF
         when RBS::Types::Bases::Top
           # `Top` is the most super superclass
-          '::BasicObject'
-        when RBS::Types::Intersection
-          # @sg-ignore flow sensitive typing should support case/when
-          type.types.map { |member| type_to_tag(member, type_alias_decls, expanding_aliases) }.join(', ')
+          named_type('BasicObject')
         when RBS::Types::Proc
-          '::Proc'
+          named_type('Proc')
         when RBS::Types::Alias
           # Expand so conformance checks see the members, not the name. A
           # generic alias falls back: args are not substituted, so expanding
@@ -179,43 +180,42 @@ module Solargraph
           # @sg-ignore flow sensitive typing should support case/when
           if alias_decl.nil? || expanding_aliases.include?(alias_name) || !type.args.empty?
             # @sg-ignore flow sensitive typing should support case/when
-            type_tag(type.name, type.args, type_alias_decls, expanding_aliases)
+            ComplexType.new([build_type(type.name, type.args, type_alias_decls, expanding_aliases)])
           else
             # The alias body belongs to the alias's declaration, not the
             # use site, so its names stay rooted even when a core-less
             # environment left them relative.
-            expanded = type_to_tag(alias_decl.type, type_alias_decls, expanding_aliases + [alias_name])
-            ComplexType.try_parse(expanded).force_rooted.rooted_tags
+            to_type(alias_decl.type, type_alias_decls, expanding_aliases + [alias_name]).force_rooted
           end
         when RBS::Types::ClassInstance, RBS::Types::Interface
           # `Interface` represents a mix-in module which can be considered a
           # subtype of a consumer of it
           # @sg-ignore flow sensitive typing should support case/when
-          type_tag(type.name, type.args, type_alias_decls, expanding_aliases)
+          ComplexType.new([build_type(type.name, type.args, type_alias_decls, expanding_aliases)])
         when RBS::Types::ClassSingleton
           # e.g., singleton(String)
           # @sg-ignore flow sensitive typing should support case/when
-          type_tag(type.name, [], type_alias_decls, expanding_aliases)
+          ComplexType.new([build_type(type.name, [], type_alias_decls, expanding_aliases)])
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
           # `Bottom`` is used in contexts where nothing will ever return
           # - e.g., it could be the return type of 'exit()' or 'raise'
           # @todo define a specific bottom type and use it to
           #   determine dead code
           #
-          'undefined'
+          ComplexType::UNDEFINED
         else
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
-          'undefined'
+          ComplexType::UNDEFINED
         end
       end
 
-      # @param type_name [RBS::TypeName]
-      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
-      # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
-      # @param expanding_aliases [Array<String>]
-      # @return [String]
-      def type_tag type_name, type_args = [], type_alias_decls = {}, expanding_aliases = []
-        build_type(type_name, type_args, type_alias_decls, expanding_aliases).rooted_tags
+      # @param name [String]
+      # @param subtypes [Array<ComplexType, ComplexType::UniqueType>]
+      # @param parameters_type [Symbol]
+      # @return [ComplexType]
+      def named_type name, subtypes = [], parameters_type: :list
+        parameters_type = nil if subtypes.empty?
+        ComplexType.new([ComplexType::UniqueType.new(name, [], subtypes, rooted: true, parameters_type: parameters_type)])
       end
 
       # @param type_name [RBS::TypeName]
@@ -227,10 +227,8 @@ module Solargraph
         yard_base = RBS_TO_YARD_TYPE[type_name.relative!.to_s]
         base = yard_base || type_name.relative!.to_s
         rooted = !yard_base.nil? || type_name.absolute?
-        params = type_args.map { |a| type_to_tag(a, type_alias_decls, expanding_aliases) }.map do |t|
-          ComplexType.try_parse(t)
-        end
-        if base == 'Hash' && params.length == 2
+        params = type_args.map { |a| to_type(a, type_alias_decls, expanding_aliases) }
+        if base == 'Hash' && params.length == 2 && params.any?(&:defined?)
           ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: rooted, parameters_type: :hash)
         else
           ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: rooted, parameters_type: :list)

@@ -352,6 +352,38 @@ describe Solargraph::RbsMap::Conversions do
         expect(prepend_pin.name).to eq('Bar')
       end
     end
+
+    context 'with a constant typed as a tuple holding a symbol literal' do
+      subject(:constant_pin) { conversions.pins.find { |pin| pin.path == 'NO_ARGUMENT' } }
+
+      let(:rbs) do
+        <<~RBS
+          NO_ARGUMENT: [:NONE, nil]
+        RBS
+      end
+
+      it 'keeps the tuple type' do
+        expect(constant_pin.return_type.tag).to eq('Array(:NONE, nil)')
+      end
+    end
+
+    context 'with a type alias of string literals holding type syntax characters' do
+      subject(:method_pin) { api_map.get_method_stack('Requirement', 'parse', scope: :class).first }
+
+      let(:rbs) do
+        <<~RBS
+          class Requirement
+            type operator = "=" | "<" | ">="
+
+            def self.parse: () -> operator
+          end
+        RBS
+      end
+
+      it 'keeps each literal' do
+        expect(method_pin.return_type.rooted_tags).to eq('"=", "<", ">="')
+      end
+    end
   end
 
   context 'with standard loads for solargraph project' do
@@ -429,6 +461,73 @@ describe Solargraph::RbsMap::Conversions do
           param.name == 'chdir'
         end
         expect(chdir_param).not_to be_nil, -> { "Found pin #{method_pin.to_rbs} from #{method_pin.type_location}" }
+      end
+    end
+  end
+
+  describe '.ivar_to_pin / .cvar_to_pin / .civar_to_pin / .global_decl_to_pin' do
+    it 'uses a :type tag, not :return, for variable-like RBS pins' do
+      return_type = Solargraph::ComplexType.try_parse('String').force_rooted
+      pin = Solargraph::Pin::InstanceVariable.new(name: '@foo', closure: Solargraph::Pin::ROOT_PIN, return_type: return_type, source: :rbs)
+      expect(pin.docstring.tag(:type)&.types).to eq(['::String'])
+    end
+  end
+
+  context 'with RBS to digest for return_type coverage' do
+    around do |example|
+      require 'tmpdir'
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
+        @temp_dir = dir
+        example.run
+      end
+    end
+
+    let(:conversions) do
+      loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+      loader.add(path: Pathname(temp_dir))
+      described_class.new(loader: loader)
+    end
+
+    let(:rbs) do
+      <<~RBS
+        $my_global: String
+
+        class Foo
+          FOO: String
+
+          attr_reader foo: String
+          attr_writer bar: String
+
+          @baz: String
+          @@qux: String
+          self.@quux: String
+        end
+      RBS
+    end
+
+    attr_reader :temp_dir
+
+    before { File.write(File.join(temp_dir, 'foo.rbs'), rbs) }
+
+    it 'produces a fully-rooted return_type for every .*_to_pin method that builds one from an RBS type' do
+      pins = conversions.pins
+      find = lambda do |klass, name|
+        pins.find { |p| p.is_a?(klass) && p.name == name }
+      end
+
+      candidates = {
+        '$my_global (global_decl_to_pin)' => find.call(Solargraph::Pin::GlobalVariable, '$my_global'),
+        'FOO (constant_decl_to_pin)' => find.call(Solargraph::Pin::Constant, 'FOO'),
+        'foo (attr_reader_to_pin)' => find.call(Solargraph::Pin::Method, 'foo'),
+        'bar= (attr_writer_to_pin)' => find.call(Solargraph::Pin::Method, 'bar='),
+        '@baz (ivar_to_pin)' => find.call(Solargraph::Pin::InstanceVariable, '@baz'),
+        '@@qux (cvar_to_pin)' => find.call(Solargraph::Pin::ClassVariable, '@@qux'),
+        '@quux (civar_to_pin)' => find.call(Solargraph::Pin::InstanceVariable, '@quux')
+      }
+      candidates.each do |label, pin|
+        expect(pin).not_to be_nil, "expected a pin for #{label}"
+        expect(pin.return_type.all_rooted?).to be(true), "#{label}: expected an all_rooted? return_type"
+        expect(pin.return_type.rooted_tags).to eq('::String')
       end
     end
   end
