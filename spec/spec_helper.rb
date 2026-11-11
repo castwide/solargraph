@@ -2,12 +2,12 @@
 
 require 'bundler/setup'
 require 'webmock/rspec'
+require 'rspec_time_guard'
 WebMock.disable_net_connect!(allow_localhost: true)
 unless ENV['SIMPLECOV_DISABLED']
   # set up lcov reporting for undercover
   require 'simplecov'
   require 'undercover/simplecov_formatter'
-
   SimpleCov.start do
     cname = ENV.fetch('TEST_COVERAGE_COMMAND_NAME', 'ad-hoc')
     command_name cname
@@ -27,6 +27,12 @@ RSpec.configure do |c|
   # Allow use of --only-failures with rspec, handy for local development
   c.example_status_persistence_file_path = 'rspec-examples.txt'
 end
+RspecTimeGuard.setup
+RspecTimeGuard.configure do |config|
+  config.global_time_limit_seconds = 60
+  config.continue_on_timeout = false
+end
+
 require 'solargraph'
 # execute any logging blocks to make sure they don't blow up
 Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
