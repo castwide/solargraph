@@ -12,6 +12,7 @@ module Solargraph
 
           def process
             file_uri = params['textDocument']['uri']
+            return set_result([]) if host.transformed?(file_uri)
             config = config_for(file_uri)
             original = host.read_text(file_uri)
             args = cli_args(file_uri, config)

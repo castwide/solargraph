@@ -19,6 +19,18 @@ module Solargraph
     # @return [String, nil]
     attr_reader :filename
 
+    # The text a convention transformed into the code, if any (see
+    # Convention::Base#transform_source)
+    #
+    # @return [String, nil]
+    attr_reader :original_code
+
+    # True if a convention transformed the text of the file into the code.
+    # Ruby tooling such as diagnostics and formatting skips these sources.
+    def transformed?
+      !original_code.nil?
+    end
+
     # @return [String]
     def code
       finalize
@@ -44,8 +56,11 @@ module Solargraph
     # @param code [String]
     # @param filename [String, nil]
     # @param version [Integer]
-    def initialize code, filename = nil, version = 0
+    # @param original_code [String, nil] The text a convention transformed
+    #   into the code, if any (see Convention::Base#transform_source)
+    def initialize code, filename = nil, version = 0, original_code: nil
       @code = normalize(code)
+      @original_code = normalize(original_code) if original_code
       @repaired = code
       @filename = filename
       @version = version
@@ -99,6 +114,7 @@ module Solargraph
     # @return [Source]
     def synchronize updater
       raise 'Invalid synchronization' unless updater.filename == filename
+      return synchronize_original(updater) if @original_code
       real_code = updater.write(@code)
       if real_code == @code
         @version = updater.version
@@ -504,6 +520,20 @@ module Solargraph
 
     private
 
+    # Apply an update to the original text of a transformed source and
+    # transform the result again.
+    #
+    # @param updater [Source::Updater]
+    # @return [Source]
+    def synchronize_original updater
+      original_code = updater.write(@original_code)
+      if original_code == @original_code
+        @version = updater.version
+        return self
+      end
+      Source.load_string(original_code, filename, updater.version)
+    end
+
     # @return [Array<String>]
     def code_lines
       @code_lines ||= code.lines
@@ -519,12 +549,17 @@ module Solargraph
         Source.load_string(code, filename)
       end
 
+      # Load a source from the text of a file. A convention can transform
+      # the text into Ruby code (see Convention::Base#transform_source).
+      #
       # @param code [String]
       # @param filename [String, nil]
       # @param version [Integer]
       # @return [Solargraph::Source]
       def load_string code, filename = nil, version = 0
-        Source.new code, filename, version
+        transformed = Convention.transform_source(filename, code)
+        return Source.new(code, filename, version) unless transformed
+        Source.new(transformed, filename, version, original_code: code)
       end
 
       # @param comments [String]
