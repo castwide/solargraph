@@ -81,7 +81,7 @@ describe Solargraph::ComplexType do
   end
 
   it 'handles singleton types compared against their literals' do
-    pending 'side of effect of inference changes'
+    pending 'https://github.com/castwide/solargraph/pull/1223'
     exp = Solargraph::ComplexType::UniqueType.new('nil', rooted: true)
     inf = Solargraph::ComplexType::UniqueType.new('NilClass', rooted: true)
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -237,6 +237,125 @@ describe Solargraph::ComplexType do
     it 'validates inheritance the other way' do
       match = sup.conforms_to?(api_map, sub, :method_call, [:allow_reverse_match])
       expect(match).to be(true)
+    end
+  end
+
+  context 'with RBS interface types' do
+    around do |example|
+      require 'tmpdir'
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
+        @temp_dir = dir
+        example.run
+      end
+    end
+
+    attr_reader :temp_dir
+
+    # Declared here rather than reused from core RBS, whose interfaces vary by version.
+    let(:rbs) do
+      <<~RBS
+        interface _MyKey
+          def hash: () -> Integer
+          def eql?: (untyped) -> bool
+        end
+
+        interface _MyToAry
+          def to_ary: () -> Array[untyped]
+        end
+
+        class MyKeyImpl
+          def hash: () -> Integer
+          def eql?: (untyped) -> bool
+        end
+
+        class BadToAry
+          def to_ary: () -> String
+        end
+
+        class BadKey
+          def eql?: () -> bool
+          def hash: () -> Integer
+        end
+      RBS
+    end
+
+    let(:api_map) do
+      File.write(File.join(temp_dir, 'interfaces.rbs'), rbs)
+      loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+      loader.add(path: Pathname(temp_dir))
+      Solargraph::ApiMap.new.index(Solargraph::RbsMap::Conversions.new(loader: loader).pins)
+    end
+
+    it 'structurally validates a type that satisfies the interface, without any rule' do
+      exp = described_class.parse('_MyKey')
+      inf = described_class.parse('MyKeyImpl')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'structurally invalidates a type that does not satisfy the interface, even with allow_unmatched_interface' do
+      exp = described_class.parse('_MyToAry')
+      inf = described_class.parse('Integer')
+      match = inf.conforms_to?(api_map, exp, :method_call, [:allow_unmatched_interface])
+      expect(match).to be(false)
+    end
+
+    it 'rejects a type that does not satisfy the interface when the rule is absent' do
+      exp = described_class.parse('_MyToAry')
+      inf = described_class.parse('Integer')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'validates a type that satisfies the interface via a core fill include' do
+      exp = described_class.parse('_MyToAry')
+      inf = described_class.parse('Array')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'falls back to allow_unmatched_interface when the interface pin cannot be found' do
+      exp = described_class::UniqueType.new('_NoSuchInterface', rooted: true)
+      inf = described_class.parse('Integer')
+      expect(inf.conforms_to?(api_map, exp, :method_call, [:allow_unmatched_interface])).to be(true)
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(false)
+    end
+
+    it 'validates against a union whose interface member is satisfied' do
+      exp = described_class.parse('_MyToAry, Integer')
+      inf = described_class.parse('Array')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'validates regardless of where the interface sits in the union' do
+      exp = described_class.parse('Integer, _MyToAry')
+      inf = described_class.parse('Array')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'invalidates against a union when no member is satisfied' do
+      exp = described_class.parse('_MyToAry, Integer')
+      inf = described_class.parse('String')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'rejects a same-named method with the wrong return type' do
+      pending 'https://github.com/castwide/solargraph/issues/1267'
+      exp = described_class.parse('_MyToAry')
+      inf = described_class.parse('BadToAry')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'rejects a same-named method with the wrong arity' do
+      pending 'https://github.com/castwide/solargraph/issues/1267'
+      exp = described_class.parse('_MyKey')
+      inf = described_class.parse('BadKey')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
     end
   end
 
