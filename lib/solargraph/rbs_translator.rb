@@ -47,7 +47,7 @@ module Solargraph
     # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
     # @return [Array<Pin::Parameter>]
     def self.to_parameter_pins method_type, closure, parameter_names = [], type_alias_decls: {}
-      if defined?(RBS::Types::UntypedFunction) && method_type.type.is_a?(RBS::Types::UntypedFunction)
+      if method_type.type.is_a?(RBS::Types::UntypedFunction)
         return [
           Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: closure, source: :rbs)
         ]
@@ -55,34 +55,38 @@ module Solargraph
 
       arg_num = 0
       params = []
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       method_type.type.required_positionals.each do |param|
-        # @sg-ignore Unresolved call to name on RBS::Types::Function::Param
         params.push RbsTranslator.to_parameter_pin(param, param.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :arg, closure, type_alias_decls: type_alias_decls)
         arg_num += 1
       end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       method_type.type.optional_positionals.each do |param|
-        # @sg-ignore Unresolved call to name on RBS::Types::Function::Param
         params.push RbsTranslator.to_parameter_pin(param, param.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :optarg, closure, type_alias_decls: type_alias_decls)
         arg_num += 1
       end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       if method_type.type.rest_positionals
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         rest_positionals = method_type.type.rest_positionals
         # @sg-ignore Unresolved call to name on RBS::Types::Function::Param
         rest_name = rest_positionals.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}"
         params.push RbsTranslator.to_parameter_pin(rest_positionals, rest_name, :restarg, closure, type_alias_decls: type_alias_decls)
         arg_num += 1
       end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       method_type.type.required_keywords.each do |param|
-        # @sg-ignore Unresolved calls to last, first on generic<D>
         params.push RbsTranslator.to_parameter_pin(param.last, param.first.to_s, :kwarg, closure, type_alias_decls: type_alias_decls)
         arg_num += 1
       end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       method_type.type.optional_keywords.each do |param|
-        # @sg-ignore Unresolved calls to last, first on generic<D>
         params.push RbsTranslator.to_parameter_pin(param.last, param.first.to_s, :kwoptarg, closure, type_alias_decls: type_alias_decls)
         arg_num += 1
       end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       if method_type.type.rest_keywords
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         rest_keywords = method_type.type.rest_keywords
         # @sg-ignore Unresolved call to name on RBS::Types::Function::Param
         rest_keywords_name = rest_keywords.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}"
@@ -107,6 +111,7 @@ module Solargraph
       block = if method_type.block
                 # @sg-ignore https://github.com/castwide/solargraph/issues/1249
                 block_parameters = to_parameter_pins(method_type.block, closure, type_alias_decls: type_alias_decls)
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1258
                 block_return_type = to_complex_type(method_type.block.type.return_type, type_alias_decls: type_alias_decls)
                 Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)
               end

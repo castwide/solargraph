@@ -18,6 +18,7 @@ module Solargraph
         end
         # @sg-ignore flow sensitive typing should be able to identify more blocks that always return
         file = File.join(spec.full_gem_path, code_object.file)
+        # @sg-ignore flow sensitive typing should be able to identify more blocks that always return
         Solargraph::Location.new(file, Solargraph::Range.from_to(code_object.line - 1, 0, code_object.line - 1, 0))
       end
 
