@@ -534,7 +534,11 @@ describe Solargraph::Plugin::ActiveSupport do
         expect(api_map.get_method_stack('Foo', 'bar', scope: :class).map(&:path)).to eq(['Foo.bar'])
       end
 
-      it 'types accessors from a gem that reaches activesupport through another gem' do
+      # A workspace whose bundle has a gem that reaches activesupport only
+      # through another gem, as responders does through actionpack
+      #
+      # @return [String] the workspace directory
+      def write_transitive_workspace
         workspace_dir = write_workspace
         { 'middle' => 'activesupport', 'outer' => 'middle' }.each do |name, dependency|
           gem_dir = File.join(@root, name)
@@ -571,10 +575,25 @@ describe Solargraph::Plugin::ActiveSupport do
           _out, err, status = Open3.capture3('bundle', 'lock', '--local', chdir: workspace_dir)
           raise "bundle lock failed: #{err}" unless status.success?
         end
+        workspace_dir
+      end
 
-        clip = Solargraph::ApiMap.load(workspace_dir).clip_at(File.join(workspace_dir, 'app.rb'), [1, 14])
+      # @param workspace_dir [String]
+      # @return [Solargraph::SourceMap::Clip] the clip at app.rb's Outer::Base.label
+      def label_clip workspace_dir
+        Solargraph::ApiMap.load(workspace_dir).clip_at(File.join(workspace_dir, 'app.rb'), [1, 14])
+      end
+
+      it 'types accessors from a gem that reaches activesupport through another gem' do
+        clip = label_clip(write_transitive_workspace)
         expect(clip.infer.to_s).to eq('String')
         expect(clip.define.map(&:documentation).join).to include('The label of the base')
+      end
+
+      it 'types accessors from such a gem after the cache command maps it' do
+        workspace_dir = write_transitive_workspace
+        expect { Solargraph::Shell.new([], { directory: workspace_dir }).cache('outer') }.to output(/Caching outer/).to_stdout
+        expect(label_clip(workspace_dir).infer.to_s).to eq('String')
       end
     end
   end
