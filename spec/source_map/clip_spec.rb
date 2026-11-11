@@ -641,6 +641,20 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
   end
 
+  it 'rebinds a block to Refinement inside Module#refine, whose only binding is RBS [self: Refinement]' do
+    source = Solargraph::Source.load_string(%(
+      module Mod
+        refine String do
+          tar
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [3, 13])
+    expect(clip.complete.pins.map(&:path)).to include('Refinement#target')
+  end
+
   it 'processes @yieldreceiver tags referencing instances from classes' do
     other = Solargraph::SourceMap.load_string(%(
       module Mixin
