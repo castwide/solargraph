@@ -48,18 +48,103 @@ module Solargraph
 
         def method_call
           # @todo Quick and dirty hack to force UniqueType to ComplexType
-          pins = ComplexType.new([receiver.context])
-                            .to_typedef_typeset
-                            .types
-                            .flat_map { |type| get_methods(type) }
-                            .select { |pin| pin.name == link.word }
-                            .map { |pin| find_matching_signature(pin, receiver) }
-                            .map { |pin| expand_macros_from_arguments(pin) }
-                            .map { |pin| expand_generic_parameters_from_arguments(pin) }
-                            .map { |pin| expand_generic_parameters_from_block(pin) }
+          types = ComplexType.new([receiver.context]).to_typedef_typeset.types
+          # Each member of a union of types defines the call on its own, e.g.,
+          # +nil?+ returns +true+ for +nil+ and +false+ for every other type, so
+          # unions are resolved one type at a time, and each member binds +self+
+          # in the result to itself.
+          pins = if types.length > 1
+                   union_method_pins(types)
+                 else
+                   method_pins_from(types)
+                 end
           return pins unless link.nullable? && receiver.typedef_typeset.nullable?
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
+        end
+
+        # The pins that define a method call for every member of a union of
+        # types.
+        #
+        # A member that does not define the call is disregarded unless the call
+        # cannot be determined for it at all, e.g., a bare +Class+ responds to
+        # +new+ but nothing is known about the type it creates, so +new+ on
+        # +Class<Beta> | Class+ is undefined. When unions are not loose, every
+        # member of the union must define the call.
+        #
+        # @param types [Array<Typedef::Type>]
+        # @return [Array<Pin::Base>]
+        def union_method_pins types
+          resolved = []
+          unresolved = []
+          types.each do |type|
+            pins = union_member_pins type
+            if pins.empty?
+              unresolved.push type
+            else
+              resolved.concat pins
+            end
+          end
+          return [] if unresolved.any? && !api_map.loose_unions
+          return [] if unresolved.any? { |type| indeterminate_type? type }
+
+          resolved
+        end
+
+        # The pins that define a method call for a single member of a union of
+        # types. The member supersedes the types it derives from, and it binds
+        # +self+ in the return type to itself, e.g., +Symbol#to_sym+ returns
+        # +self+, which must resolve to +Symbol+ even when the receiver is a
+        # union such as +String | Symbol+.
+        #
+        # @param type [Typedef::Type]
+        # @return [Array<Pin::Base>]
+        def union_member_pins type
+          pins = method_pins_from([type])
+          winner = pins.find { |pin| pin.typedef_typeset.defined? } || pins.first
+          return [] unless winner
+
+          [bind_self_to(winner, type)]
+        end
+
+        # True if no namespace can be resolved for the type, which leaves every
+        # call on it undefined. A class-scoped type names the class it refers to
+        # with a parameter, e.g., +Class<Beta>+, so a bare +Class+ names none.
+        #
+        # @param type [Typedef::Type]
+        # @return [Boolean]
+        def indeterminate_type? type
+          type.class? && type.params.empty?
+        end
+
+        # @param pin [Pin::Base]
+        # @param type [Typedef::Type]
+        # @return [Pin::Base]
+        def bind_self_to pin, type
+          typeset = pin.typedef_typeset
+          return pin unless typeset.defined?
+
+          pin.proxy(typeset.expand({ 'self' => Typeset.new([type]) }).to_complex_type)
+        end
+
+        # The pins that define a method call for the specified types. Methods
+        # inherited from superclasses and modules are included, so the first pin
+        # that declares a return type takes precedence over the rest. If none of
+        # them are declared, the first pin is kept since its type can still be
+        # inferred from the method's body.
+        #
+        # @param types [Array<Typedef::Type>]
+        # @return [Array<Pin::Base>]
+        def method_pins_from types
+          pins = types.flat_map { |type| get_methods(type) }
+                      .select { |pin| pin.name == link.word }
+                      .map { |pin| find_matching_signature(pin, receiver) }
+                      .map { |pin| expand_macros_from_arguments(pin) }
+                      .map { |pin| expand_generic_parameters_from_arguments(pin) }
+                      .map { |pin| expand_generic_parameters_from_block(pin) }
+          return pins if types.length < 2
+
+          [pins.find { |pin| pin.typedef_typeset.defined? } || pins.first].compact
         end
 
         # @param pin [Pin::Method]

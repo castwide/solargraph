@@ -58,6 +58,26 @@ module Solargraph
         types.any?(&:nullable?)
       end
 
+      # True if this typeset contains both of the literal types, +true+ and
+      # +false+. RBS defines +bool+ as +true | false+, which Solargraph
+      # represents as +Boolean+.
+      #
+      # @return [Boolean]
+      def boolean_literals?
+        literals = types.select { |type| boolean_literal?(type) }.map(&:to_s)
+        literals.include?('true') && literals.include?('false')
+      end
+
+      # True if the type is one of the literal types, +true+ or +false+.
+      #
+      # @param type [Type, Path, Token]
+      # @return [Boolean]
+      def boolean_literal? type
+        return false unless type.respond_to?(:params)
+
+        type.params.empty? && %w[true false].include?(type.to_s)
+      end
+
       def to_s
         types.join(' | ')
       end
@@ -78,7 +98,14 @@ module Solargraph
 
       def reduce!
         types.uniq!(&:to_s)
+        return unless boolean_literals?
+
+        types.reject! { |type| boolean_literal?(type) }
+        types.push BOOLEAN
       end
+
+      # The type used to reduce literal +true+ and +false+ types.
+      BOOLEAN = Type.new('Boolean')
     end
 
     Typeset::UNDEFINED = Typeset.new([Type::UNDEFINED])

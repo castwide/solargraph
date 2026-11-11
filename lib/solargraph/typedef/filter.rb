@@ -67,7 +67,7 @@ module Solargraph
 
       # @return [Typeset]
       def first_declared_or_inferred
-        return first_declared if first_declared.defined? || !infer?
+        return declared_types if declared_types.defined? || !infer?
 
         pins.each do |pin|
           inferred = Expansions::Inference.expand(api_map, pin, receiver)
@@ -75,6 +75,26 @@ module Solargraph
         end
 
         ComplexType::UNDEFINED.to_typedef_typeset
+      end
+
+      # The types declared by the pins. A method called on a union of types is
+      # resolved for each member of the union, and each member contributes its
+      # own type, e.g., +nil?+ returns +true+ for +nil+ and +false+ for every
+      # other type.
+      #
+      # @return [Typeset]
+      def declared_types
+        @declared_types ||= begin
+          declared = union_receiver? ? pins.map(&:typedef_typeset).select(&:defined?) : []
+          declared.empty? ? first_declared : Typeset.new(declared)
+        end
+      end
+
+      # @return [Boolean]
+      def union_receiver?
+        return false if receiver.nil?
+
+        ComplexType.new([receiver.context]).to_typedef_typeset.types.length > 1
       end
 
       def first_declared

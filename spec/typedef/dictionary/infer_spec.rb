@@ -75,7 +75,6 @@ describe Solargraph::Typedef::Dictionary do
     end
 
     it 'resolves a YARD @return [self] to the union member that supplied the method' do
-      pending 'WIP'
       code = %(
         class Alpha
           # @return [Symbol]
@@ -763,6 +762,17 @@ describe Solargraph::Typedef::Dictionary do
       )
       typeset = dictionary_for(code, [2, 8]).infer
       expect(typeset.to_s).to eq('Integer')
+    end
+
+    it 'infers Boolean fron #nil?' do
+      code = %(
+        # @type [Integer, nil]
+        b = foo
+        b.nil?
+      )
+
+      typeset = dictionary_for(code, [3, 10]).infer
+      expect(typeset.to_s).to eq('Boolean')
     end
   end
 end
