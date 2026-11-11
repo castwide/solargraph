@@ -136,7 +136,10 @@ module Solargraph
     # @return [Metagem, nil]
     def system_find_by_path path
       gem = Gem::Specification.find_by_path(path)
-      gem && Metagem.from_specification(gem)
+      return Metagem.from_specification(gem) if gem
+
+      # find_by_path misses gems Bundler loads from git and path sources
+      loaded_metagems.find { |mg| mg.require?(path) }
     end
 
     # @param name [String]
@@ -168,6 +171,11 @@ module Solargraph
       @bundled_metagem_path_map ||= Hash.new do |hash, path|
         hash[path] = bundled.find { |mg| mg.require?(path) }
       end
+    end
+
+    # @return [Array<Metagem>]
+    def loaded_metagems
+      @loaded_metagems ||= Gem.loaded_specs.values.map { |spec| Metagem.from_specification(spec) }
     end
 
     def bundled_group_map
