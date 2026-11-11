@@ -420,7 +420,9 @@ module Solargraph
 
         all_errors = []
         pin.signatures.sort_by { |sig| sig.parameters.length }.each do |sig|
-          params = param_details_from_stack(sig, pins)
+          # A union receiver can resolve some members through a macro,
+          # which yields a ProxyType with no signatures
+          params = param_details_from_stack(sig, pins.grep(Pin::Method))
 
           signature_errors = signature_argument_problems_for location, locals, closure_pin, params, arguments, sig, pin
 
