@@ -11,6 +11,15 @@ module Solargraph
       # @return [Hash{String => Array<Pin::Method>}]
       attr_reader :macro_method_name_pins
 
+      # Methods that carry call site templates, by name. Computed on first
+      # use: only conventions mapping call sites need it.
+      #
+      # @return [Hash{String => Array<Pin::Method>}]
+      def call_site_template_pins
+        @call_site_template_pins ||= pins_by_class(Pin::Method).reject { |pin| pin.call_site_templates.empty? }
+                                                               .group_by(&:name)
+      end
+
       # @param pins [Array<Pin::Base>]
       def initialize pins = []
         catalog pins
@@ -161,6 +170,7 @@ module Solargraph
         macro_pins = pins_by_class(Pin::Method).select { |pin| pin.macros.any? }
         @macro_method_names = macro_pins.to_set(&:name)
         @macro_method_name_pins = macro_pins.to_set.classify(&:name)
+        @call_site_template_pins = nil
         map_factory_parameters
         map_overrides
         pins_by_class(Pin::Reference::TypeAlias).each { |pin| alias_hash[pin.name] = pin.return_type }
