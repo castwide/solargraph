@@ -192,5 +192,21 @@ describe Solargraph::Typedef::Dictionary do
         ), 2, 17)).to eq('String')
       end
     end
+
+    it 'gets modified types from inherited methods' do
+      code = %(
+        class Superclass
+          # @return [String]
+          def foo; end
+        end
+        class Subclass < Superclass
+          # @return [Integer]
+          def foo; end
+        end
+        Subclass.new.foo
+      )
+      typeset = dictionary_for(code, [9, 21]).declare
+      expect(typeset.to_s).to eq('Integer')
+    end
   end
 end
