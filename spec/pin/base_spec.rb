@@ -54,6 +54,7 @@ describe Solargraph::Pin::Base do
   it 'deals well with known closure combination issue' do
     bench = Solargraph::Bench.new(external_requires: ['yard'])
     api_map = Solargraph::ApiMap.new.catalog(bench)
+    cache_unloaded_gems(api_map, bench)
     pins = api_map.get_method_stack('YARD::Docstring', 'parser', scope: :class)
     # @todo Some environments get more than one pin
     expect(pins.length).to be_positive
