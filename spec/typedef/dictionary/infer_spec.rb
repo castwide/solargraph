@@ -774,5 +774,32 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [3, 10]).infer
       expect(typeset.to_s).to eq('Boolean')
     end
+
+    it 'infers type parameters from Array#map' do
+      skip 'TBD'
+      code = "['foo'].map { 1 }"
+      typeset = dictionary_for(code, [0, 8]).infer
+      expect(typeset.to_s).to eq('Array[Integer]')
+    end
+
+    it 'infers variable type parameters from Array#map' do
+      skip 'TBD'
+      code = "['foo'].map { foo ? 'one' : 1 }"
+      typeset = dictionary_for(code, [0, 8]).infer
+      expect(typeset.to_s).to eq('Array[String | Integer]')
+    end
+
+    it 'infers type parameters from Array#map' do
+      pending 'TBD'
+      code = %(
+        def foo
+          blah = ['foo'].map { 1 }
+        end
+        a = foo
+        a
+      )
+      typeset = dictionary_for(code, [5, 8]).infer
+      expect(typeset.to_s).to eq('Array[Integer]')
+    end
   end
 end
