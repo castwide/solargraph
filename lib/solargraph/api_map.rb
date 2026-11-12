@@ -795,7 +795,7 @@ module Solargraph
     # @return [Pin::Namespace, nil]
     def namespace_pin_for_generics fqns
       candidates = store.get_path_pins(fqns).grep(Pin::Namespace)
-      # @sg-ignore grep with a class does not narrow the element type
+      # @sg-ignore https://github.com/apiology/solargraph/pull/358
       candidates.find { |p| !p.generics.empty? } || candidates.first
     end
 
