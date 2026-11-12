@@ -12,16 +12,21 @@ module Solargraph
                 forward(callable)
               else
                 node.children.each do |u|
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                   loc = get_node_location(u)
                   locals.push Solargraph::Pin::Parameter.new(
                     location: loc,
                     closure: callable,
                     comments: comments_for(node),
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                     name: u.children[0].to_s,
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                     assignment: u.children[1],
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                     asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
                     # @sg-ignore Need to add nil check here
                     presence: callable.location.range,
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                     decl: get_decl(u),
                     source: :parser
                   )

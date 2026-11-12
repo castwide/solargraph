@@ -655,9 +655,12 @@ module Solargraph
       end
 
       # @return [Parser::AST::Node, nil]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1418
       def method_body_node
         return nil if node.nil?
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         return node.children[1].children.last if node.type == :DEFN
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         return node.children[2].children.last if node.type == :DEFS
         return node.children[2] if %i[def DEFS].include?(node.type)
         return node.children[3] if node.type == :defs
