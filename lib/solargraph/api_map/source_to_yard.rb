@@ -88,7 +88,7 @@ module Solargraph
           method_object.docstring = pin.docstring
           method_object.visibility = pin.visibility || :public
           method_object.parameters = pin.parameters.map do |p|
-            # @sg-ignore https://github.com/castwide/solargraph/issues/1318
+            # @sg-ignore https://github.com/apiology/solargraph/pull/73
             [p.full_name, p.asgn_code]
           end
         end
