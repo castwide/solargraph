@@ -128,6 +128,26 @@ describe Solargraph::Pin::Method do
     expect(result.length).to eq(signatures.length)
   end
 
+  describe '#combine_with' do
+    it 'keeps a non-attribute method a non-attribute' do
+      pin1 = described_class.new(name: 'foo', attribute: false)
+      pin2 = described_class.new(name: 'foo', attribute: false)
+      expect(pin1.combine_with(pin2)).not_to be_attribute
+    end
+
+    it 'keeps an attribute an attribute' do
+      pin1 = described_class.new(name: 'foo', attribute: true)
+      pin2 = described_class.new(name: 'foo', attribute: true)
+      expect(pin1.combine_with(pin2)).to be_attribute
+    end
+
+    it 'treats a method as an attribute when either source says so' do
+      pin1 = described_class.new(name: 'foo', attribute: false)
+      pin2 = described_class.new(name: 'foo', attribute: true)
+      expect(pin1.combine_with(pin2)).to be_attribute
+    end
+  end
+
   it 'does not merge with changes in parameters' do
     # @todo Method pin parameters are pins now
     pin1 = described_class.new(name: 'bar', parameters: %w[one two])

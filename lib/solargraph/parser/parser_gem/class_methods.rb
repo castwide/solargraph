@@ -56,21 +56,36 @@ module Solargraph
             reg = /#{Regexp.escape name[0..-2]}\s*=/
             # @param code [String]
             # @param offset [Integer]
+            # @param limit [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore Need to add nil check here
-            extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
+            extract_offset = lambda do |code, offset, limit|
+              match = reg.match(code, offset)
+              return [nil, nil] unless match
+
+              soff = match.begin(0)
+              soff && soff < limit ? match.offset(0) : [nil, nil]
+            end
           else
             # @param code [String]
             # @param offset [Integer]
+            # @param limit [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore Need to add nil check here
-            extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
+            extract_offset = lambda do |code, offset, limit|
+              soff = code.index(name, offset)
+              soff && soff < limit ? [soff, soff + name.length] : [nil, nil]
+            end
           end
-          inner_node_references(name, source.node).map do |n|
+          inner_node_references(name, source.node).filter_map do |n|
             rng = Range.from_node(n)
-            # @sg-ignore Need to add nil check here
+            next unless rng
+
             offset = Position.to_offset(source.code, rng.start)
-            soff, eoff = extract_offset[source.code, offset]
+            limit = Position.to_offset(source.code, rng.ending)
+            soff, eoff = extract_offset[source.code, offset, limit]
+            # Operator calls like foo[0] do not spell the method name, and
+            # a match past the call belongs to unrelated code
+            next unless soff && eoff
+
             Location.new(
               source.filename,
               Range.new(
