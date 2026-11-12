@@ -7,7 +7,7 @@ module Solargraph
   #   bundle or dependency updates
   #
   class External
-    # @return [String]
+    # @return [String, nil]
     attr_reader :directory
 
     # @return [Array<String>]
@@ -15,14 +15,24 @@ module Solargraph
 
     attr_reader :extra_gem_names
 
-    # @param directory [String]
+    # @return [Hash{String => String, nil}] Solargraph plugin gem name =>
+    #   version, nil when the plugin was not loaded from a gem; selects the
+    #   gem cache directory (see {Workspace#plugin_versions})
+    attr_reader :plugin_versions
+
+    # @param directory [String, nil]
     # @param requires [Array<String>]
     # @param extra_gem_names [Array<String>]
-    def initialize directory, requires, extra_gem_names = []
+    # @param plugin_versions [Hash{String => String, nil}] the workspace's
+    #   Solargraph plugin gem name => version, nil when the plugin was not
+    #   loaded from a gem; selects the gem cache directory (see
+    #   {Workspace#plugin_versions})
+    def initialize directory, requires, extra_gem_names = [], plugin_versions: {}
       @repo = Repo.new(directory)
       @directory = directory
       @requires = requires
       @extra_gem_names = extra_gem_names
+      @plugin_versions = plugin_versions
       update!
     end
 
@@ -82,6 +92,7 @@ module Solargraph
     # @return [String, nil]
     def rbs_collection_config_path
       # @todo Get rid of the '*' case
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       @rbs_collection_config_path ||= unless directory.nil? || directory.empty? || directory == '*'
                                         yaml_file = File.join(directory, 'rbs_collection.yaml')
                                         yaml_file if File.file?(yaml_file)
@@ -99,7 +110,7 @@ module Solargraph
     end
 
     def cache_changed?
-      unloaded_gems.any? { |gem| Collection::Gem.cached?(gem) }
+      unloaded_gems.any? { |gem| Collection::Gem.cached?(gem, plugin_versions) }
     end
 
     def load_requires
@@ -136,6 +147,7 @@ module Solargraph
     end
 
     def rbs_collection_lockfile
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       return if directory.nil? || directory.empty? || directory == '*'
       lockfile = File.join(directory, 'rbs_collection.lock.yaml')
       lockfile if File.file?(lockfile)
@@ -151,14 +163,15 @@ module Solargraph
       unfound_gem_names.clear
     end
 
+    # @param metagem [Metagem]
     def process_gem metagem
       return if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
 
-      if metagem.cacheable? && !Collection::Gem.cached?(metagem)
+      if metagem.cacheable? && !Collection::Gem.cached?(metagem, plugin_versions)
         unloaded_gems.add metagem
       else
         loaded_gems.add metagem
-        base_pins = Collection::Gem.load(metagem)
+        base_pins = Collection::Gem.load(metagem, plugin_versions)
         rbsc_pins = rbs_collection.load(metagem)
         if rbsc_pins.empty?
           pins.concat base_pins

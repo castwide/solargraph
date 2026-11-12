@@ -81,6 +81,8 @@ describe Solargraph::External do
 
   it 'imports all gems when bundler/require is required' do
     external = described_class.new(directory, ['bundler/require'])
+    external.unloaded_gems.each { |metagem| Solargraph::Collection::Gem.load(metagem) }
+    external.update(['bundler/require'])
     gem_names = external.loaded_gems.map(&:name)
     expect(gem_names).to include('backport')
     expect(gem_names).to include('gem-with-yard-macros')
@@ -89,6 +91,8 @@ describe Solargraph::External do
 
   it 'ignores duplicate gems' do
     external = described_class.new(directory, ['backport', 'backport/version'])
+    external.unloaded_gems.each { |metagem| Solargraph::Collection::Gem.load(metagem) }
+    external.update(['backport', 'backport/version'])
     backport_method_pins = external.pins.select { |pin| pin.path == 'Backport.prepare_stdio_server' }
     expect(backport_method_pins).to be_one
   end
@@ -97,5 +101,16 @@ describe Solargraph::External do
     external = described_class.new(directory, ['net/http'])
     pin_paths = external.pins.map(&:path)
     expect(pin_paths).to include('Net::HTTP')
+  end
+
+  describe '#rbs_collection_config_path' do
+    it 'finds the config in its directory' do
+      external = described_class.new(File.join('spec', 'fixtures', 'rbs_collection'), [])
+      expect(external.rbs_collection_config_path).to eq(File.join('spec', 'fixtures', 'rbs_collection', 'rbs_collection.yaml'))
+    end
+
+    it 'is nil without a directory' do
+      expect(described_class.new(nil, []).rbs_collection_config_path).to be_nil
+    end
   end
 end

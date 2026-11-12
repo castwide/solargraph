@@ -18,17 +18,14 @@ describe Solargraph::Workspace::Config do
     after do
       $LOAD_PATH.delete dir_path
       $LOADED_FEATURES.delete_if { |path| path.end_with?('config_probe_plugin.rb') }
-      Solargraph::CacheDir.plugins.delete 'config_probe_plugin'
     end
 
-    it 'records the plugins it loads in the gem cache key' do
-      described_class.new(dir_path).require_plugins!
-      expect(Solargraph::CacheDir.plugins.keys).to include('config_probe_plugin')
+    it 'returns the plugins it loads' do
+      expect(described_class.new(dir_path).require_plugins!.keys).to include('config_probe_plugin')
     end
 
-    it 'leaves plugins that fail to load out of the gem cache key' do
-      described_class.new(dir_path).require_plugins!
-      expect(Solargraph::CacheDir.plugins.keys).not_to include('missing_probe_plugin')
+    it 'leaves out plugins that fail to load' do
+      expect(described_class.new(dir_path).require_plugins!.keys).not_to include('missing_probe_plugin')
     end
   end
 

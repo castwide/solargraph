@@ -116,7 +116,7 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
-      require_plugins!
+      plugin_versions = require_plugins!
       repo = Solargraph::Repo.new(options[:directory])
 
       gems.each do |gem|
@@ -126,7 +126,7 @@ module Solargraph
           FileUtils.rm_rf CacheDir.stdlib_dir
         else
           metagem = repo.find_by_name(gem)
-          Solargraph::Collection::Gem.uncache(metagem) if metagem
+          Solargraph::Collection::Gem.uncache(metagem, plugin_versions) if metagem
         end
       end
     end
@@ -163,7 +163,7 @@ module Solargraph
     # @return [void]
     # @param [Array<Object>] gem_names
     def cache *gem_names
-      require_plugins!
+      plugin_versions = require_plugins!
       repo = Solargraph::Repo.new(options[:directory])
       metagems = if gem_names.empty?
                    if repo.bundled?
@@ -193,9 +193,9 @@ module Solargraph
                    end
                  end
       metagems.each do |metagem|
-        Collection::Gem.uncache(metagem) if options[:rebuild]
+        Collection::Gem.uncache(metagem, plugin_versions) if options[:rebuild]
         puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
-        Collection::Gem.load(metagem)
+        Collection::Gem.load(metagem, plugin_versions)
       end
       puts "Documentation cached for #{metagems.count} gems."
     end
@@ -539,17 +539,18 @@ module Solargraph
 
     # Plugins change the pins mapped from gem source and the gem cache
     # directory, so the language server's cache subprocess needs them too.
+    # Plugins given with --plugins must all load: one that did not would
+    # change the gem cache directory from the one the caller reads.
     #
-    # @return [void]
+    # @return [Hash{String => String, nil}] Solargraph plugin gem name =>
+    #   version, nil when the plugin was not loaded from a gem; selects the
+    #   gem cache directory (see {Workspace#plugin_versions})
     def require_plugins!
       return Workspace::Config.new(options[:directory] || Dir.pwd).require_plugins! if options[:plugins].nil?
 
-      options[:plugins].split(File::PATH_SEPARATOR).each do |plugin|
-        require plugin
-        CacheDir.add_plugin plugin
-      rescue LoadError
-        Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
-      end
+      Workspace::Config.require_plugins! options[:plugins].split(File::PATH_SEPARATOR), strict: true
+    rescue LoadError => e
+      raise Thor::Error, "Failed to load plugin: #{e.message}"
     end
 
     # @param pin [Solargraph::Pin::Base]
