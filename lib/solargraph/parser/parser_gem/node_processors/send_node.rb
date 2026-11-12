@@ -358,29 +358,25 @@ module Solargraph
             hook = region.closure
             args.each do |arg|
               next unless Parser.is_ast_node?(arg)
-              # @sg-ignore tool-limitation:pr-1259-and-pr-1396-and-pr-1418
-              #   https://github.com/castwide/solargraph/pull/1259
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
               #   https://github.com/castwide/solargraph/pull/1396
-              #   https://github.com/castwide/solargraph/pull/1418
+              #   https://github.com/castwide/solargraph/pull/1259
               name = if arg.type == :self
                        hook.namespace
-                     # @sg-ignore tool-limitation:pr-1259-and-pr-1396-and-pr-1418
-                     #   https://github.com/castwide/solargraph/pull/1259
+                     # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                      #   https://github.com/castwide/solargraph/pull/1396
-                     #   https://github.com/castwide/solargraph/pull/1418
+                     #   https://github.com/castwide/solargraph/pull/1259
                      elsif arg.type == :const
-                       # @sg-ignore tool-limitation:pr-1259-and-pr-1396-and-pr-1418
-                       #   https://github.com/castwide/solargraph/pull/1259
+                       # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                        #   https://github.com/castwide/solargraph/pull/1396
-                       #   https://github.com/castwide/solargraph/pull/1418
+                       #   https://github.com/castwide/solargraph/pull/1259
                        unpack_name(arg)
                      end
               next if name.nil? || name.empty?
               pins.push Pin::Reference::IncludedMixin.new(
-                # @sg-ignore tool-limitation:pr-1259-and-pr-1396-and-pr-1418
-                #   https://github.com/castwide/solargraph/pull/1259
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                 #   https://github.com/castwide/solargraph/pull/1396
-                #   https://github.com/castwide/solargraph/pull/1418
+                #   https://github.com/castwide/solargraph/pull/1259
                 location: get_node_location(arg),
                 closure: hook.closure,
                 name: name,
