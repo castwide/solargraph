@@ -137,6 +137,106 @@ describe Solargraph::Shell do
     end
   end
 
+  context 'with a plugin that adds pins to gem files' do
+    let(:plugin_lib) { File.join(__dir__, 'fixtures', 'cache_probe_plugin', 'lib') }
+    let(:cache_dir) { Dir.mktmpdir }
+    let(:metagem) { Solargraph::Repo.new(temp_dir).find_by_name('backport') }
+
+    around do |example|
+      with_env_var('SOLARGRAPH_CACHE', cache_dir) { example.run }
+    end
+
+    before do
+      $LOAD_PATH.unshift plugin_lib
+      Solargraph::Collection.clear_mem_cache
+    end
+
+    after do
+      Solargraph::Convention.unregister SolargraphCacheProbePlugin::Convention if defined?(SolargraphCacheProbePlugin)
+      $LOAD_PATH.delete plugin_lib
+      $LOADED_FEATURES.delete_if { |path| path.end_with?('solargraph_cache_probe_plugin.rb') }
+      Solargraph::Collection.clear_mem_cache
+      FileUtils.rm_rf cache_dir
+    end
+
+    # @param plugins [String] the --plugins option
+    # @return [Array<String>] the names of the cached gem's pins
+    def cached_pin_names plugins
+      capture_both { described_class.new([], directory: temp_dir, plugins: plugins).cache('backport') }
+      key = Solargraph::Workspace::Config.require_plugins!(plugins.split(File::PATH_SEPARATOR))
+      Solargraph::Convention.unregister SolargraphCacheProbePlugin::Convention if defined?(SolargraphCacheProbePlugin)
+      Solargraph::Collection.clear_mem_cache
+      Solargraph::Collection::Gem.load(metagem, key).map(&:name)
+    end
+
+    it 'caches the pins the plugin adds' do
+      expect(cached_pin_names('solargraph_cache_probe_plugin')).to include('cache_probe_plugin_method')
+    end
+
+    it 'caches no plugin pins without the plugin' do
+      expect(cached_pin_names('')).not_to include('cache_probe_plugin_method')
+    end
+  end
+
+  context 'with a plugin configured in the workspace' do
+    let(:plugin_dir) { Dir.mktmpdir }
+
+    before do
+      File.write(File.join(plugin_dir, 'cache_probe_plugin.rb'), '')
+      File.write(File.join(temp_dir, '.solargraph.yml'), "plugins:\n  - cache_probe_plugin\n")
+      $LOAD_PATH.unshift plugin_dir
+    end
+
+    after do
+      $LOAD_PATH.delete plugin_dir
+      $LOADED_FEATURES.delete_if { |path| path.end_with?('cache_probe_plugin.rb') }
+      FileUtils.rm_rf plugin_dir
+    end
+
+    it 'loads the plugin before caching' do
+      capture_both { described_class.new([], directory: temp_dir).cache('nonexistentgem8675309') }
+      expect($LOADED_FEATURES).to include(end_with('cache_probe_plugin.rb'))
+    end
+
+    it 'loads the plugin before uncaching' do
+      capture_both { described_class.new([], directory: temp_dir).uncache('nonexistentgem8675309') }
+      expect($LOADED_FEATURES).to include(end_with('cache_probe_plugin.rb'))
+    end
+
+    it 'loads the plugins it is given instead of the configured ones' do
+      capture_both { described_class.new([], directory: temp_dir, plugins: '').cache('nonexistentgem8675309') }
+      expect($LOADED_FEATURES).not_to include(end_with('cache_probe_plugin.rb'))
+    end
+
+    it 'loads the plugins it is given' do
+      FileUtils.rm File.join(temp_dir, '.solargraph.yml')
+      capture_both { described_class.new([], directory: temp_dir, plugins: 'cache_probe_plugin').cache('nonexistentgem8675309') }
+      expect($LOADED_FEATURES).to include(end_with('cache_probe_plugin.rb'))
+    end
+
+    it 'caches gems in the directory for the plugins it loaded' do
+      metagem = instance_double(Solargraph::Metagem, name: 'probe_gem', version: '1.0.0', cache_name: 'probe_gem-1.0.0')
+      allow(Solargraph::Repo).to receive(:new).and_return(instance_double(Solargraph::Repo, find_by_name: metagem))
+      allow(Solargraph::Collection::Gem).to receive(:uncache)
+      allow(Solargraph::Collection::Gem).to receive(:load)
+      capture_both { described_class.new([], directory: temp_dir, rebuild: true).cache('probe_gem') }
+      expect(Solargraph::Collection::Gem).to have_received(:load).with(metagem, { 'cache_probe_plugin' => nil })
+    end
+
+    it 'fails when a plugin it is given cannot load' do
+      expect do
+        capture_both { described_class.new([], directory: temp_dir, plugins: 'missing_probe_plugin').cache('nonexistentgem8675309') }
+      end.to raise_error(Thor::Error, /missing_probe_plugin/)
+    end
+
+    it 'warns about a configured plugin it cannot load' do
+      File.write(File.join(temp_dir, '.solargraph.yml'), "plugins:\n  - missing_probe_plugin\n")
+      allow(Solargraph.logger).to receive(:warn)
+      capture_both { described_class.new([], directory: temp_dir).cache('nonexistentgem8675309') }
+      expect(Solargraph.logger).to have_received(:warn).with("Failed to load plugin 'missing_probe_plugin'")
+    end
+  end
+
   describe 'cache' do
     it 'caches a stdlib gem without erroring out' do
       skip 'WIP'
