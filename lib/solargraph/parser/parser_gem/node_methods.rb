@@ -212,7 +212,10 @@ module Solargraph
           nodes.any? do |n|
             next false unless Parser.is_ast_node?(n)
             next true if %i[forwarded_args forwarded_restarg].include?(n.type)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418 https://github.com/castwide/solargraph/pull/1396 https://github.com/castwide/solargraph/pull/1259
+            # @sg-ignore tool-limitation:pr-1259-and-pr-1396-and-pr-1418
+            #   https://github.com/castwide/solargraph/pull/1259
+            #   https://github.com/castwide/solargraph/pull/1396
+            #   https://github.com/castwide/solargraph/pull/1418
             n.type == :hash && n.children.any? { |c| Parser.is_ast_node?(c) && c.type == :forwarded_kwrestarg }
           end
         end
@@ -606,7 +609,9 @@ module Solargraph
                 # from above; now we need to also gather the value
                 # position nodes
                 next unless idx == nodes.length - 1
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1418 https://github.com/castwide/solargraph/pull/1438
+                # @sg-ignore tool-limitation:pr-1418-and-pr-1438
+                #   https://github.com/castwide/solargraph/pull/1418
+                #   https://github.com/castwide/solargraph/pull/1438
                 result.concat from_value_position_statement(nodes.last,
                                                             include_explicit_returns: false)
               end
