@@ -776,29 +776,34 @@ describe Solargraph::Typedef::Dictionary do
     end
 
     it 'infers type parameters from Array#map' do
-      skip 'TBD'
       code = "['foo'].map { 1 }"
       typeset = dictionary_for(code, [0, 8]).infer
       expect(typeset.to_s).to eq('Array[Integer]')
     end
 
     it 'infers variable type parameters from Array#map' do
-      skip 'TBD'
       code = "['foo'].map { foo ? 'one' : 1 }"
       typeset = dictionary_for(code, [0, 8]).infer
       expect(typeset.to_s).to eq('Array[String | Integer]')
     end
 
-    it 'infers variables with method blocks from the assignment' do
+    it "infers variables with method blocks from the pin's assignment" do
       code = %(
         def foo
-          blah = ['foo'].map { 1 }
+          blah = ['foo'].map { 1 } # Ensure inference is from the method instead of the block
+                                   # (i.e., `Array[Integer]` instead of `Integer`)
         end
         a = foo
         a
       )
-      typeset = dictionary_for(code, [5, 8]).infer
+      typeset = dictionary_for(code, [6, 8]).infer
       expect(typeset.to_s).to eq('Array[Integer]')
+    end
+
+    it 'does not infer parameters from literal arrays' do
+      code = 'ary = [1, 2]'
+      typeset = dictionary_for(code, [0, 0]).infer
+      expect(typeset.to_s).to eq('Array')
     end
   end
 end
