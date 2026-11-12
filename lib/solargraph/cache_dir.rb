@@ -26,8 +26,9 @@ module Solargraph
     # The gem directory for a set of plugins. Plugins can change the pins
     # mapped from gem source, so each set of plugin versions gets its own.
     #
-    # @param plugin_versions [Hash{String => String, nil}] plugin gem names
-    #   and versions
+    # @param plugin_versions [Hash{String => String, nil}] Solargraph plugin
+    #   gem name => version, nil when the plugin was not loaded from a gem
+    #   (see {Workspace#plugin_versions})
     # @return [String]
     def gem_dir plugin_versions = {}
       return File.join(work_dir, 'gems') if plugin_versions.empty?

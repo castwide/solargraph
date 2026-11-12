@@ -15,14 +15,17 @@ module Solargraph
 
     attr_reader :extra_gem_names
 
-    # @return [Hash{String => String, nil}]
+    # @return [Hash{String => String, nil}] Solargraph plugin gem name =>
+    #   version, nil when the plugin was not loaded from a gem; selects the
+    #   gem cache directory (see {Workspace#plugin_versions})
     attr_reader :plugin_versions
 
     # @param directory [String, nil]
     # @param requires [Array<String>]
     # @param extra_gem_names [Array<String>]
     # @param plugin_versions [Hash{String => String, nil}] the workspace's
-    #   plugin versions, which select the gem cache directory (see
+    #   Solargraph plugin gem name => version, nil when the plugin was not
+    #   loaded from a gem; selects the gem cache directory (see
     #   {Workspace#plugin_versions})
     def initialize directory, requires, extra_gem_names = [], plugin_versions: {}
       @repo = Repo.new(directory)

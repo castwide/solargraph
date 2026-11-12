@@ -542,8 +542,9 @@ module Solargraph
     # Plugins given with --plugins must all load: one that did not would
     # change the gem cache directory from the one the caller reads.
     #
-    # @return [Hash{String => String, nil}] the gem name and version of each
-    #   plugin that loaded, for {CacheDir.gem_dir}
+    # @return [Hash{String => String, nil}] Solargraph plugin gem name =>
+    #   version, nil when the plugin was not loaded from a gem; selects the
+    #   gem cache directory (see {Workspace#plugin_versions})
     def require_plugins!
       return Workspace::Config.new(options[:directory] || Dir.pwd).require_plugins! if options[:plugins].nil?
 

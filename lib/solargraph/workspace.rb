@@ -37,8 +37,12 @@ module Solargraph
       @plugin_versions = require_plugins!
     end
 
-    # The gem name and version of each configured plugin that loaded, which
-    # selects this workspace's {CacheDir.gem_dir}.
+    # The configured Solargraph plugins that loaded. Each key is the name of
+    # the Solargraph plugin gem that provides the plugin, or the plugin's
+    # require path when no loaded gem provides it; each value is that gem's
+    # version string, or nil when the plugin was not loaded from a gem. The
+    # hash selects this workspace's gem cache directory
+    # ({CacheDir.gem_dir}).
     #
     # @return [Hash{String => String, nil}]
     attr_reader :plugin_versions
@@ -234,7 +238,9 @@ module Solargraph
       end
     end
 
-    # @return [Hash{String => String, nil}]
+    # @return [Hash{String => String, nil}] Solargraph plugin gem name =>
+    #   version, nil when the plugin was not loaded from a gem (see
+    #   {#plugin_versions})
     def require_plugins!
       @plugins = config.plugins.dup
       Config.require_plugins! plugins

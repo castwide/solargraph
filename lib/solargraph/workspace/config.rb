@@ -113,8 +113,9 @@ module Solargraph
 
       # Require the configured plugins.
       #
-      # @return [Hash{String => String, nil}] the gem name and version of
-      #   each plugin that loaded, for {CacheDir.gem_dir}
+      # @return [Hash{String => String, nil}] Solargraph plugin gem name =>
+      #   version, nil when the plugin was not loaded from a gem; selects the
+      #   gem cache directory (see {Workspace#plugin_versions})
       def require_plugins!
         Config.require_plugins! plugins
       end
@@ -128,8 +129,9 @@ module Solargraph
       #   supplies the gem name and version recorded for it.
       # @param strict [Boolean] raise LoadError for a plugin that fails to
       #   load instead of leaving it out
-      # @return [Hash{String => String, nil}] the gem name and version of
-      #   each plugin that loaded, for {CacheDir.gem_dir}
+      # @return [Hash{String => String, nil}] Solargraph plugin gem name =>
+      #   version, nil when the plugin was not loaded from a gem; selects the
+      #   gem cache directory (see {Workspace#plugin_versions})
       def self.require_plugins! plugins, strict: false
         plugins.each_with_object({}) do |plugin, loaded|
           require plugin
