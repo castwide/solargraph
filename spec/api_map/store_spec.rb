@@ -146,6 +146,32 @@ describe Solargraph::ApiMap::Store do
       # outcome, so bound the size rather than assert exact merges.
       expect(bar_pins.first.signatures.length).to be <= maps.length
     end
+
+    it 'keeps same-arity overloads with different parameter types separate when combining' do
+      # Mirrors Integer#- from core RBS combined with bigdecimal's RBS.
+      core = Solargraph::SourceMap.load_string(%(
+        class Foo
+          # @param other [Integer]
+          # @return [Integer]
+          def minus(other); end
+        end
+      ), 'core.rb')
+      bigdecimal = Solargraph::SourceMap.load_string(%(
+        class Foo
+          # @param other [BigDecimal]
+          # @return [BigDecimal]
+          def minus(other); end
+        end
+      ), 'bigdecimal.rb')
+      store = described_class.new(core.pins + bigdecimal.pins)
+
+      minus_pins = store.get_methods('Foo', scope: :instance).select { |p| p.name == 'minus' }
+      expect(minus_pins.length).to eq(1)
+      signatures = minus_pins.first.signatures.map do |sig|
+        [sig.parameters.map { |param| param.return_type.tag }, sig.return_type.tag]
+      end
+      expect(signatures).to contain_exactly([['Integer'], 'Integer'], [['BigDecimal'], 'BigDecimal'])
+    end
   end
 
   # @todo This will become #get_superclass
