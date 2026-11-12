@@ -789,7 +789,7 @@ describe Solargraph::Typedef::Dictionary do
       expect(typeset.to_s).to eq('Array[String | Integer]')
     end
 
-    it 'infers type parameters from Array#map' do
+    it 'infers variables with method blocks from the assignment' do
       code = %(
         def foo
           blah = ['foo'].map { 1 }
