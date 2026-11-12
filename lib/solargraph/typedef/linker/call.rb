@@ -47,6 +47,13 @@ module Solargraph
         end
 
         def method_call
+          # @todo A Class#new exception is necessary because the current pin from
+          #   RBS core has return type `undefined`. A better solution is a
+          #   CoreFills override of `Class#new => self`, but it interferes with
+          #   the existing chain inference.
+          if link.word == 'new' && ['Class', 'Class[Class]'].include?(receiver.typedef_typeset.to_s)
+            return [Pin::ProxyType.anonymous(ComplexType.parse('::Class'))]
+          end
           # @todo Quick and dirty hack to force UniqueType to ComplexType
           types = ComplexType.new([receiver.context]).to_typedef_typeset.types
           # Each member of a union of types defines the call on its own, e.g.,
@@ -384,6 +391,7 @@ module Solargraph
           api_map.get_methods('Kernel', scope: :instance, visibility: [:private])
         end
 
+        # @param pin [Pin::Base]
         # @param type [Typedef::Type]
         def get_methods type
           namespace = if type.class?

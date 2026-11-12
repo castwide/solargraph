@@ -805,5 +805,14 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [0, 0]).infer
       expect(typeset.to_s).to eq('Array')
     end
+
+    it 'infers Class from Class#new' do
+      code = %(
+        cls = Class.new
+        cls.new
+      )
+      typeset = dictionary_for(code, [2, 12]).infer
+      expect(typeset.to_s).to eq('Class')
+    end
   end
 end

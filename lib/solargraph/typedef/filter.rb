@@ -20,7 +20,7 @@ module Solargraph
         @pins = if receiver
                   pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
                       .map { |pin| pin.proxy(expand_root(pin, receiver).to_complex_type) }
-                      .map { |pin| expand_self(pin, receiver) }
+                      .map { |pin| pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type) }
                 else
                   pins
                 end
@@ -106,18 +106,6 @@ module Solargraph
 
       def expand_root pin, receiver
         pin.typedef_typeset.resolve_rooted(api_map, receiver&.closure&.gates || [''])
-      end
-
-      def expand_self pin, receiver
-        # @todo A Class#new exception is necessary because the current pin from
-        #   RBS core has return type `undefined`. A better solution is a
-        #   CoreFills override of `Class#new => self`, but it interferes with
-        #   the existing chain inference.
-        if pin.path == 'Class#new'
-          pin.proxy(Solargraph::ComplexType.parse('::Class'))
-        else
-          pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type)
-        end
       end
     end
   end
