@@ -23,7 +23,8 @@ module Solargraph
       # @param [Hash{Symbol => Object}] splat
       def initialize(method: nil, receiver: nil, name: method&.name, receiver_method_name: name, **splat)
         raise ArgumentError, 'either :method or :receiver is required' if (method && receiver) || (!method && !receiver)
-        super(name: name || raise(ArgumentError, ':name is required with :receiver'), **splat)
+        # @sg-ignore Need to add nil check here
+        super(name: name, **splat)
 
         @receiver_chain = receiver
         @resolved_method = method

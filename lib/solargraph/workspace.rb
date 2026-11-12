@@ -154,10 +154,7 @@ module Solargraph
     # @param updater [Source::Updater]
     # @return [void]
     def synchronize! updater
-      source = source_hash[updater.filename]
-      return unless source
-
-      source_hash[updater.filename] = source.synchronize(updater)
+      source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
     # @sg-ignore return type could not be inferred
