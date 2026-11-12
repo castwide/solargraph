@@ -110,6 +110,14 @@ module Solargraph
         tag
       end
 
+      # Widen literal types to their classes for display and comparison,
+      # here and in every type parameter: `Array<1, :a>` becomes
+      # `Array<Integer, Symbol>`. `nil` stays `nil`, since a declared
+      # `nil` already names its one value and type.
+      #
+      # @see #non_literal_type to find the class whose methods a literal
+      #   value has, `nil` included
+      #
       # @return [self]
       def simplify_literals
         transform do |t|
@@ -165,6 +173,11 @@ module Solargraph
         @non_literal_name ||= determine_non_literal_name
       end
 
+      # The class a literal type's value is an instance of, for looking
+      # up its methods or superclass: `:a` becomes `Symbol` and `nil`
+      # becomes `NilClass`. Unlike #simplify_literals, this converts
+      # `nil` and leaves type parameters as they are.
+      #
       # @return [self]
       def non_literal_type
         recreate(new_name: non_literal_name)
