@@ -101,10 +101,8 @@ module Solargraph
           if @receiver_chain.constant?
             # HACK: the `return_type` of a constant is Class<Whatever>, but looking up a method expects
             # the arguments `"Whatever"` and `scope: :class`.
-            # @sg-ignore Need to add nil check here
             [receiver_type.to_s.sub(/^Class<(.+)>$/, '\1'), :class]
           else
-            # @sg-ignore Need to add nil check here
             [receiver_type.to_s, :instance]
           end
 

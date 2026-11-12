@@ -236,7 +236,6 @@ module Solargraph
               next pin if pin.return_type.undefined?
               # @sg-ignore Need to add nil check here
               selfy = pin.return_type.self_to_type(name_pin.binder)
-              # @sg-ignore Need to add nil check here
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
