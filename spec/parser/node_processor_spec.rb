@@ -99,9 +99,9 @@ describe Solargraph::Parser::NodeProcessor do
     expect(map.pins.last.type.to_s).to eq('Array')
   end
 
-  it 'ignores deregistering a processor from a node type with none registered' do
+  it 'raises when deregistering from a node type with none registered' do
     expect do
       described_class.deregister(:unregistered_node_type, Solargraph::Parser::NodeProcessor::Base)
-    end.not_to raise_error
+    end.to raise_error(KeyError)
   end
 end
