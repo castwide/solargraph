@@ -10,6 +10,11 @@ module Solargraph
         class Formatting < Base
           include Solargraph::Diagnostics::RubocopHelpers
 
+          # Defined at runtime by #formatter_class, once RuboCop is loaded.
+          #
+          # @!parse
+          #   class BlankRubocopFormatter < ::RuboCop::Formatter::BaseFormatter; end
+
           def process
             file_uri = params['textDocument']['uri']
             config = config_for(file_uri)
@@ -84,11 +89,10 @@ module Solargraph
           end
 
           # @param config [Hash{String => String}]
-          # @sg-ignore
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
-              self.class.const_get('BlankRubocopFormatter')
+              BlankRubocopFormatter
             else
               require_rubocop(config['version'])
               klass = Class.new(::RuboCop::Formatter::BaseFormatter)
