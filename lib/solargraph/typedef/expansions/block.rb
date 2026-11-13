@@ -118,7 +118,10 @@ module Solargraph
         end
 
         def yieldparam_matching_tag
-          @yieldparam_matching_tag ||= yieldparam_tags[receiver.parameters.find_index { |param| param.name == pin.name }]
+          @yieldparam_matching_tag ||= begin
+            idx = receiver.parameters.find_index { |param| param.name == pin.name }
+            idx ? yieldparam_tags[idx] : nil
+          end
         end
 
         def yieldparam_type
