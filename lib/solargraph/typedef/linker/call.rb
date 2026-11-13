@@ -79,7 +79,7 @@ module Solargraph
         # +Class<Beta> | Class+ is undefined. When unions are not loose, every
         # member of the union must define the call.
         #
-        # @param types [Array<Typedef::Type>]
+        # @param types [Array<Typedef::Concrete>]
         # @return [Array<Pin::Base>]
         def union_method_pins types
           resolved = []
@@ -104,7 +104,7 @@ module Solargraph
         # +self+, which must resolve to +Symbol+ even when the receiver is a
         # union such as +String | Symbol+.
         #
-        # @param type [Typedef::Type]
+        # @param type [Typedef::Concrete]
         # @return [Array<Pin::Base>]
         def union_member_pins type
           pins = method_pins_from([type])
@@ -118,20 +118,20 @@ module Solargraph
         # call on it undefined. A class-scoped type names the class it refers to
         # with a parameter, e.g., +Class<Beta>+, so a bare +Class+ names none.
         #
-        # @param type [Typedef::Type]
+        # @param type [Typedef::Concrete]
         # @return [Boolean]
         def indeterminate_type? type
           type.class? && type.params.empty?
         end
 
         # @param pin [Pin::Base]
-        # @param type [Typedef::Type]
+        # @param type [Typedef::Concrete]
         # @return [Pin::Base]
         def bind_self_to pin, type
           typeset = pin.typedef_typeset
           return pin unless typeset.defined?
 
-          pin.proxy(typeset.expand({ 'self' => Typeset.new([type]) }).to_complex_type)
+          pin.proxy(typeset.expand({ 'self' => Union.new([type]) }).to_complex_type)
         end
 
         # The pins that define a method call for the specified types. Methods
@@ -140,7 +140,7 @@ module Solargraph
         # them are declared, the first pin is kept since its type can still be
         # inferred from the method's body.
         #
-        # @param types [Array<Typedef::Type>]
+        # @param types [Array<Typedef::Concrete>]
         # @return [Array<Pin::Base>]
         def method_pins_from types
           pins = types.flat_map { |type| get_methods(type) }
@@ -223,7 +223,7 @@ module Solargraph
           return pin if pin.block.nil?
 
           typeset = pin.typedef_typeset
-          return pin unless typeset.generic?
+          return pin unless typeset.any_generic?
 
           names = (generic_names(pin.block.typedef_typeset) & generic_names(typeset)).uniq
           return pin if names.empty?
@@ -252,13 +252,13 @@ module Solargraph
         # The names, e.g., +generic<X>+, of the generic tokens within a
         # Typedef node.
         #
-        # @param node [Typedef::Typeset, Typedef::Type, Typedef::Path, Typedef::Token]
+        # @param node [Typedef::Typeset, Typedef::Concrete, Typedef::Path, Typedef::Token]
         # @return [Array<String>]
         def generic_names node
           case node
           when Typedef::Typeset
             node.types.flat_map { |type| generic_names type }
-          when Typedef::Type
+          when Typedef::Concrete
             node.all.flat_map { |part| generic_names part }
           when Typedef::Token
             node.generic? ? [node.name] : node.params.flat_map { |par| generic_names Typedef.tokenize(par) }
@@ -355,13 +355,13 @@ module Solargraph
         # True if the given Typedef node contains a +self+ token, either
         # as a base or nested within parameters.
         #
-        # @param node [Typedef::Typeset, Typedef::Type, Typedef::Token, Typedef::Path]
+        # @param node [Typedef::Typeset, Typedef::Concrete, Typedef::Token, Typedef::Path]
         # @return [Boolean]
         def selfy? node
           case node
           when Typedef::Typeset
             node.types.any? { |type| selfy?(type) }
-          when Typedef::Type
+          when Typedef::Concrete
             node.all.any? { |part| selfy?(part) }
           when Typedef::Token
             node.name == 'self' || node.params.any? { |par| selfy?(Typedef.tokenize(par)) }
@@ -392,7 +392,7 @@ module Solargraph
         end
 
         # @param pin [Pin::Base]
-        # @param type [Typedef::Type]
+        # @param type [Typedef::Concrete]
         def get_methods type
           namespace = if type.class?
             # @todo Handle multiple
@@ -410,7 +410,7 @@ module Solargraph
                     .select { |pin| pin.name == link.word }
         end
 
-        # @param type [Typedef::Type]
+        # @param type [Typedef::Concrete]
         # @return [Array<Symbol>]
         def method_visibility type
           return [:public, :private, :protected] if link.head?
