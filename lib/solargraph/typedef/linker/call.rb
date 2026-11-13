@@ -47,16 +47,111 @@ module Solargraph
         end
 
         def method_call
+          # @todo A Class#new exception is necessary because the current pin from
+          #   RBS core has return type `undefined`. A better solution is a
+          #   CoreFills override of `Class#new => self`, but it interferes with
+          #   the existing chain inference.
+          if link.word == 'new' && ['Class', 'Class[Class]'].include?(receiver.typedef_typeset.to_s)
+            return [Pin::ProxyType.anonymous(ComplexType.parse('::Class'))]
+          end
           # @todo Quick and dirty hack to force UniqueType to ComplexType
-          pins = ComplexType.new([receiver.context]).to_typedef_types
-                            .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
-                            .select { |pin| pin.name == link.word }
-                            .map { |pin| find_matching_signature(pin, receiver) }
-                            .map { |pin| expand_macros_from_arguments(pin) }
-                            .map { |pin| expand_generic_parameters_from_arguments(pin) }
+          types = ComplexType.new([receiver.context]).to_typedef_typeset.types
+          # Each member of a union of types defines the call on its own, e.g.,
+          # +nil?+ returns +true+ for +nil+ and +false+ for every other type, so
+          # unions are resolved one type at a time, and each member binds +self+
+          # in the result to itself.
+          pins = if types.length > 1
+                   union_method_pins(types)
+                 else
+                   method_pins_from(types)
+                 end
           return pins unless link.nullable? && receiver.typedef_typeset.nullable?
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
+        end
+
+        # The pins that define a method call for every member of a union of
+        # types.
+        #
+        # A member that does not define the call is disregarded unless the call
+        # cannot be determined for it at all, e.g., a bare +Class+ responds to
+        # +new+ but nothing is known about the type it creates, so +new+ on
+        # +Class<Beta> | Class+ is undefined. When unions are not loose, every
+        # member of the union must define the call.
+        #
+        # @param types [Array<Typedef::Type>]
+        # @return [Array<Pin::Base>]
+        def union_method_pins types
+          resolved = []
+          unresolved = []
+          types.each do |type|
+            pins = union_member_pins type
+            if pins.empty?
+              unresolved.push type
+            else
+              resolved.concat pins
+            end
+          end
+          return [] if unresolved.any? && !api_map.loose_unions
+          return [] if unresolved.any? { |type| indeterminate_type? type }
+
+          resolved
+        end
+
+        # The pins that define a method call for a single member of a union of
+        # types. The member supersedes the types it derives from, and it binds
+        # +self+ in the return type to itself, e.g., +Symbol#to_sym+ returns
+        # +self+, which must resolve to +Symbol+ even when the receiver is a
+        # union such as +String | Symbol+.
+        #
+        # @param type [Typedef::Type]
+        # @return [Array<Pin::Base>]
+        def union_member_pins type
+          pins = method_pins_from([type])
+          winner = pins.find { |pin| pin.typedef_typeset.defined? } || pins.first
+          return [] unless winner
+
+          [bind_self_to(winner, type)]
+        end
+
+        # True if no namespace can be resolved for the type, which leaves every
+        # call on it undefined. A class-scoped type names the class it refers to
+        # with a parameter, e.g., +Class<Beta>+, so a bare +Class+ names none.
+        #
+        # @param type [Typedef::Type]
+        # @return [Boolean]
+        def indeterminate_type? type
+          type.class? && type.params.empty?
+        end
+
+        # @param pin [Pin::Base]
+        # @param type [Typedef::Type]
+        # @return [Pin::Base]
+        def bind_self_to pin, type
+          typeset = pin.typedef_typeset
+          return pin unless typeset.defined?
+
+          pin.proxy(typeset.expand({ 'self' => Typeset.new([type]) }).to_complex_type)
+        end
+
+        # The pins that define a method call for the specified types. Methods
+        # inherited from superclasses and modules are included, so the first pin
+        # that declares a return type takes precedence over the rest. If none of
+        # them are declared, the first pin is kept since its type can still be
+        # inferred from the method's body.
+        #
+        # @param types [Array<Typedef::Type>]
+        # @return [Array<Pin::Base>]
+        def method_pins_from types
+          pins = types.flat_map { |type| get_methods(type) }
+                      .select { |pin| pin.name == link.word }
+                      .map { |pin| find_matching_signature(pin, receiver) }
+                      .map { |pin| expand_macros_from_arguments(pin) }
+                      .map { |pin| expand_generic_parameters_from_arguments(pin) }
+                      .map { |pin| expand_generic_parameters_from_block(pin) }
+          return pins if types.length < 2
+
+          [pins.find { |pin| pin.typedef_typeset.defined? } || pins.first].compact
         end
 
         # @param pin [Pin::Method]
@@ -106,6 +201,70 @@ module Solargraph
           end
           expanded = pin.typedef_typeset.expand(named_values)
           pin.proxy(expanded.to_complex_type)
+        end
+
+        # Expands the generic parameters of a method call using the block
+        # passed at the call site.
+        #
+        # Some methods declare return types that are determined entirely by
+        # their blocks, e.g., +Mutex#synchronize+ is +( +{ () -> generic<X> }
+        # -> generic<X> )+. Neither the receiver nor the arguments supply a
+        # value for +X+, so it has to be inferred from the block itself.
+        #
+        # Only the generics shared by the block's return type and the method's
+        # return type are bound, leaving generics resolved by the receiver or
+        # the arguments untouched.
+        #
+        # @param pin [Pin::Method, Pin::Signature]
+        # @return [Pin::Base]
+        def expand_generic_parameters_from_block pin
+          return pin unless link.with_block?
+          return pin unless pin.is_a?(Pin::Callable)
+          return pin if pin.block.nil?
+
+          typeset = pin.typedef_typeset
+          return pin unless typeset.generic?
+
+          names = (generic_names(pin.block.typedef_typeset) & generic_names(typeset)).uniq
+          return pin if names.empty?
+          return pin if block_passed_by_reference?
+
+          inferred = Dictionary.new(api_map, source_map, link.block).infer
+          return pin if inferred.undefined?
+
+          named_values = names.to_h { |name| [name, inferred] }
+          pin.proxy(typeset.expand(named_values).to_complex_type)
+        end
+
+        # Blocks that are not written at the call site cannot be inferred, e.g.
+        # +&:to_s+ passes a symbol and +&blk+ passes a variable, and calls
+        # without a block have no block chain at all.
+        #
+        # @return [Boolean]
+        def block_passed_by_reference?
+          return true if link.block.nil? || link.block.node.nil?
+
+          link.block.links.any? do |block_link|
+            block_link.is_a?(Source::Chain::BlockSymbol) || block_link.is_a?(Source::Chain::BlockVariable)
+          end
+        end
+
+        # The names, e.g., +generic<X>+, of the generic tokens within a
+        # Typedef node.
+        #
+        # @param node [Typedef::Typeset, Typedef::Type, Typedef::Path, Typedef::Token]
+        # @return [Array<String>]
+        def generic_names node
+          case node
+          when Typedef::Typeset
+            node.types.flat_map { |type| generic_names type }
+          when Typedef::Type
+            node.all.flat_map { |part| generic_names part }
+          when Typedef::Token
+            node.generic? ? [node.name] : node.params.flat_map { |par| generic_names Typedef.tokenize(par) }
+          else
+            []
+          end
         end
 
         # Expands the return type of a method call using YARD macros.
@@ -177,6 +336,38 @@ module Solargraph
           return [] unless nearest_method_pin
           api_map.get_method_stack(nearest_method_pin.namespace, nearest_method_pin.name, scope: nearest_method_pin.context.scope)
                  .reject { |pin| pin.path == nearest_method_pin.path }
+                 .map { |pin| expand_self_type(pin) }
+        end
+
+        # A superclass method may declare a return type of +self+, which
+        # should resolve to the type of the calling context. Detection of
+        # +self+ is performed entirely within the Typedef typeset
+        # structure, avoiding any reliance on ComplexType.
+        #
+        # @param pin [Pin::Base]
+        # @return [Pin::Base]
+        def expand_self_type pin
+          typeset = pin.typedef_typeset
+          return pin unless selfy?(typeset)
+          pin.proxy(typeset.expand({ 'self' => nearest_method_pin.context.to_typedef_typeset }).to_complex_type)
+        end
+
+        # True if the given Typedef node contains a +self+ token, either
+        # as a base or nested within parameters.
+        #
+        # @param node [Typedef::Typeset, Typedef::Type, Typedef::Token, Typedef::Path]
+        # @return [Boolean]
+        def selfy? node
+          case node
+          when Typedef::Typeset
+            node.types.any? { |type| selfy?(type) }
+          when Typedef::Type
+            node.all.any? { |part| selfy?(part) }
+          when Typedef::Token
+            node.name == 'self' || node.params.any? { |par| selfy?(Typedef.tokenize(par)) }
+          else
+            false
+          end
         end
 
         def nearest_method_pin
@@ -193,6 +384,39 @@ module Solargraph
           nearest_method_pin.signatures
                             .map(&:block)
                             .compact
+        end
+
+        def private_kernel_methods type
+          return [] unless link.head?
+          api_map.get_methods('Kernel', scope: :instance, visibility: [:private])
+        end
+
+        # @param pin [Pin::Base]
+        # @param type [Typedef::Type]
+        def get_methods type
+          namespace = if type.class?
+            # @todo Handle multiple
+            type.params.first.to_s
+          else
+            type.base.to_s
+          end
+          scope = if type.class?
+            :class
+          else
+            :instance
+          end
+          visibility = method_visibility(type)
+          dictionary.api_map.get_methods(namespace, scope: scope, visibility: visibility)
+                    .select { |pin| pin.name == link.word }
+        end
+
+        # @param type [Typedef::Type]
+        # @return [Array<Symbol>]
+        def method_visibility type
+          return [:public, :private, :protected] if link.head?
+          # @todo Stop depending on complex types
+          return [:public, :protected] if type.to_complex_type.to_s == dictionary.closure.context.to_s
+          [:public]
         end
       end
     end

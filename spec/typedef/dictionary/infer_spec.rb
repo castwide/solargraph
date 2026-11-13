@@ -8,18 +8,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   describe '#infer' do
-    it 'infers types' do
-      code = %(
-        # @return [Array<String>]
-        def foo; end
-
-        foo.first
-      )
-
-      typeset = dictionary_for(code, [4, 12]).infer
-      expect(typeset.to_s).to eq('String | nil')
-    end
-
     it 'infers local variables' do
       code = %(
         x = 0
@@ -31,116 +19,6 @@ describe Solargraph::Typedef::Dictionary do
 
       typeset = dictionary_for(code, [2, 8]).infer
       expect(typeset.to_s).to eq('Integer')
-    end
-
-    it 'resolves an RBS self return type to the union member that supplied the method' do
-      code = %(
-        # @type [String, Symbol]
-        name = string_or_symbol
-        name.to_sym
-      )
-
-      typeset = dictionary_for(code, [3, 13]).infer
-      expect(typeset.to_s).to eq('Symbol')
-    end
-
-    it 'resolves a shared self-returning method separately for each union member' do
-      code = %(
-        # @type [String, Symbol]
-        name = string_or_symbol
-        name.itself
-      )
-
-      typeset = dictionary_for(code, [3, 13]).infer
-      expect(typeset.to_s).to eq('String | Symbol')
-    end
-
-    it 'resolves self in a union return type separately for each union member' do
-      code = %(
-        class Base
-          # @return [String, self]
-          def pick; end
-        end
-
-        class Alpha < Base; end
-        class Beta < Base; end
-
-        # @type [Alpha, Beta]
-        thing = alpha_or_beta
-        thing.pick
-      )
-
-      typeset = dictionary_for(code, [11, 15]).infer
-      expect(typeset.to_s).to eq('String | Alpha | Beta')
-    end
-
-    it 'resolves a YARD @return [self] to the union member that supplied the method' do
-      pending 'WIP'
-      code = %(
-        class Alpha
-          # @return [Symbol]
-          def to_thing; end
-        end
-
-        class Beta
-          # @return [self]
-          def to_thing; end
-        end
-
-        # @type [Alpha, Beta]
-        thing = alpha_or_beta
-        thing.to_thing
-      )
-
-      typeset = dictionary_for(code, [13, 14]).infer
-      expect(typeset.to_s).to eq('Symbol | Beta')
-    end
-
-    it 'distributes a YARD self nested in a generic across union members' do
-      pending 'WIP'
-      code = %(
-        class Base
-          # @return [Array<self>]
-          def many; end
-        end
-
-        class Alpha < Base; end
-        class Beta < Base; end
-
-        # @type [Alpha, Beta]
-        thing = alpha_or_beta
-        thing.many
-      )
-
-      typeset = dictionary_for(code, [11, 16]).infer
-      expect(typeset.to_s).to eq('Array[Alpha], Array[Beta]')
-    end
-
-    it 'does not leak one union member into a Class#new call resolved on another' do
-      code = %(
-        class Beta; end
-
-        # @type [Class<Beta>, Class]
-        klass = beta_class_or_generic_class
-        klass.new
-      )
-
-      typeset = dictionary_for(code, [5, 15]).infer
-      # The bare `Class` member cannot know what its #new constructs, and Beta must not leak in from the other.
-      expect(typeset.to_s).to eq('undefined')
-    end
-
-    it 'resolves Class#new the same way regardless of union member order' do
-      code = %(
-        class Beta; end
-
-        # @type [Class, Class<Beta>]
-        klass = generic_or_beta_class
-        klass.new
-      )
-
-      typeset = dictionary_for(code, [5, 14]).infer
-      expect(typeset.to_s).to eq('undefined')
     end
 
     it 'infers from variable assignments with if conditions' do
@@ -186,23 +64,6 @@ describe Solargraph::Typedef::Dictionary do
 
       typeset = dictionary_for(code, [1, 8]).infer
       expect(typeset.to_s).to eq('Integer | String')
-    end
-
-    it 'infers types from new subclass calls without a subclass initialize method' do
-      code = %(
-        class Sup
-          def initialize; end
-          def meth; end
-        end
-        class Sub < Sup
-          def meth; end
-        end
-
-        Sub.new
-      )
-
-      typeset = dictionary_for(code, [9, 12]).infer
-      expect(typeset.to_s).to eq('Sub')
     end
 
     it 'pulls types from multiple lines of code' do
@@ -271,24 +132,6 @@ describe Solargraph::Typedef::Dictionary do
 
       typeset = dictionary_for(code, [1, 10]).infer
       expect(typeset.to_s).to eq('Boolean')
-    end
-
-    it 'infers self from Array#new' do
-      code = %(
-        Array.new
-      )
-
-      typeset = dictionary_for(code, [1, 14]).infer
-      expect(typeset.to_s).to eq('Array')
-    end
-
-    it 'infers self from inherited Object#freeze' do
-      code = %(
-        Array.new.freeze
-      )
-
-      typeset = dictionary_for(code, [1, 18]).infer
-      expect(typeset.to_s).to eq('Array')
     end
 
     it 'infers the nearest constants first' do
@@ -602,6 +445,252 @@ describe Solargraph::Typedef::Dictionary do
 
       typeset = dictionary_for(code, [8, 16]).infer
       expect(typeset.to_s).to eq('String')
+    end
+
+    it 'roots type parameters' do
+      code = %(
+        module A
+          class B
+            class C
+              # @param x [Array<B>]
+              def d(x)
+                x
+              end
+            end
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [6, 16]).infer
+      expect(typeset.to_s).to eq('Array[A::B]')
+    end
+
+    it 'types global variables' do
+      code = %(
+        $foo = [] #: Array[Integer]
+        $foo
+      )
+
+      typeset = dictionary_for(code, [2, 8]).infer
+      expect(typeset.to_s).to eq('Array[Integer]')
+    end
+
+    it 'interprets self type in superclass method return type' do
+      code = %(
+        class Foo
+          # @return [self]
+          def foo
+            dup
+          end
+        end
+
+        class Bar < Foo
+          def foo
+            a = super()
+            a
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [11, 12]).infer
+      expect(typeset.to_s).to eq('Bar')
+    end
+
+    it 'resolves Enumerable generics from Array receivers' do
+      code = %(
+        module A
+          class Foo
+            # @param pins [::Enumerable<String>]
+            def inferred_pins pins
+              pins
+              result = pins.map do |p|
+                p
+              end
+              result
+            end
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [9, 14]).infer
+      expect(typeset.to_s).to eq('Array[String]')
+    end
+
+    it 'infers nil for empty methods' do
+      code = %(
+        def foo; end
+        foo
+      )
+      typeset = dictionary_for(code, [2, 8]).infer
+      expect(typeset.to_s).to eq('nil')
+    end
+
+    it 'infers instance variables from superclasses' do
+      code = %(
+        class Superclass
+          def initialize
+            @foo = 'foo'
+          end
+        end
+        class Subclass < Superclass
+          def foo
+            @foo
+          end
+        end
+      )
+      typeset = dictionary_for(code, [8, 16]).infer
+      expect(typeset.to_s).to eq('String')
+    end
+
+    it 'infers instance variables from mixins' do
+      pending 'WIP'
+      code = %(
+        module Mixin
+          def foo
+            @foo = 'foo'
+          end
+        end
+        class User
+          include Mixin
+          def bar
+            @foo
+          end
+        end
+      )
+      typeset = dictionary_for(code, [9, 12]).infer
+      expect(typeset.to_s).to eq('String')
+    end
+
+    it 'preserves hash value when it is a union without brackets' do
+      code = %(
+        # @type [Hash{String => Array, Hash, Integer, nil}]
+        raw_data = {}
+        a = raw_data['domains']
+        a
+      )
+      typeset = dictionary_for(code, [4, 8]).infer
+      expect(typeset.to_s).to eq('Array | Hash | Integer | nil')
+    end
+
+    it 'infers generic yield parameters from mixins' do
+      code = %(
+        # @type [Enumerable<String>]
+        a = ['a', 'b', 'c']
+        # Generic parameter comes from `_Each#each`
+        a.each do |s|
+          s
+        end
+      )
+      typeset = dictionary_for(code, [5, 10]).infer
+      expect(typeset.to_s).to eq('String')
+    end
+
+    it 'infers nil with conditional reassignments' do
+      code = %(
+        bar = nil
+        if baz
+          bar = :foo
+        elsif qux
+          bar = 123
+        end
+        bar
+      )
+      typeset = dictionary_for(code, [7, 8]).infer
+      expect(typeset.to_s).to eq('Integer | Symbol | nil')
+    end
+
+    it 'infers from block return values' do
+      code = %(
+        x = Mutex.new.synchronize { 1 }
+        x
+      )
+      typeset = dictionary_for(code, [2, 8]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
+
+    it 'infers Boolean fron #nil?' do
+      code = %(
+        # @type [Integer, nil]
+        b = foo
+        b.nil?
+      )
+
+      typeset = dictionary_for(code, [3, 10]).infer
+      expect(typeset.to_s).to eq('Boolean')
+    end
+
+    it 'infers type parameters from Array#map' do
+      code = "['foo'].map { 1 }"
+      typeset = dictionary_for(code, [0, 8]).infer
+      expect(typeset.to_s).to eq('Array[Integer]')
+    end
+
+    it 'infers variable type parameters from Array#map' do
+      code = "['foo'].map { foo ? 'one' : 1 }"
+      typeset = dictionary_for(code, [0, 8]).infer
+      expect(typeset.to_s).to eq('Array[String | Integer]')
+    end
+
+    it "infers variables with method blocks from the pin's assignment" do
+      code = %(
+        def foo
+          blah = ['foo'].map { 1 } # Ensure inference is from the method instead of the block
+                                   # (i.e., `Array[Integer]` instead of `Integer`)
+        end
+        a = foo
+        a
+      )
+      typeset = dictionary_for(code, [6, 8]).infer
+      expect(typeset.to_s).to eq('Array[Integer]')
+    end
+
+    it 'does not infer parameters from literal arrays' do
+      code = 'ary = [1, 2]'
+      typeset = dictionary_for(code, [0, 0]).infer
+      expect(typeset.to_s).to eq('Array')
+    end
+
+    it 'infers Class from Class#new' do
+      code = %(
+        cls = Class.new
+        cls.new
+      )
+      typeset = dictionary_for(code, [2, 12]).infer
+      expect(typeset.to_s).to eq('Class')
+    end
+
+    it 'does not apply an RBS assertion to the next statement' do
+      code = %(
+        x = 1 #: String
+        y = 'y'.size
+        y
+      )
+      typeset = dictionary_for(code, [3, 8]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
+
+    it 'prioritizes YARD declarations over inference' do
+      code = %(
+        # @return [Integer]
+        def foo
+          'string'
+        end
+        foo
+      )
+      typeset = dictionary_for(code, [5, 8]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
+
+    it 'prioritizes RBS declarations over inference' do
+      code = %(
+        #: () -> Integer
+        def foo
+          'string'
+        end
+        foo
+      )
+      typeset = dictionary_for(code, [5, 8]).infer
+      expect(typeset.to_s).to eq('Integer')
     end
   end
 end

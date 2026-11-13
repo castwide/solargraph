@@ -502,16 +502,6 @@ module Solargraph
       result
     end
 
-    # @param type [Typedef::Concrete]
-    # @return [Array<Pin::Method>]
-    def typedef_type_methods type
-      if type.class?
-        get_methods(type.params.first.to_s, scope: :class)
-      else
-        get_methods(type.base.to_s, scope: :instance)
-      end
-    end
-
     # Whether a call made from +context+ may use +pin+, per Ruby's rules:
     # public always; protected when +context+ is the namespace that
     # defines the method or has it as an ancestor; private only when the
@@ -750,14 +740,16 @@ module Solargraph
     def inner_get_methods_from_reference fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core
       logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
 
-      # Ensure the types returned by the methods in the referenced
-      # type are relative to the generic values passed in the
-      # reference.  e.g., Foo<String> might include Enumerable<String>
-      #
-      # @todo perform the same translation in the other areas
-      #  here after adding a spec and handling things correctly
-      #  in ApiMap::Store and RbsMap::Conversions for each
-      resolved_reference_type = ComplexType.parse(fq_reference_tag).force_rooted.resolve_generics(namespace_pin, type)
+      parsed_reference_type = ComplexType.parse(fq_reference_tag).force_rooted
+      # A receiver without type parameters, e.g. a bare +Enumerable+, has
+      # nothing to substitute for the reference's generics. Resolving in that
+      # case collapses them to +undefined+ and destroys information that callers
+      # may still bind from context, so leave the reference unresolved.
+      resolved_reference_type = if type.nil? || type.all_params.empty?
+                                  parsed_reference_type
+                                else
+                                  parsed_reference_type.resolve_generics(namespace_pin, type)
+                                end
       # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
       methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
       if namespace_pin && !resolved_reference_type.all_params.empty?

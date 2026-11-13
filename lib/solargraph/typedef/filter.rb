@@ -6,7 +6,7 @@ module Solargraph
     #
     # The Dictionary determines the selection of pins that can define the
     # return type of a given Chain. The Filter collates them into a single
-    # typeset.
+    # Typeset.
     #
     class Filter
       attr_reader :api_map, :pins, :receiver
@@ -14,16 +14,22 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param pins [Array<Pin::Base>]
       # @param receiver [Pin::Closure]
-      def initialize api_map, pins, receiver
+      # @param infer [Boolean]
+      def initialize api_map, pins, receiver, infer: true
         @api_map = api_map
         @pins = if receiver
                   pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
                       .map { |pin| pin.proxy(expand_root(pin, receiver).to_complex_type) }
-                      .map { |pin| expand_self(pin, receiver) }
+                      .map { |pin| pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type) }
                 else
                   pins
                 end
         @receiver = receiver
+        @infer = infer
+      end
+
+      def infer?
+        @infer
       end
 
       # @return [Typeset]
@@ -48,7 +54,7 @@ module Solargraph
 
       # @return [Typeset]
       def first_declared_or_combined
-        return first_declared if first_declared.defined?
+        return first_declared if first_declared.defined? || !infer?
 
         inferred = pins.filter_map do |pin|
           inferred = Expansions::Inference.expand(api_map, pin, receiver)
@@ -61,7 +67,7 @@ module Solargraph
 
       # @return [Typeset]
       def first_declared_or_inferred
-        return first_declared if first_declared.defined?
+        return declared_types if declared_types.defined? || !infer?
 
         pins.each do |pin|
           inferred = Expansions::Inference.expand(api_map, pin, receiver)
@@ -69,6 +75,26 @@ module Solargraph
         end
 
         ComplexType::UNDEFINED.to_typedef_typeset
+      end
+
+      # The types declared by the pins. A method called on a union of types is
+      # resolved for each member of the union, and each member contributes its
+      # own type, e.g., +nil?+ returns +true+ for +nil+ and +false+ for every
+      # other type.
+      #
+      # @return [Typeset]
+      def declared_types
+        @declared_types ||= begin
+          declared = union_receiver? ? pins.map(&:typedef_typeset).select(&:defined?) : []
+          declared.empty? ? first_declared : Typeset.new(declared)
+        end
+      end
+
+      # @return [Boolean]
+      def union_receiver?
+        return false if receiver.nil?
+
+        ComplexType.new([receiver.context]).to_typedef_typeset.types.length > 1
       end
 
       def first_declared
@@ -80,18 +106,6 @@ module Solargraph
 
       def expand_root pin, receiver
         pin.typedef_typeset.resolve_rooted(api_map, receiver&.closure&.gates || [''])
-      end
-
-      def expand_self pin, receiver
-        # @todo A Class#new exception is necessary because the current pin from
-        #   RBS core has return type `undefined`. A better solution is a
-        #   CoreFills override of `Class#new => self`, but it interferes with
-        #   the existing chain inference.
-        if pin.path == 'Class#new'
-          pin.proxy(Solargraph::ComplexType.parse('::Class'))
-        else
-          pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type)
-        end
       end
     end
   end

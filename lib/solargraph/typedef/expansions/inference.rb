@@ -58,10 +58,12 @@ module Solargraph
         # @param parent_node [Parser::AST::Node]
         # @return [Typeset]
         def return_typeset_from_node parent_node
+          return ComplexType::NIL.to_typedef_typeset if pin.is_a?(Pin::Method) && parent_node.nil?
+
           types = []
           Parser::ParserGem::NodeMethods.value_position_nodes_only(parent_node).each do |node|
             # Nil nodes may not have a location
-            if node.nil? || node.type == :NIL || node.type == :nil
+            if node.nil? || node.type == :nil
               types.push ComplexType::NIL.to_typedef_typeset
             else
               chain = Parser.chain(node, nil, nil)

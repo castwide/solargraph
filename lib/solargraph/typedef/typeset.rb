@@ -107,6 +107,26 @@ module Solargraph
         self.class.new(parts) unless parts.any?(&:nil?)
       end
 
+      # True if this typeset contains both of the literal types, +true+ and
+      # +false+. RBS defines +bool+ as +true | false+, which Solargraph
+      # represents as +Boolean+.
+      #
+      # @return [Boolean]
+      def boolean_literals?
+        literals = types.select { |type| boolean_literal?(type) }.map(&:to_s)
+        literals.include?('true') && literals.include?('false')
+      end
+
+      # True if the type is one of the literal types, +true+ or +false+.
+      #
+      # @param type [Type, Path, Token]
+      # @return [Boolean]
+      def boolean_literal? type
+        return false unless type.respond_to?(:params)
+
+        type.params.empty? && %w[true false].include?(type.to_s)
+      end
+
       # The methods that might be reachable on a value of this typeset,
       # pooled from its members: a union's value is one of them, and an
       # intersection's value is all of them at once.
@@ -129,7 +149,14 @@ module Solargraph
 
       def reduce!
         types.uniq!(&:to_s)
+        return unless boolean_literals?
+
+        types.reject! { |type| boolean_literal?(type) }
+        types.push BOOLEAN
       end
+
+      # The type used to reduce literal +true+ and +false+ types.
+      BOOLEAN = Concrete.new('Boolean')
 
       # A nested composite of the same concrete kind flattens into this
       # one - a union nested in a union is still just a union - but a

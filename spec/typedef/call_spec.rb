@@ -182,7 +182,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers generic types from union type' do
-    pending 'WIP'
     source = Solargraph::Source.load_string(%(
       # @type [String, Array<Integer>]
       list = string_or_integer
@@ -218,7 +217,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'denies calls off of nilable objects when loose union mode is off' do
-    pending 'WIP'
     source = Solargraph::Source.load_string(%(
       # @type [String, nil]
       f = foo

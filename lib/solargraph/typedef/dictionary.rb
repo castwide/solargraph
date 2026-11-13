@@ -56,14 +56,23 @@ module Solargraph
         end
       end
 
+      # Get the first declared return type without inference.
+      #
+      # @return [Type]
+      def declare
+        # rubocop:disable-next Lint/UselessDefaultValueArgument
+        Typedef.memos.fetch memo_key(:declare), Union::UNDEFINED do
+          typify infer: false
+        end
+      end
+
+      # Get the first declared return type or infer the type from code.
+      #
       # @return [Type]
       def infer
         # rubocop:disable-next Lint/UselessDefaultValueArgument
         Typedef.memos.fetch memo_key(:infer), Union::UNDEFINED do
-          pins, receiver = define_from_chain
-          return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
-
-          Filter.new(api_map, pins, receiver).typeset
+          typify infer: true
         end
       end
 
@@ -77,6 +86,15 @@ module Solargraph
       end
 
       private
+
+      def typify infer: true
+        pins, receiver = define_from_chain
+        return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
+
+        Filter.new(api_map, pins, receiver, infer: infer)
+              .typeset
+              .resolve_rooted(api_map, receiver.gates)
+      end
 
       # @param chain [Source::Chain]
       # @return [Array<Pin::Base>, Pin::Closure)]
