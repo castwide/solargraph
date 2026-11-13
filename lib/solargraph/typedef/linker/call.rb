@@ -55,7 +55,7 @@ module Solargraph
             return [Pin::ProxyType.anonymous(ComplexType.parse('::Class'))]
           end
           # @todo Quick and dirty hack to force UniqueType to ComplexType
-          types = ComplexType.new([receiver.context]).to_typedef_typeset.types
+          types = ComplexType.new([receiver.context]).non_literal_type.to_typedef_typeset.types
           # Each member of a union of types defines the call on its own, e.g.,
           # +nil?+ returns +true+ for +nil+ and +false+ for every other type, so
           # unions are resolved one type at a time, and each member binds +self+

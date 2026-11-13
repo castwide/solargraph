@@ -49,6 +49,25 @@ describe Solargraph::TypeChecker do
         .to eq(['Wrong argument type for #foo: str expected String, received Class<File>'])
     end
 
+    it 'does not leak an unresolved generic from a literal-keyed Hash#fetch' do
+      checker = type_checker(%(
+        class ReproLeak
+          # @param period [Hash{"Index" => Float}]
+          # @return [Float]
+          def literal_key(period)
+            period.fetch('Index')
+          end
+
+          # @param period [Hash{String => Float}]
+          # @return [Float]
+          def class_key(period)
+            period.fetch('Index')
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]
@@ -1021,7 +1040,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'does not complain when passing NilClass to nil parameter' do
-      pending 'should be feasible'
       checker = type_checker(%(
         # @param a [nil]
         def foo(a); end
