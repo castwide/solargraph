@@ -8,18 +8,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   describe '#infer' do
-    it 'infers types' do
-      code = %(
-        # @return [Array<String>]
-        def foo; end
-
-        foo.first
-      )
-
-      typeset = dictionary_for(code, [4, 12]).infer
-      expect(typeset.to_s).to eq('String | nil')
-    end
-
     it 'infers local variables' do
       code = %(
         x = 0
@@ -31,115 +19,6 @@ describe Solargraph::Typedef::Dictionary do
 
       typeset = dictionary_for(code, [2, 8]).infer
       expect(typeset.to_s).to eq('Integer')
-    end
-
-    it 'resolves an RBS self return type to the union member that supplied the method' do
-      code = %(
-        # @type [String, Symbol]
-        name = string_or_symbol
-        name.to_sym
-      )
-
-      typeset = dictionary_for(code, [3, 13]).infer
-      expect(typeset.to_s).to eq('Symbol')
-    end
-
-    it 'resolves a shared self-returning method separately for each union member' do
-      code = %(
-        # @type [String, Symbol]
-        name = string_or_symbol
-        name.itself
-      )
-
-      typeset = dictionary_for(code, [3, 13]).infer
-      expect(typeset.to_s).to eq('String | Symbol')
-    end
-
-    it 'resolves self in a union return type separately for each union member' do
-      code = %(
-        class Base
-          # @return [String, self]
-          def pick; end
-        end
-
-        class Alpha < Base; end
-        class Beta < Base; end
-
-        # @type [Alpha, Beta]
-        thing = alpha_or_beta
-        thing.pick
-      )
-
-      typeset = dictionary_for(code, [11, 15]).infer
-      expect(typeset.to_s).to eq('String | Alpha | Beta')
-    end
-
-    it 'resolves a YARD @return [self] to the union member that supplied the method' do
-      code = %(
-        class Alpha
-          # @return [Symbol]
-          def to_thing; end
-        end
-
-        class Beta
-          # @return [self]
-          def to_thing; end
-        end
-
-        # @type [Alpha, Beta]
-        thing = alpha_or_beta
-        thing.to_thing
-      )
-
-      typeset = dictionary_for(code, [13, 14]).infer
-      expect(typeset.to_s).to eq('Symbol | Beta')
-    end
-
-    it 'distributes a YARD self nested in a generic across union members' do
-      pending 'WIP'
-      code = %(
-        class Base
-          # @return [Array<self>]
-          def many; end
-        end
-
-        class Alpha < Base; end
-        class Beta < Base; end
-
-        # @type [Alpha, Beta]
-        thing = alpha_or_beta
-        thing.many
-      )
-
-      typeset = dictionary_for(code, [11, 16]).infer
-      expect(typeset.to_s).to eq('Array[Alpha], Array[Beta]')
-    end
-
-    it 'does not leak one union member into a Class#new call resolved on another' do
-      code = %(
-        class Beta; end
-
-        # @type [Class<Beta>, Class]
-        klass = beta_class_or_generic_class
-        klass.new
-      )
-
-      typeset = dictionary_for(code, [5, 15]).infer
-      # The bare `Class` member cannot know what its #new constructs, and Beta must not leak in from the other.
-      expect(typeset.to_s).to eq('undefined')
-    end
-
-    it 'resolves Class#new the same way regardless of union member order' do
-      code = %(
-        class Beta; end
-
-        # @type [Class, Class<Beta>]
-        klass = generic_or_beta_class
-        klass.new
-      )
-
-      typeset = dictionary_for(code, [5, 14]).infer
-      expect(typeset.to_s).to eq('undefined')
     end
 
     it 'infers from variable assignments with if conditions' do
@@ -185,23 +64,6 @@ describe Solargraph::Typedef::Dictionary do
 
       typeset = dictionary_for(code, [1, 8]).infer
       expect(typeset.to_s).to eq('Integer | String')
-    end
-
-    it 'infers types from new subclass calls without a subclass initialize method' do
-      code = %(
-        class Sup
-          def initialize; end
-          def meth; end
-        end
-        class Sub < Sup
-          def meth; end
-        end
-
-        Sub.new
-      )
-
-      typeset = dictionary_for(code, [9, 12]).infer
-      expect(typeset.to_s).to eq('Sub')
     end
 
     it 'pulls types from multiple lines of code' do
@@ -270,24 +132,6 @@ describe Solargraph::Typedef::Dictionary do
 
       typeset = dictionary_for(code, [1, 10]).infer
       expect(typeset.to_s).to eq('Boolean')
-    end
-
-    it 'infers self from Array#new' do
-      code = %(
-        Array.new
-      )
-
-      typeset = dictionary_for(code, [1, 14]).infer
-      expect(typeset.to_s).to eq('Array')
-    end
-
-    it 'infers self from inherited Object#freeze' do
-      code = %(
-        Array.new.freeze
-      )
-
-      typeset = dictionary_for(code, [1, 18]).infer
-      expect(typeset.to_s).to eq('Array')
     end
 
     it 'infers the nearest constants first' do
@@ -813,6 +657,40 @@ describe Solargraph::Typedef::Dictionary do
       )
       typeset = dictionary_for(code, [2, 12]).infer
       expect(typeset.to_s).to eq('Class')
+    end
+
+    it 'does not apply an RBS assertion to the next statement' do
+      code = %(
+        x = 1 #: String
+        y = 'y'.size
+        y
+      )
+      typeset = dictionary_for(code, [3, 8]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
+
+    it 'prioritizes YARD declarations over inference' do
+      code = %(
+        # @return [Integer]
+        def foo
+          'string'
+        end
+        foo
+      )
+      typeset = dictionary_for(code, [5, 8]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
+
+    it 'prioritizes RBS declarations over inference' do
+      code = %(
+        #: () -> Integer
+        def foo
+          'string'
+        end
+        foo
+      )
+      typeset = dictionary_for(code, [5, 8]).infer
+      expect(typeset.to_s).to eq('Integer')
     end
   end
 end

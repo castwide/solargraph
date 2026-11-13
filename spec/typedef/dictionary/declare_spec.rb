@@ -10,7 +10,53 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   describe '#declare' do
-    context 'with inline rbs type assertions' do
+    context 'without type declarations' do
+      it 'does not infer from variable assignments' do
+        code = 'x = Object.new'
+        typeset = dictionary_for(code, [0, 0]).declare
+        expect(typeset).to be_undefined
+      end
+
+      it 'does not infer from literals' do
+        code = 'x = 1'
+        typeset = dictionary_for(code, [0, 0]).declare
+        expect(typeset).to be_undefined
+      end
+
+      it 'expands self from Array#new' do
+        code = 'Array.new'
+        typeset = dictionary_for(code, [0, 6]).declare
+        expect(typeset.to_s).to eq('Array')
+      end
+
+      it 'expands self from new subclass calls without a subclass initialize method' do
+        code = %(
+          class Sup
+            def initialize; end
+            def meth; end
+          end
+          class Sub < Sup
+            def meth; end
+          end
+
+          Sub.new
+        )
+
+        typeset = dictionary_for(code, [9, 14]).declare
+        expect(typeset.to_s).to eq('Sub')
+      end
+
+      it 'expands self from inherited Object#freeze' do
+        code = %(
+          Array.new.freeze
+        )
+
+        typeset = dictionary_for(code, [1, 20]).declare
+        expect(typeset.to_s).to eq('Array')
+      end
+    end
+
+    context 'with inline RBS type assertions' do
       it 'types local variables' do
         expect(declare_at(%(
           x = [] #: Array[String]
@@ -88,15 +134,6 @@ describe Solargraph::Typedef::Dictionary do
           x = [] #: Array[String]
           x
         ), 3, 10)).to eq('Array[String]')
-      end
-
-      it 'does not apply the assertion to the next statement' do
-        pending 'Inference required'
-        expect(declare_at(%(
-          x = 1 #: String
-          y = 'y'.size
-          y
-        ), 3, 10)).to eq('Integer')
       end
 
       it 'ignores comments that are not valid RBS types' do
@@ -193,20 +230,152 @@ describe Solargraph::Typedef::Dictionary do
       end
     end
 
-    it 'gets modified types from inherited methods' do
-      code = %(
-        class Superclass
-          # @return [String]
+    context 'with YARD tags' do
+      it 'gets variable type tags' do
+        code = %(
+          # @type [Array<String>]
+          x = foo
+        )
+        typeset = dictionary_for(code, [2, 10]).declare
+        expect(typeset.to_s).to eq('Array[String]')
+      end
+
+      it 'gets modified types from inherited methods' do
+        code = %(
+          class Superclass
+            # @return [String]
+            def foo; end
+          end
+          class Subclass < Superclass
+            # @return [Integer]
+            def foo; end
+          end
+          Subclass.new.foo
+        )
+        typeset = dictionary_for(code, [9, 23]).declare
+        expect(typeset.to_s).to eq('Integer')
+      end
+
+      it 'gets types from generics' do
+        code = %(
+          # @return [Array<String>]
           def foo; end
-        end
-        class Subclass < Superclass
-          # @return [Integer]
-          def foo; end
-        end
-        Subclass.new.foo
-      )
-      typeset = dictionary_for(code, [9, 21]).declare
-      expect(typeset.to_s).to eq('Integer')
+
+          foo.first
+        )
+
+        typeset = dictionary_for(code, [4, 14]).declare
+        expect(typeset.to_s).to eq('String | nil')
+      end
+
+      it 'resolves an RBS self return type to the union member that supplied the method' do
+        code = %(
+          # @type [String, Symbol]
+          name = string_or_symbol
+          name.to_sym
+        )
+
+        typeset = dictionary_for(code, [3, 15]).declare
+        expect(typeset.to_s).to eq('Symbol')
+      end
+
+      it 'resolves a shared self-returning method separately for each union member' do
+        code = %(
+          # @type [String, Symbol]
+          name = string_or_symbol
+          name.itself
+        )
+
+        typeset = dictionary_for(code, [3, 15]).declare
+        expect(typeset.to_s).to eq('String | Symbol')
+      end
+
+      it 'resolves self in a union return type separately for each union member' do
+        code = %(
+          class Base
+            # @return [String, self]
+            def pick; end
+          end
+
+          class Alpha < Base; end
+          class Beta < Base; end
+
+          # @type [Alpha, Beta]
+          thing = alpha_or_beta
+          thing.pick
+        )
+
+        typeset = dictionary_for(code, [11, 17]).declare
+        expect(typeset.to_s).to eq('String | Alpha | Beta')
+      end
+
+      it 'resolves a YARD @return [self] to the union member that supplied the method' do
+        code = %(
+          class Alpha
+            # @return [Symbol]
+            def to_thing; end
+          end
+
+          class Beta
+            # @return [self]
+            def to_thing; end
+          end
+
+          # @type [Alpha, Beta]
+          thing = alpha_or_beta
+          thing.to_thing
+        )
+
+        typeset = dictionary_for(code, [13, 16]).declare
+        expect(typeset.to_s).to eq('Symbol | Beta')
+      end
+
+      it 'distributes a YARD self nested in a generic across union members' do
+        pending 'WIP'
+        code = %(
+          class Base
+            # @return [Array<self>]
+            def many; end
+          end
+
+          class Alpha < Base; end
+          class Beta < Base; end
+
+          # @type [Alpha, Beta]
+          thing = alpha_or_beta
+          thing.many
+        )
+
+        typeset = dictionary_for(code, [11, 18]).declare
+        expect(typeset.to_s).to eq('Array[Alpha], Array[Beta]')
+      end
+
+      it 'does not leak one union member into a Class#new call resolved on another' do
+        code = %(
+          class Beta; end
+
+          # @type [Class<Beta>, Class]
+          klass = beta_class_or_generic_class
+          klass.new
+        )
+
+        typeset = dictionary_for(code, [5, 17]).declare
+        # The bare `Class` member cannot know what its #new constructs, and Beta must not leak in from the other.
+        expect(typeset.to_s).to eq('undefined')
+      end
+
+      it 'resolves Class#new the same way regardless of union member order' do
+        code = %(
+          class Beta; end
+
+          # @type [Class, Class<Beta>]
+          klass = generic_or_beta_class
+          klass.new
+        )
+
+        typeset = dictionary_for(code, [5, 16]).declare
+        expect(typeset.to_s).to eq('undefined')
+      end
     end
   end
 end
