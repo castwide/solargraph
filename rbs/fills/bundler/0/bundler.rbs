@@ -878,7 +878,7 @@ class Bundler::EndpointSpecification < Gem::Specification
 
   def source=: (untyped source) -> untyped
 
-  def version: () -> String
+  def version: () -> Gem::Version
 end
 
 Bundler::EndpointSpecification::Elem: untyped
@@ -1939,7 +1939,7 @@ class Bundler::LazySpecification
 
   def to_s: () -> untyped
 
-  def version: () -> String
+  def version: () -> Gem::Version?
 end
 
 class Bundler::LazySpecification::Identifier < Struct
@@ -3106,7 +3106,7 @@ class Bundler::RemoteSpecification
 
   def to_s: () -> untyped
 
-  def version: () -> String
+  def version: () -> Gem::Version
 end
 
 class Bundler::Resolver

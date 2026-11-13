@@ -28,6 +28,13 @@ module Solargraph
     # @return [String]
     attr_reader :cache_name
 
+    # @param name [String]
+    # @param full_path [String]
+    # @param spec_file [String]
+    # @param source [String]
+    # @param version [String]
+    # @param require_paths [Array<String>]
+    # @param dependencies [Array<String>]
     def initialize name:, full_path:, spec_file:, source:, version:, require_paths:, dependencies:
       @name = name
       @full_path = full_path
@@ -72,7 +79,7 @@ module Solargraph
                   full_path: gem.full_gem_path,
                   spec_file: gem.spec_file,
                   source: gem.source.to_s,
-                  version: gem.version,
+                  version: gem.version.to_s,
                   require_paths: gem.require_paths,
                   dependencies: gem.runtime_dependencies.map(&:name))
     end

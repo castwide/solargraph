@@ -19,14 +19,17 @@ module Solargraph
         'fatal' => Severities::ERROR
       }.freeze
 
+      # RuboCop lints its current directory when given no path, so a source
+      # without a filename is linted from stdin under this placeholder name.
+      UNSAVED_FILENAME = 'untitled.rb'
+
       # @param source [Solargraph::Source]
       # @param _api_map [Solargraph::ApiMap]
       # @return [Array<Hash>]
       def diagnose source, _api_map
         @source = source
         require_rubocop(rubocop_version)
-        # @sg-ignore Need to add nil check here
-        options, paths = generate_options(source.filename, source.code)
+        options, paths = generate_options(source.filename || UNSAVED_FILENAME, source.code)
         store = RuboCop::ConfigStore.new
         runner = RuboCop::Runner.new(options, store)
         # Ensure only one instance of RuboCop::Runner is running at

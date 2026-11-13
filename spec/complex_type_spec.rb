@@ -15,6 +15,11 @@ describe 'YARD type specifier list parsing' do
       expect(types.length).to eq(0)
     end
 
+    it 'has no parameters when it has zero types' do
+      types = Solargraph::ComplexType.parse
+      expect(types.all_params).to eq([])
+    end
+
     it 'parses zero types as a string' do
       pending('special case being added')
       types = Solargraph::ComplexType.parse ''

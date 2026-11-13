@@ -55,10 +55,10 @@ module Solargraph
           Position.new(node.loc.line, node.loc.column)
         end
 
-        # @sg-ignore downcast output of Enumerable#select
         # @return [Solargraph::Pin::Breakable, nil]
         def enclosing_breakable_pin
-          pins.select { |pin| pin.is_a?(Pin::Breakable) && pin.location&.range&.contain?(position) }.last
+          pins.reverse_each { |pin| return pin if pin.is_a?(Pin::Breakable) && pin.location&.range&.contain?(position) }
+          nil
         end
 
         # @todo downcast output of Enumerable#select

@@ -31,8 +31,7 @@ module Solargraph
       # @return [String, nil] fully qualified namespace (i.e., is
       #   absolute, but will not start with ::)
       def resolve(name, *gates)
-        # @sg-ignore Need to add nil check here
-        return store.get_path_pins(name[2..]).first&.path if name.start_with?('::')
+        return store.get_path_pins(name.delete_prefix('::')).first&.path if name.start_with?('::')
 
         flat = gates.flatten
         flat.push '' if flat.empty?
@@ -210,8 +209,7 @@ module Solargraph
       # @return [String, nil] fully qualified namespace
       def qualify_namespace namespace, context_namespace = ''
         if namespace.start_with?('::')
-          # @sg-ignore Need to add nil check here
-          inner_qualify(namespace[2..], '', Set.new)
+          inner_qualify(namespace.delete_prefix('::'), '', Set.new)
         else
           inner_qualify(namespace, context_namespace, Set.new)
         end
