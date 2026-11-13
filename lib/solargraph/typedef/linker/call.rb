@@ -10,14 +10,28 @@ module Solargraph
         include Solargraph::Parser::NodeMethods
 
         def resolve
-          # @todo We shouldn't need to check for local variables here. Local variables
-          #   are always the head of the chain, so they should go to the Head link.
-          #   This change will require a change to the way chainers work, so it might
-          #   have to wait until processes outside of Typedef stop using chains.
-          local_variable || yield_call || super_call || method_call
+          flow_sensitive_pins || pins
         end
 
         private
+
+        def pins
+          @pins ||= local_variable || yield_call || super_call || method_call
+        end
+
+        def flow_sensitive_pins
+          return unless pins.first.is_a?(Pin::BaseVariable)
+
+          range = Range.from_node(dictionary.chain.node)
+          tree = dictionary.source_map
+                           .source
+                           .tree_at(range.start.line, range.start.column)
+                           .select { |node| %i[if until when while and or].include?(node.type) }
+          return if tree.empty?
+
+          # @todo Finish
+          nil
+        end
 
         def local_variable
           found = if link.head?

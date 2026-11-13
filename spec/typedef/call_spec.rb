@@ -337,4 +337,22 @@ describe Solargraph::Typedef::Dictionary do
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Class')
   end
+
+  it 'detects flow-sensitive locations' do
+    source = Solargraph::Source.load_string(%(
+      # @type [String, Integer]
+      a = string_or_integer
+      if a.is_a?(String)
+        a.upcase
+      else
+        a.to_s
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.at(api_map, 'test.rb', [4, 8])
+    call = Solargraph::Typedef::Linker::Call.new(dictionary, dictionary.chain.links.first, dictionary.closure)
+    # expect(call).to be_flow_sensitive
+    expect(call.resolve.first.typedef_typeset.to_s).to eq('String')
+  end
 end
