@@ -701,7 +701,6 @@ module Solargraph
         @client_capabilities ||= {}
       end
 
-      # @sg-ignore need boolish support for ? methods
       def client_supports_progress?
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
@@ -861,7 +860,6 @@ module Solargraph
         }
       end
 
-      # @sg-ignore need boolish support for ? methods
       def prepare_rename?
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
