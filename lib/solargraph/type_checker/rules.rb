@@ -67,52 +67,84 @@ module Solargraph
       #
       # False negatives:
       #
-      # @todo 4: Missed nil violation
+      # @todo 3: Missed nil violation
       #
-      # pending code fixes (277):
+      # pending code fixes (372):
       #
-      # @todo 281: Need to add nil check here
-      # @todo 22: Translate to something flow sensitive typing understands
-      # @todo 3: Need a downcast here
+      # @todo 141: Need to add nil check here
+      # @todo 33: pin.closure relies on closure always resolved
+      # @todo 30: Range.from_node result assumed always present
+      # @todo 26: Translate to something flow sensitive typing understands
+      # @todo 22: String/Array Range slice relies on valid bounds
+      # @todo 19: pin.location relies on location always resolved
+      # @todo 20: Need a downcast here
+      # @todo 12: MatchData relies on regex always matching
+      # @todo 12: Array#[] integer index relies on fixed arity
+      # @todo 11: node.children[] relies on grammar-guaranteed arity
+      # @todo 7: Missing @return tag
+      # @todo 3: Unresolved call to start_with? on Array, nil
+      # @todo 3: Array literals infer bare Array without element types
+      # @todo 3: Array#first/#last relies on non-empty invariant
+      # @todo 2: probably nil false alarm
+      # @todo 2: Unresolved call to children
+      # @todo 2: Unresolved call to links on Solargraph::Source::Chain, nil
+      # @todo 1: Yielded tuples are not destructured into block params
+      # @todo 1: Unresolved call to ==
+      # @todo 1: Unresolved call to gsub on Array, nil
+      # @todo 1: Unresolved call to end_with? on Array, nil
+      # @todo 1: Unresolved call to []=
+      # @todo 1: Unresolved constant BlankRubocopFormatter
+      # @todo 1: Proc#call return type isn't inferred without generics
+      # @todo 1: super is typed void though it returns a value
+      # @todo 1: parser gem's Builders::Default#value has no return type
+      # @todo 1: @@inference_cache has no declared value type
+      # @todo 1: Use fetch to suppress false alarm
+      # @todo 1: Unresolved call to name
+      # @todo 1: Solargraph::Plugin::ActiveSupport#classmethod_pins return type could not be inferred
+      # @todo 1: Solargraph::Plugin::ActiveSupport#attribute_pins return type could not be inferred
+      # @todo 1: Hash#[] relies on key always being present
+      # @todo 1: Unresolved call to type; Unresolved call to children
+      # @todo 1: Unresolved call to version on String
+      # @todo 1: Unresolved call to empty?
+      # @todo 1: Declared return type ::String, nil does not match inferred type ::String, nil, ::Symbol, ::NilClass for Solargraph::ApiMap::Constants#resolve
+      # @todo 1: Declared return type ::Solargraph::Pin::Signature, nil does not match inferred type ::Symbol, ::Solargraph::Pin::Signature, nil for Solargraph::Pin::Method#block
+      # @todo 1: Solargraph::Source::Chain::Parameter#current_index return type could not be inferred
+      # @todo 1: Wrong argument type for Solargraph::LanguageServer::Host#receive: request expected Hash{String => undefined}, received Hash, nil
+      # @todo 1: Wrong argument type for Solargraph::Library#contain?: filename expected String, received String, nil
+      # @todo 1: Wrong argument type for Solargraph::Parser::ParserGem::NodeChainer.chain: node expected Parser::AST::Node, received Parser::AST::Node, nil
       #
-      # flow sensitive typing could handle (99):
+      # flow sensitive typing could handle (165):
       #
-      # @todo 36: flow sensitive typing needs to handle attrs
-      # @todo 29: flow sensitive typing should be able to handle redefinition
-      # @todo 21: flow sensitive typing needs to narrow down type with an if is_a? check
-      # @todo 13: Need to validate config
+      # @todo 30: https://github.com/castwide/solargraph/issues/1249
+      # @todo 28: https://github.com/castwide/solargraph/issues/1241
+      # @todo 20: https://github.com/castwide/solargraph/issues/1250
+      # @todo 12: https://github.com/castwide/solargraph/issues/1251
+      # @todo 11: flow sensitive typing needs better handling of ||= on lvars
+      # @todo 11: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
-      # @todo 6: need boolish support for ? methods
-      # @todo 6: flow sensitive typing needs better handling of ||= on lvars
-      # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
-      # @todo 5: flow sensitive typing needs to handle 'raise if'
-      # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
-      # @todo 4: nil? support in flow sensitive typing
-      # @todo 3: flow sensitive typing ought to be able to handle 'when ClassName'
-      # @todo 2: downcast output of Enumerable#select
-      # @todo 2: flow sensitive typing should handle return nil if location&.name.nil?
+      # @todo 7: need boolish support for ? methods
+      # @todo 4: flow sensitive typing ought to be able to handle 'when ClassName'
+      # @todo 4: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+      # @todo 4: flow sensitive typing needs to handle 'raise if'
       # @todo 2: flow sensitive typing should handle is_a? and next
-      # @todo 2: Need to look at Tuple#include? handling
-      # @todo 2: Should better support meaning of '&' in RBS
-      # @todo 2: (*) flow sensitive typing needs to handle "if foo = bar"
-      # @todo 2: flow sensitive typing needs to handle "if foo = bar"
-      # @todo 2: Need to handle duck-typed method calls on union types
+      # @todo 3: flow sensitive typing needs to handle "if foo = bar"
+      # @todo 3: Should better support meaning of '&' in RBS
+      # @todo 2: flow sensitive typing needs to create separate ranges for postfix if
       # @todo 2: Need better handling of #compact
-      # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
-      # @todo 1: flow sensitive typing not smart enough to handle this case
-      # @todo 1: flow sensitive typing needs to handle if foo = bar
-      # @todo 1: flow sensitive typing needs to handle "if foo.nil?"
-      # @todo 1: flow sensitive typing should support case/when
+      # @todo 2: downcast output of Enumerable#select
       # @todo 1: flow sensitive typing should support ivars
+      # @todo 1: Need to be able to resolve generics based on a
+      # @todo 1: Need to resolve @generic T from a block's yieldreturn
       # @todo 1: Need to support this in flow sensitive typing
-      # @todo 1: flow sensitive typing needs to handle self.class == other.class
-      # @todo 1: flow sensitive typing needs to remove literal with
-      # @todo 1: flow sensitive typing needs to understand reassignment
+      # @todo 1: flow sensitive typing needs to handle "if foo.nil?"
       # @todo 1: flow sensitive typing should be able to identify more blocks that always return
-      # @todo 1: should warn on nil dereference below
-      # @todo 1: flow sensitive typing needs to create separate ranges for postfix if
-      # @todo 1: flow sensitive typing needs to handle constants
       # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
+      # @todo 1: flow sensitive typing not smart enough to handle this case
+      # @todo 1: flow sensitive typing needs to handle self.class == other.class
+      # @todo 1: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
+      # @todo 1: flow sensitive typing needs to handle constants
+      # @todo 1: Need to handle duck-typed method calls on union types
+      # @todo 1: flow sensitive typing needs to remove literal with
       # @todo 1: Array#flatten returns a bare Array
       def require_all_unique_types_match_expected?
         report?(:require_all_unique_types_match_expected, :strong)

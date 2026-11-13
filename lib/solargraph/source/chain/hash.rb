@@ -26,9 +26,7 @@ module Solargraph
 
         protected
 
-        # @sg-ignore Fix "Not enough arguments to Module#protected"
         def equality_fields
-          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           super + [@splatted]
         end
       end

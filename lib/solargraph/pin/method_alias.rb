@@ -14,7 +14,7 @@ module Solargraph
       # @return [::Symbol]
       attr_reader :scope
 
-      # @return [String]
+      # @return [String, nil]
       attr_reader :original
 
       # @param scope [::Symbol]
