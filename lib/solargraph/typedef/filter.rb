@@ -62,7 +62,7 @@ module Solargraph
           inferred
         end
 
-        Typeset.new(inferred)
+        Union.new(inferred)
       end
 
       # @return [Typeset]
@@ -86,7 +86,7 @@ module Solargraph
       def declared_types
         @declared_types ||= begin
           declared = union_receiver? ? pins.map(&:typedef_typeset).select(&:defined?) : []
-          declared.empty? ? first_declared : Typeset.new(declared)
+          declared.empty? ? first_declared : Union.new(declared)
         end
       end
 

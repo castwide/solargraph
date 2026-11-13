@@ -11,7 +11,7 @@ module Solargraph
           when Pin::Parameter
             signature_type || yieldparam_type || ComplexType::UNDEFINED.to_typedef_typeset
           else
-            return Typeset::UNDEFINED if pin_defines_itself?
+            return Union::UNDEFINED if pin_defines_itself?
             node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
             call_chain = Parser.chain(node)
             chain_inferred = Dictionary.new(api_map, pin.filename, call_chain).infer

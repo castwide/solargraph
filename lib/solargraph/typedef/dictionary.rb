@@ -58,20 +58,20 @@ module Solargraph
 
       # Get the first declared return type without inference.
       #
-      # @return [Typeset]
+      # @return [Type]
       def declare
         # rubocop:disable-next Lint/UselessDefaultValueArgument
-        Typedef.memos.fetch memo_key(:declare), Typeset::UNDEFINED do
+        Typedef.memos.fetch memo_key(:declare), Union::UNDEFINED do
           typify infer: false
         end
       end
 
       # Get the first declared return type or infer the type from code.
       #
-      # @return [Typeset]
+      # @return [Type]
       def infer
         # rubocop:disable-next Lint/UselessDefaultValueArgument
-        Typedef.memos.fetch memo_key(:infer), Typeset::UNDEFINED do
+        Typedef.memos.fetch memo_key(:infer), Union::UNDEFINED do
           typify infer: true
         end
       end

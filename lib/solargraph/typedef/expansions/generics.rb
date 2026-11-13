@@ -112,7 +112,7 @@ module Solargraph
         # matches the given generic names.
         #
         # @param names [Array<String>]
-        # @return [Typedef::Type, nil]
+        # @return [Typedef::Concrete, nil]
         def find_matching_receiver_type names
           return nil if names.empty? || receiver.nil?
           typeset = receiver.typedef_typeset

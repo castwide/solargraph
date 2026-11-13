@@ -150,9 +150,9 @@ module Solargraph
 
         return true if inferred.subtypes.any?(&:undefined?) && rules.include?(:allow_undefined)
 
-        return true if inferred.subtypes.all?(&:generic?) && rules.include?(:allow_unresolved_generic)
+        return true if inferred.subtypes.all?(&:any_generic?) && rules.include?(:allow_unresolved_generic)
 
-        return true if expected.subtypes.all?(&:generic?) && rules.include?(:allow_unresolved_generic)
+        return true if expected.subtypes.all?(&:any_generic?) && rules.include?(:allow_unresolved_generic)
 
         return false if inferred.subtypes.empty?
 

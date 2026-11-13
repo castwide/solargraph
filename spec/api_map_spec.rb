@@ -158,7 +158,7 @@ describe Solargraph::ApiMap do
   it 'gets instance methods for complex types' do
     @api_map.index []
     type = Solargraph::ComplexType.parse('String')
-    pins = @api_map.get_complex_type_methods(type)
+    pins = type.reachable_methods(@api_map)
     expect(pins.map(&:path)).to include('String#upcase')
   end
 
@@ -174,19 +174,20 @@ describe Solargraph::ApiMap do
       end
     ))
     @api_map.index map.pins
-    type = Solargraph::ComplexType.parse('Foo')
-    pins = @api_map.get_complex_type_methods(type, 'Foo')
-    expect(pins.map(&:path)).to include('Foo#prot')
-    expect(pins.map(&:path)).not_to include('Foo#priv')
-    pins = @api_map.get_complex_type_methods(type, 'Foo', true)
-    expect(pins.map(&:path)).to include('Foo#prot')
-    expect(pins.map(&:path)).to include('Foo#priv')
+    pins = Solargraph::ComplexType.parse('Foo').reachable_methods(@api_map)
+    callable = lambda do |self_receiver|
+      pins.select { |pin| @api_map.callable_from?(pin, 'Foo', self_receiver: self_receiver) }.map(&:path)
+    end
+    expect(callable.call(false)).to include('Foo#prot')
+    expect(callable.call(false)).not_to include('Foo#priv')
+    expect(callable.call(true)).to include('Foo#prot')
+    expect(callable.call(true)).to include('Foo#priv')
   end
 
   it 'finds methods for duck types' do
     @api_map.index []
     type = Solargraph::ComplexType.parse('#foo, #bar')
-    pins = @api_map.get_complex_type_methods(type)
+    pins = type.reachable_methods(@api_map)
     expect(pins.map(&:name)).to include('foo')
     expect(pins.map(&:name)).to include('bar')
   end
@@ -194,14 +195,14 @@ describe Solargraph::ApiMap do
   it 'adds Object instance methods to duck types' do
     api_map = described_class.new
     type = Solargraph::ComplexType.parse('#foo')
-    pins = api_map.get_complex_type_methods(type)
+    pins = type.reachable_methods(api_map)
     expect(pins.any? { |p| p.namespace == 'BasicObject' }).to be(true)
   end
 
   it 'finds methods for parametrized class types' do
     @api_map.index []
     type = Solargraph::ComplexType.parse('Class<String>')
-    pins = @api_map.get_complex_type_methods(type)
+    pins = type.reachable_methods(@api_map)
     expect(pins.map(&:path)).to include('String.try_convert')
   end
 
@@ -352,14 +353,18 @@ describe Solargraph::ApiMap do
     )
     source = Solargraph::Source.load_string(code)
     @api_map.map source
-    pins = @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub')
-    expect(pins.map(&:path)).to include('Sup#bar')
-    pins = @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub2'), 'Sub2')
-    expect(pins.map(&:path)).to include('Sup#bar')
-    pins = @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sup'), 'Sub')
-    expect(pins.map(&:path)).to include('Sup#bar')
-    pins = @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sup'), 'Sub2')
-    expect(pins.map(&:path)).to include('Sup#bar')
+    callable = lambda do |tag, context|
+      Solargraph::ComplexType.parse(tag).reachable_methods(@api_map).select do |pin|
+        @api_map.callable_from?(pin, context, self_receiver: false)
+      end.map(&:path)
+    end
+    expect(callable.call('Sub', 'Sub')).to include('Sup#bar')
+    expect(callable.call('Sub2', 'Sub2')).to include('Sup#bar')
+    expect(callable.call('Sup', 'Sub')).to include('Sup#bar')
+    expect(callable.call('Sup', 'Sub2')).to include('Sup#bar')
+    # Ruby checks the caller against the class defining the method, not the receiver's class
+    expect(callable.call('Sub2', 'Sup')).to include('Sup#bar')
+    expect(callable.call('Sup', '')).not_to include('Sup#bar')
   end
 
   it 'ignores undefined superclasses when finding complex type methods' do
@@ -370,7 +375,9 @@ describe Solargraph::ApiMap do
     source = Solargraph::Source.load_string(code)
     @api_map.map source
     expect do
-      @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('Sub'), 'Sub2')
+      Solargraph::ComplexType.parse('Sub').reachable_methods(@api_map).each do |pin|
+        @api_map.callable_from?(pin, 'Sub2', self_receiver: false)
+      end
     end.not_to raise_error
   end
 
