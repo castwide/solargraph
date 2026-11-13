@@ -15,10 +15,6 @@ module Solargraph
 
         private
 
-        def pins
-          @pins ||= local_variable || yield_call || super_call || method_call
-        end
-
         def flow_sensitive_pins
           return unless pins.first.is_a?(Pin::BaseVariable)
 
@@ -27,10 +23,15 @@ module Solargraph
                            .source
                            .tree_at(range.start.line, range.start.column)
                            .select { |node| %i[if until when while and or].include?(node.type) }
+                           .select { |node| here = Range.from_node(node); dictionary.closure.location.range.contain?(here.start) }
           return if tree.empty?
 
           # @todo Finish
           nil
+        end
+
+        def pins
+          @pins ||= local_variable || yield_call || super_call || method_call
         end
 
         def local_variable

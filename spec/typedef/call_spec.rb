@@ -352,7 +352,6 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.at(api_map, 'test.rb', [4, 8])
     call = Solargraph::Typedef::Linker::Call.new(dictionary, dictionary.chain.links.first, dictionary.closure)
-    # expect(call).to be_flow_sensitive
     expect(call.resolve.first.typedef_typeset.to_s).to eq('String')
   end
 end
