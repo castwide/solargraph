@@ -35,10 +35,7 @@ module Solargraph
 
     # @return [Boolean]
     def rbs?
-      name = filename
-      return false if name.nil?
-
-      name.end_with?('.rbs')
+      filename&.end_with?('.rbs') || false
     end
 
     # @param location [self]
