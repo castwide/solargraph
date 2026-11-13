@@ -28,12 +28,12 @@ describe Solargraph::Typedef::Type do
 
   describe '#generic?' do
     it 'is true if any parameter is generic' do
-      type = Solargraph::ComplexType.parse('Array<generic<T>>').to_typedef_types.first
+      type = Solargraph::ComplexType.parse('Array<generic<T>>').to_typedef_typeset
       expect(type).to be_generic
     end
 
     it 'is false if no parameters are generic' do
-      type = Solargraph::ComplexType.parse('Array<String>').to_typedef_types.first
+      type = Solargraph::ComplexType.parse('Array<String>').to_typedef_typeset
       expect(type).not_to be_generic
     end
   end

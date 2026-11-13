@@ -109,5 +109,48 @@ describe Solargraph::Typedef::Dictionary do
       pins = dictionary_for(code, [3, 8]).define
       expect(pins.map(&:path)).to eq(['Correct'])
     end
+
+    it 'includes private Kernel methods' do
+      code = 'puts string'
+      pins = dictionary_for(code, [0, 0]).define
+      expect(pins.map(&:path)).to eq(['Kernel#puts'])
+    end
+
+    it 'includes private Kernel methods from namespaces' do
+      code = %(
+        class Example
+          puts string
+        end
+      )
+      pins = dictionary_for(code, [2, 10]).define
+      expect(pins.map(&:path)).to eq(['Kernel#puts'])
+    end
+
+    it 'includes protected methods in context' do
+      code = %(
+        class Example
+          def instance_method
+            Example.new.protected_method
+          end
+
+          protected
+          def protected_method; end
+        end
+      )
+      pins = dictionary_for(code, [3, 25]).define
+      expect(pins.map(&:path)).to eq(['Example#protected_method'])
+    end
+
+    it 'excludes protected methods out of context' do
+      code = %(
+        class Example
+          protected
+          def protected_method; end
+        end
+        Example.new.protected_method
+      )
+      pins = dictionary_for(code, [5,20]).define
+      expect(pins).to be_empty
+    end
   end
 end

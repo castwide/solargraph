@@ -644,16 +644,6 @@ module Solargraph
         self.class.can_root_name?(name_to_check)
       end
 
-      def to_typedef_types
-        # @todo Quick and dirty hack
-        return Typedef::Type.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
-
-        base = name
-        base = "::#{base}" if rooted? && base =~ /^[A-Z]/
-        params = all_params.map(&:to_typedef_types)
-        Typedef::Type.new(base, *params)
-      end
-
       def to_typedef_typeset
         # @todo Quick and dirty hack
         return Typedef::Type.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
