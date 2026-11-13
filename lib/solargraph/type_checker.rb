@@ -53,6 +53,8 @@ module Solargraph
     # @param inferred [ComplexType, ComplexType::UniqueType]
     # @param expected [ComplexType, ComplexType::UniqueType]
     def return_type_conforms_to? inferred, expected
+      # Callers of a method whose return includes void do not use the value
+      return true if expected.any?(&:void?)
       conforms_to?(inferred, expected, :return_type)
     end
 

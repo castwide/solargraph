@@ -611,9 +611,10 @@ module Solargraph
           return result unless result.nil?
         end
         match = comments.match(/^[ \t]*\(see (.*)\)/m)
-        return nil if match.nil?
-        # @sg-ignore Need to add nil check here
-        resolve_reference match[1], api_map
+        # YARD leaves an empty (see ) as plain text, not a reference
+        reference = match && match[1].to_s.strip
+        return nil if reference.nil? || reference.empty?
+        resolve_reference reference, api_map
       end
 
       # @return [String]
@@ -637,14 +638,13 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType, ComplexType::UniqueType, nil]
       def resolve_reference ref, api_map
-        parts = ref.split(/[.#]/)
-        if parts.first.empty? || parts.one?
+        prefix, separator, name = ref.rpartition(/[.#]/)
+        if prefix.empty?
           path = "#{namespace}#{ref}"
         else
-          fqns = api_map.qualify(parts.first, *gates)
+          fqns = api_map.qualify(prefix, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
-          # @sg-ignore Need to add nil check here
-          path = fqns + ref[parts.first.length] + parts.last
+          path = fqns + separator + name
         end
         pins = api_map.get_path_pins(path)
         pins.each do |pin|
@@ -740,6 +740,8 @@ module Solargraph
       def return_type_from_inline_rbs
         return nil if inline_rbs.empty?
         method_type = RBS::Parser.parse_method_type(inline_rbs)
+        return nil if method_type.nil?
+
         RbsTranslator.to_complex_type(method_type.type.return_type)
       rescue RBS::ParsingError
         nil
@@ -748,6 +750,8 @@ module Solargraph
       # @return [Array<Pin::Signature>]
       def signatures_from_inline_rbs
         method_type = RBS::Parser.parse_method_type(inline_rbs)
+        return signatures_from_yard if method_type.nil?
+
         [RbsTranslator.to_signature(method_type, self, parameter_names)]
       rescue RBS::ParsingError
         signatures_from_yard

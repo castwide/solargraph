@@ -416,6 +416,8 @@ module Solargraph
         else
           args = line.split(':').map(&:strip)
           name = args.shift
+          raise DiagnosticsError, "Invalid diagnostics reporter entry #{line.inspect}" if name.nil?
+
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
           # @sg-ignore Hash errors

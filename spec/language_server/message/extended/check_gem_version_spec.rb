@@ -2,9 +2,10 @@
 
 describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
   before do
-    version = instance_double(Gem::Version, version: Gem::Version.new('1.0.0'))
+    tuple = Gem::NameTuple.new('solargraph', Gem::Version.new('1.0.0'), 'ruby')
+    source = Gem::Source.new('https://rubygems.org/')
     described_class.fetcher =
-      instance_double(Gem::SpecFetcher, search_for_dependency: [version])
+      instance_double(Gem::SpecFetcher, search_for_dependency: [[[tuple, source]], []])
   end
 
   after do
@@ -33,6 +34,38 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
     host = Solargraph::LanguageServer::Host.new
     message = described_class.new(host, { 'params' => { 'verbose' => true } }, current: Gem::Version.new('0.0.1'))
     expect { message.process }.not_to raise_error
+  end
+
+  it 'reports an unreachable gem source instead of crashing' do
+    source = Gem::Source.new('http://127.0.0.1:9/')
+    error = Gem::RemoteFetcher::FetchError.new('Errno::ECONNREFUSED: Connection refused', source.uri)
+    described_class.fetcher = instance_double(Gem::SpecFetcher,
+                                              search_for_dependency: [[], [Gem::SourceFetchProblem.new(source, error)]])
+    host = Solargraph::LanguageServer::Host.new
+    message = described_class.new(host, { 'params' => { 'verbose' => true } })
+    message.process
+    expect(message.result).to eq({ installed: Gem::Version.new(Solargraph::VERSION), available: Gem::Version.new('0.0.0') })
+    expect(message.error).to be_nil
+    expect(host.flush).to include('Unable to connect to gem source')
+  end
+
+  it 'reports a gem source that raises EADDRNOTAVAIL instead of crashing' do
+    fetcher = instance_double(Gem::SpecFetcher)
+    allow(fetcher).to receive(:search_for_dependency).and_raise(Errno::EADDRNOTAVAIL)
+    described_class.fetcher = fetcher
+    host = Solargraph::LanguageServer::Host.new
+    message = described_class.new(host, { 'params' => { 'verbose' => true } })
+    message.process
+    expect(message.result).to eq({ installed: Gem::Version.new(Solargraph::VERSION), available: Gem::Version.new('0.0.0') })
+  end
+
+  it 'reports an empty gem source response instead of crashing' do
+    described_class.fetcher = instance_double(Gem::SpecFetcher, search_for_dependency: [[], []])
+    host = Solargraph::LanguageServer::Host.new
+    message = described_class.new(host, { 'params' => { 'verbose' => true } })
+    message.process
+    expect(message.result).to eq({ installed: Gem::Version.new(Solargraph::VERSION), available: Gem::Version.new('0.0.0') })
+    expect(host.flush).to include('An error occurred fetching the gem data')
   end
 
   it 'responds to update actions' do
