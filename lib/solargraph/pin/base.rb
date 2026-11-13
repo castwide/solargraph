@@ -523,7 +523,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless nearly? other
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         comments == other.comments && location == other.location
       end
 
@@ -540,7 +540,7 @@ module Solargraph
         @docstring ||= Solargraph::Source.parse_docstring('').to_docstring
       end
 
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       # @return [::Array<YARD::Tags::Directive>]
       def directives
         parse_comments unless @directives
@@ -784,7 +784,7 @@ module Solargraph
       def compare_docstring_tags docstring1, docstring2
         return false if docstring1.tags.length != docstring2.tags.length
         docstring1.tags.each_index do |i|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           return false unless compare_tags(docstring1.tags[i], docstring2.tags[i])
         end
         true
@@ -796,7 +796,7 @@ module Solargraph
       def compare_directives dir1, dir2
         return false if dir1.length != dir2.length
         dir1.each_index do |i|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           return false unless compare_tags(dir1[i].tag, dir2[i].tag)
         end
         true

@@ -187,7 +187,7 @@ module Solargraph
 
           # @return [void]
           def process_attribute
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             node.children[2..].each do |a|
               loc = get_node_location(node)
               clos = region.closure

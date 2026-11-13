@@ -72,7 +72,7 @@ module Solargraph
       sources.each do |source|
         next unless directory == '*' || config.calculated.include?(source.filename)
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1478
         source_hash[source.filename] = source
         includes_any = true
       end
@@ -154,7 +154,7 @@ module Solargraph
     # @param updater [Source::Updater]
     # @return [void]
     def synchronize! updater
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 

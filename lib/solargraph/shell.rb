@@ -289,7 +289,7 @@ module Solargraph
           exit 1
         end
       end
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 

@@ -16,7 +16,7 @@ module Solargraph
           # @return [Array<Hash>, nil]
           def code_location
             suggestions = host.type_definitions_at(params['textDocument']['uri'], @line, @column)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1478
             return nil if suggestions.empty?
             # @sg-ignore https://github.com/castwide/solargraph/pull/1399
             suggestions.reject { |pin| pin.best_location.nil? || pin.best_location.filename.nil? }.map do |pin|

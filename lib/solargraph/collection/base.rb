@@ -36,7 +36,7 @@ module Solargraph
       private
 
       # @return [Array<Pin::Base>, nil]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1479
       def file_cache_pins
         Marshal.load(File.read(cache_file, mode: 'rb')) if File.exist?(cache_file) # rubocop:disable Security/MarshalLoad
       end

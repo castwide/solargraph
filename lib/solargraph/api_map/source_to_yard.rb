@@ -77,11 +77,11 @@ module Solargraph
             obj.add_file pin.location.filename, pin.location.range.start.line
           end
           method_object = code_object_at(pin.path, YARD::CodeObjects::MethodObject)
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           method_object.docstring = pin.docstring
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           method_object.visibility = pin.visibility || :public
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           method_object.parameters = pin.parameters.map do |p|
             [p.full_name, p.asgn_code]
           end

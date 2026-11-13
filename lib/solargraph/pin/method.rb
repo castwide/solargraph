@@ -126,7 +126,7 @@ module Solargraph
         !block.nil?
       end
 
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore Declared return type ::Solargraph::Pin::Signature, nil does not match inferred type ::Symbol, ::Solargraph::Pin::Signature, nil for Solargraph::Pin::Method#block
       # @return [Pin::Signature, nil]
       def block
         return @block unless @block == :undefined
@@ -280,7 +280,7 @@ module Solargraph
           types = macro_names.flat_map do |mac|
             directive = api_map.named_macro(mac)
             next unless directive
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             macro = Solargraph::YardMap::Macro.from_directive(directive, self)
             expanded = macro.macro_object.expand([name, *parameter_names])
             docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
@@ -615,7 +615,7 @@ module Solargraph
         end
         match = comments.match(/^[ \t]*\(see (.*)\)/m)
         return nil if match.nil?
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1493
         resolve_reference match[1], api_map
       end
 
@@ -640,13 +640,13 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType, nil]
       def resolve_reference ref, api_map
         parts = ref.split(/[.#]/)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1493
         if parts.first.empty? || parts.one?
           path = "#{namespace}#{ref}"
         else
           fqns = api_map.qualify(parts.first, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1493
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)
@@ -749,7 +749,7 @@ module Solargraph
       def return_type_from_inline_rbs
         return nil if inline_rbs.empty?
         method_type = RBS::Parser.parse_method_type(inline_rbs)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1493
         RbsTranslator.to_complex_type(method_type.type.return_type)
       rescue RBS::ParsingError
         nil
@@ -758,7 +758,7 @@ module Solargraph
       # @return [Array<Pin::Signature>]
       def signatures_from_inline_rbs
         method_type = RBS::Parser.parse_method_type(inline_rbs)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1493
         [RbsTranslator.to_signature(method_type, self, parameter_names)]
       rescue RBS::ParsingError
         signatures_from_yard
@@ -780,7 +780,7 @@ module Solargraph
       def inline_rbs
         comments.lines
                 .select { |line| line.start_with?(': ') }
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1494
                 .map { |line| line[2..].strip }
                 .join("\n")
       end

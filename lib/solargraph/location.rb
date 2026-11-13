@@ -33,9 +33,9 @@ module Solargraph
       end
     end
 
-    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1494
     def rbs?
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       filename.end_with?('.rbs')
     end
 

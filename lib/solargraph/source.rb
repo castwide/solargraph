@@ -294,7 +294,7 @@ module Solargraph
     # @return [Integer]
     def first_not_empty_from line
       cursor = line
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       cursor += 1 while cursor < code_lines.length && code_lines[cursor].strip.empty?
       cursor = line if cursor > code_lines.length - 1
       cursor
@@ -341,7 +341,7 @@ module Solargraph
           ctxt.push p
         else
           here = p.index(/[^ \t]/)
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           skip = here if skip.nil? || here < skip
           ctxt.push p[skip..]
         end

@@ -110,7 +110,7 @@ module Solargraph
 
       # @param method_object [YARD::CodeObjects::MethodObject]
       # @return [Array<YARD::CodeObjects::MacroObject>]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       def macros_for_method_object method_object
         attached_macros_by_method_object[method_object]
       end

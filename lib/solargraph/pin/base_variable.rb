@@ -217,7 +217,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless super
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         assignment == other.assignment
       end
 

@@ -55,13 +55,13 @@ module Solargraph
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1493
             extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
           else
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1493
             extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
           end
           inner_node_references(name, source.node).map do |n|

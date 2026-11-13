@@ -65,7 +65,7 @@ module Solargraph
 
             # @sg-ignore https://github.com/apiology/solargraph/pull/193
             code = match[1].strip
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore Unresolved call to empty?
             return if code.empty?
 
             "<#{code}>"

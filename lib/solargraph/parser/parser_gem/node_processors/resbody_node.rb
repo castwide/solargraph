@@ -10,16 +10,16 @@ module Solargraph
           # @return [void]
           def process
             if node.children[1] # Exception local variable name
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               here = get_node_start_position(node.children[1])
               # @sg-ignore https://github.com/castwide/solargraph/pull/1399
               presence = Range.new(here, region.closure.location.range.ending)
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               loc = get_node_location(node.children[1])
               types = if node.children[0].nil?
                         ['Exception']
                       else
-                        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                        # @sg-ignore node.children[] relies on grammar-guaranteed arity
                         node.children[0].children.map do |child|
                           unpack_name(child)
                         end
@@ -27,7 +27,7 @@ module Solargraph
               locals.push Solargraph::Pin::LocalVariable.new(
                 location: loc,
                 closure: region.closure,
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                # @sg-ignore node.children[] relies on grammar-guaranteed arity
                 name: node.children[1].children[0].to_s,
                 comments: "@type [#{types.join(',')}]",
                 presence: presence,

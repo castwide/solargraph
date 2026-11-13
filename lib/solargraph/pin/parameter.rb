@@ -260,7 +260,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       def typify_block_param api_map
         block_pin = closure
         return block_pin.typify_parameters(api_map)[index] if block_pin.is_a?(Pin::Block) && block_pin.receiver && index
@@ -281,7 +281,7 @@ module Solargraph
             found = p
             break
           end
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore Unresolved call to name
           if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
             found = params[index]
           end
@@ -317,13 +317,13 @@ module Solargraph
         return nil if skip.include?(ref)
         skip.push ref
         parts = ref.split(/[.#]/)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1493
         if parts.first.empty?
           path = "#{namespace}#{ref}"
         else
           fqns = api_map.qualify(parts.first, namespace)
           return nil if fqns.nil?
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1493
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)

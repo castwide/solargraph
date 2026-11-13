@@ -584,7 +584,7 @@ module Solargraph
                 else
                   get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
                 end
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
       methods
     end
@@ -744,7 +744,7 @@ module Solargraph
       with_resolved_aliases = pins.map do |pin|
         next pin unless pin.is_a?(Pin::MethodAlias)
         resolved = resolve_method_alias(pin)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         resolved
       end.compact
@@ -878,7 +878,7 @@ module Solargraph
         if scope == :instance
           store.get_includes(fqns).reverse.each do |ref|
             in_tag = dereference(ref)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             result.concat inner_get_methods_from_reference(in_tag, namespace_pin, rooted_type, scope, visibility, deep,
                                                            skip, true)
           end

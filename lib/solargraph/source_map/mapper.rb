@@ -85,13 +85,13 @@ module Solargraph
       def find_directive_line_number comment, tag, start
         # Avoid overruning the index
         return start unless start < comment.lines.length
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         num = comment.lines[start..].find_index do |line|
           # Legacy method directives might be `@method` instead of `@!method`
           # @todo Legacy syntax should probably emit a warning
           line.include?("@!#{tag}") || (tag == 'method' && line.include?("@#{tag}"))
         end
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         num.to_i + start
       end
 
@@ -126,7 +126,7 @@ module Solargraph
             started = true
           elsif started && !p.strip.empty?
             cur = p.index(/[^ ]/)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             num = cur if cur < num
           end
           ctxt += p[num..].to_s if started

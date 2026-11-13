@@ -126,10 +126,10 @@ module Solargraph
       def generate_yardoc_from chain, source_map
         # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         name = chain.links.last.word
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         values = chain.links.last.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
         # @sg-ignore https://github.com/castwide/solargraph/pull/1259
-        #   also needs https://github.com/castwide/solargraph/pull/1245
+        #   also needs https://github.com/castwide/solargraph/pull/1494
         code = source_map.source.code_for(chain.node)
         expanded_comment = macro_object.expand([name, *values], code)
                                        .gsub(/\n(?!@!|\s)/, "\n  ")
@@ -148,7 +148,7 @@ module Solargraph
           next if VALUE_DIRECTIVES.include? directive.tag.tag_name
 
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
-          #   also needs https://github.com/castwide/solargraph/pull/1245
+          #   also needs https://github.com/castwide/solargraph/pull/1494
           comments = source_map.source.comments_for(chain.node)
           if comments&.length&.positive?
             directive.tag.text += "\n#{comments}"

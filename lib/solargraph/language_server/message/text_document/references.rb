@@ -10,7 +10,7 @@ module Solargraph
                                         params['position']['character'])
             result = locs.map do |loc|
               {
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1478
                 uri: file_to_uri(loc.filename),
                 range: loc.range.to_hash
               }

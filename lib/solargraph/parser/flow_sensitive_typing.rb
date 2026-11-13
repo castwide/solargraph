@@ -282,20 +282,20 @@ module Solargraph
         #     s(:const, nil, :Baz)),
         #
         call_receiver = call_node.children[0]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         call_arg = type_name(call_node.children[2])
 
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore Unresolved call to type; Unresolved call to children
         if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore Unresolved call to children
           variable_name = call_receiver.children[1].to_s
         end
         # or like this:
         # (lvar :repr)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore Unresolved call to children
         variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
         return unless variable_name
 

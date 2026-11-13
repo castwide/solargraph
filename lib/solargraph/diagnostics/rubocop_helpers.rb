@@ -26,7 +26,7 @@ module Solargraph
           raise InvalidRubocopVersionError,
                 "could not find '#{e.name}' (#{e.requirement}) - " \
                 "did find: [#{
-                  # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                  # @sg-ignore Unresolved call to version on String
                   specs.map { |s| s.version.version }.join(', ')
                 }]"
         end
@@ -53,7 +53,7 @@ module Solargraph
       # @return [String]
       def fix_drive_letter path
         return path unless path.match(/^[a-z]:/)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         path[0].upcase + path[1..]
       end
 

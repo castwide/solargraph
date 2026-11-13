@@ -343,9 +343,9 @@ module Solargraph
     end
 
     # @return [Array<ComplexType>]
-    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1494
     def all_params
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       @items.first.all_params || []
     end
 

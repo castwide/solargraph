@@ -67,7 +67,7 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select do |pin|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
         end
       end
@@ -136,7 +136,7 @@ module Solargraph
 
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       def get_path_pins path
         index.path_pin_hash[path]
       end
@@ -216,7 +216,7 @@ module Solargraph
 
       # @param fqns [String, nil]
       # @return [Array<Solargraph::Pin::Namespace>]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       def fqns_pins fqns
         return [] if fqns.nil?
         if fqns.include?('::')
@@ -330,7 +330,7 @@ module Solargraph
           end
         end
         @index = @indexes.last.clone
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear

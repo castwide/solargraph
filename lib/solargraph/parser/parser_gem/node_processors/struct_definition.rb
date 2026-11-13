@@ -125,7 +125,7 @@ module Solargraph
             # @return [YARD::Docstring]
             def parse_comments
               struct_comments = comments_for(node) || ''
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1494
               struct_definition_node.attributes.each do |attr_node, attr_name|
                 comment = comments_for(attr_node)
                 next if comment.nil?

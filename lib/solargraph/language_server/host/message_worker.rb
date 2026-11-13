@@ -66,7 +66,7 @@ module Solargraph
             @resource.wait(@mutex) if messages.empty?
             next_message
           end
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore Wrong argument type for Solargraph::LanguageServer::Host#receive: request expected Hash{String => undefined}, received Hash, nil
           handler = @host.receive(message)
           handler&.send_response
         end

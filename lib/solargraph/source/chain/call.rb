@@ -122,7 +122,7 @@ module Solargraph
                                                     gates: name_pin.gates,
                                                     source: :chain)
             atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             unless param.compatible_arg?(atype, api_map) || param.restarg?
               match = false
               break
@@ -134,7 +134,7 @@ module Solargraph
             # @sg-ignore https://github.com/castwide/solargraph/pull/1258
             block_atypes = overload.block.parameters.map(&:return_type)
             # @todo Need to add nil check here
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             blocktype = if block.links.map(&:class) == [BlockSymbol]
                           # like the bar in foo(&:bar)
                           block_symbol_call_type(api_map, name_pin.context, block_atypes, locals)
@@ -246,7 +246,7 @@ module Solargraph
               current_argument = arguments[index]
               next unless current_argument&.literal?
               # @type [Solargraph::Source::Chain::Literal]
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1494
               last_link = current_argument.links.last
               argument_value = last_link.value
 
@@ -273,7 +273,7 @@ module Solargraph
             #   generic<Elem>' is because we lose 'rooted' information
             #   in the 'Chain::Array' class internally, leaving
             #   ::Array#each shadowed when it shouldn't be.
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -289,7 +289,7 @@ module Solargraph
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
             next if macro.nil?
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -305,18 +305,18 @@ module Solargraph
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
           txt = macro.tag.text.clone
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           if txt.empty? && macro.tag.name
             named = api_map.named_macro(macro.tag.name)
             txt = named.tag.text.clone if named
           end
           i = 1
           vals.each do |v|
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             txt.gsub!(/\$#{i}/, v.context.namespace)
             i += 1
           end
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
@@ -368,7 +368,7 @@ module Solargraph
 
           # @param signature_pin [Pin::Signature]
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             return_type = signature_pin.return_type.qualify(api_map, *name_pin.gates)
             signature_pin.proxy(return_type)
           end
@@ -396,7 +396,7 @@ module Solargraph
         def block_symbol_call_type api_map, context, block_parameter_types, locals
           # Ruby's shorthand for sending the passed in method name
           # to the first yield parameter with no arguments
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore Unresolved call to links on Solargraph::Source::Chain, nil
           block_symbol_name = block.links.first.word
           block_symbol_call_path = "#{block_parameter_types.first}##{block_symbol_name}"
           callee = api_map.get_path_pins(block_symbol_call_path).first
@@ -404,7 +404,7 @@ module Solargraph
           # @todo: Figure out why we get unresolved generics at
           #   this point and need to assume method return types
           #   based on the generic type
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore Unresolved call to links on Solargraph::Source::Chain, nil
           return_type ||= api_map.get_path_pins("#{context.subtypes.first}##{block.links.first.word}").first&.return_type
           return_type || ComplexType::UNDEFINED
         end
@@ -412,7 +412,7 @@ module Solargraph
         # @param api_map [ApiMap]
         # @return [Pin::Block, nil]
         def find_block_pin api_map
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           node_location = Solargraph::Location.from_node(block.node)
           return if node_location.nil?
           block_pins = api_map.get_block_pins
@@ -431,7 +431,7 @@ module Solargraph
           # We use the block pin as the closure, as the parameters
           # here will only be defined inside the block itself and we
           # need to be able to see them
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           block.infer(api_map, block_pin, locals)
         end
 

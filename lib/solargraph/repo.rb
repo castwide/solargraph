@@ -57,9 +57,9 @@ module Solargraph
     # @note If Solargraph itself is running in this directory's bundled
     #   environment, `bundled?` is false.
     #
-    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1479
     def bundled?
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1479
       !!@metagems
     end
     alias bundle? bundled?
@@ -68,7 +68,7 @@ module Solargraph
     # bundle definition does not exist.
     #
     # @return [Array<Solargraph::Metagem>]
-    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1479
     def bundled
       @metagems || []
     end
@@ -103,11 +103,11 @@ module Solargraph
         o, e, s = Open3.capture3(*cmd, chdir: directory)
         # @sg-ignore https://github.com/castwide/solargraph/pull/1461
         if s.success?
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore Hash#[] relies on key always being present
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1479
           @bundled_group_map = json[:groups].transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
         else
           Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"

@@ -85,7 +85,7 @@ module Solargraph
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1494
               BlankRubocopFormatter
             else
               require_rubocop(config['version'])
@@ -99,7 +99,7 @@ module Solargraph
           # @return [String, nil]
           def cop_list value
             # @type [String]
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             value = value.join(',') if value.respond_to?(:join)
             return nil if value == '' || !value.is_a?(String)
             value

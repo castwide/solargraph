@@ -10,7 +10,7 @@ module Solargraph
       # @param library [String]
       def initialize library
         super()
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1451
         loader.add(library: library.gsub('/', '-')) if self.class.has?(library)
       end
 

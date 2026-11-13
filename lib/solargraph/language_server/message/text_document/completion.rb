@@ -15,7 +15,7 @@ module Solargraph
               items = []
               last_context = nil
               idx = -1
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1478
               completion.pins.each do |pin|
                 idx += 1 if last_context != pin.context
                 items.push pin.completion_item.merge({

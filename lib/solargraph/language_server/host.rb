@@ -511,7 +511,7 @@ module Solargraph
                 name: 'new',
                 scope: :class,
                 location: pin.location,
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1494
                 parameters: pin.parameters,
                 return_type: ComplexType.try_parse(params['data']['path']),
                 comments: pin.comments,
@@ -750,7 +750,7 @@ module Solargraph
       end
 
       # @param path [String]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1494
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?

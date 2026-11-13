@@ -50,7 +50,7 @@ module Solargraph
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
           yield_type = yield_types.first
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1392
           return yield_type.all_params if yield_type.tuple? && yield_type.all_params.length == parameters.length
         end
         parameters.map.with_index { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
@@ -77,7 +77,7 @@ module Solargraph
           argument_types = destructure_yield_types(yield_types, parameters)
           param_types = argument_types.each_with_index.map do |arg_type, idx|
             param = parameters[idx]
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1494
             param_type = chain.base.infer(api_map, param, locals)
             # @sg-ignore https://github.com/castwide/solargraph/pull/1461
             unless arg_type.nil?

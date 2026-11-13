@@ -27,11 +27,11 @@ module Solargraph
       # @param name [String] Namespace which may relative and not be rooted.
       # @param gates [Array<Array<String>, String>] Namespaces to search while resolving the name
       #
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore Declared return type ::String, nil does not match inferred type ::String, nil, ::Symbol, ::NilClass for Solargraph::ApiMap::Constants#resolve
       # @return [String, nil] fully qualified namespace (i.e., is
       #   absolute, but will not start with ::)
       def resolve(name, *gates)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         return store.get_path_pins(name[2..]).first&.path if name.start_with?('::')
 
         flat = gates.flatten
@@ -212,7 +212,7 @@ module Solargraph
       # @return [String, nil] fully qualified namespace
       def qualify_namespace namespace, context_namespace = ''
         if namespace.start_with?('::')
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           inner_qualify(namespace[2..], '', Set.new)
         else
           inner_qualify(namespace, context_namespace, Set.new)

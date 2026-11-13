@@ -30,15 +30,15 @@ module Solargraph
                 return false unless node&.type == :casgn
                 return false if node.children[2].nil?
 
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                # @sg-ignore node.children[] relies on grammar-guaranteed arity
                 struct_node = if node.children[2].type == :block
-                                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                                # @sg-ignore node.children[] relies on grammar-guaranteed arity
                                 node.children[2].children[0]
                               else
                                 node.children[2]
                               end
 
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                # @sg-ignore node.children[] relies on grammar-guaranteed arity
                 struct_definition_node?(struct_node)
               end
             end

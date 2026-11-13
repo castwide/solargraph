@@ -269,7 +269,7 @@ module Solargraph
         end
         if pin.path == 'Class#new'
           caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1494
           if caller.defined?
             found.select! do |loc|
               # @sg-ignore Need to add nil check here
@@ -484,13 +484,13 @@ module Solargraph
     end
 
     # @return [SourceMap, Boolean]
-    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1478
     def next_map
       return false if mapped?
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       return false if src.nil?
       Logging.logger.debug "Mapping #{src.filename}"
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1478
       mutex.synchronize { source_map_hash[src.filename] = Solargraph::SourceMap.map(src) }
       source_map_hash[src.filename]
     end
@@ -498,9 +498,9 @@ module Solargraph
     # @return [self]
     def map!
       workspace.sources.each do |src|
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1478
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1478
         find_external_requires source_map_hash[src.filename]
       end
       self
@@ -530,7 +530,7 @@ module Solargraph
       new_set = source_map.requires.to_set(&:name)
       _filenames = nil
       filenames = -> { _filenames ||= workspace.filenames.to_set }
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1478
       source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
           full = File.join(base, path)
@@ -580,7 +580,7 @@ module Solargraph
     def maybe_map source
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1478
       source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
     end
 
