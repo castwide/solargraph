@@ -102,10 +102,10 @@ module Solargraph
         return [[closure], closure.closure] if chain.undefined?
         pins = []
         receiver = closure
-        last_link = chain.links.last
-        chain.links.each do |link|
+        last_index = chain.links.length - 1
+        chain.links.each_with_index do |link, index|
           pins = hitch(link, receiver)
-          break if link == last_link
+          break if index == last_index
 
           proxy = Filter.new(api_map, pins, receiver).proxy
           return [[], receiver] if proxy.typedef_typeset.undefined?
