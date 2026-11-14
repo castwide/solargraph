@@ -45,7 +45,7 @@ module Solargraph
       register :resbody,      ParserGem::NodeProcessors::ResbodyNode
       register :def,          ParserGem::NodeProcessors::DefNode
       register :defs,         ParserGem::NodeProcessors::DefsNode
-      # register :if,           ParserGem::NodeProcessors::IfNode
+      register :if,           ParserGem::NodeProcessors::IfNode
       register :send,         ParserGem::NodeProcessors::SendNode
       register :class,        ParserGem::NodeProcessors::StructDefinition::StructNode
       register :class,        ParserGem::NodeProcessors::DataDefinition::DataNode
@@ -68,11 +68,11 @@ module Solargraph
       register :or_asgn,      ParserGem::NodeProcessors::OrasgnNode
       register :op_asgn,      ParserGem::NodeProcessors::OpasgnNode
       register :sym,          ParserGem::NodeProcessors::SymNode
-      # register :until,        ParserGem::NodeProcessors::UntilNode
-      # register :when,         ParserGem::NodeProcessors::WhenNode
-      # register :while,        ParserGem::NodeProcessors::WhileNode
-      # register :and,          ParserGem::NodeProcessors::AndNode
-      # register :or,           ParserGem::NodeProcessors::OrNode
+      register :until,        ParserGem::NodeProcessors::UntilNode
+      register :when,         ParserGem::NodeProcessors::WhenNode
+      register :while,        ParserGem::NodeProcessors::WhileNode
+      register :and,          ParserGem::NodeProcessors::AndNode
+      register :or,           ParserGem::NodeProcessors::OrNode
     end
   end
 end
