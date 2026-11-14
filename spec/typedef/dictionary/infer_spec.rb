@@ -701,5 +701,36 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [2, 11]).infer
       expect(typeset).to be_undefined
     end
+
+    it 'infers Array#[] with (Integer) from overloads' do
+      code = %(
+       # @type [Array<String>]
+       arr = []
+       arr[1000]
+      )
+      typeset = dictionary_for(code, [2, 18]).infer
+      expect(typeset.to_s).to eq('String | nil')
+    end
+
+    it 'infers Array#[] with (Range) from overloads' do
+      pending 'WIP'
+      code = %(
+       # @type [Array<String>]
+       arr = []
+       arr[0..2]
+      )
+      typeset = dictionary_for(code, [2, 18]).infer
+      expect(typeset.to_s).to eq('Array[String] | nil')
+    end
+
+    it 'infers Array#[] with (Integer, Integer) from overloads' do
+      code = %(
+       # @type [Array<String>]
+       arr = []
+       arr[0, 2]
+      )
+      typeset = dictionary_for(code, [2, 18]).infer
+      expect(typeset.to_s).to eq('Array[String] | nil')
+    end
   end
 end
