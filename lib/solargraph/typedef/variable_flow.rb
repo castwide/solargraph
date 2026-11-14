@@ -52,7 +52,7 @@ module Solargraph
         matches = ->(type) { type.to_s.delete_prefix('::') == name.delete_prefix('::') }
         satisfied = negated ? !polarity : polarity
         kept = satisfied ? typeset.types.select(&matches) : typeset.types.reject(&matches)
-        result = Typeset.new(kept)
+        result = Union.new(kept)
         result.types.empty? ? typeset : result
       end
 
