@@ -692,5 +692,14 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [5, 8]).infer
       expect(typeset.to_s).to eq('Integer')
     end
+
+    it 'differentiates between local variables and methods' do
+      code = %(
+        a = 1 # => Integer
+        a.a   # => undefined (Integer#a does not exist)
+      )
+      typeset = dictionary_for(code, [2, 11]).infer
+      expect(typeset).to be_undefined
+    end
   end
 end
