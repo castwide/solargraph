@@ -732,5 +732,14 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [2, 18]).infer
       expect(typeset.to_s).to eq('Array[String] | nil')
     end
+
+    it 'resolves String#split overloads' do
+      code = %(
+        a = 'abc\ndef'.split('\n')
+        a
+      )
+      typeset = dictionary_for(code, [2, 8]).infer
+      expect(typeset.to_s).to eq('Array[String]')
+    end
   end
 end

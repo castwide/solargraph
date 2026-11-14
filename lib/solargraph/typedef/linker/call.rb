@@ -443,13 +443,15 @@ module Solargraph
         # @todo Callable#arity_matches? doesn't work with Typedef, so it's reimplemented here
         def arity_matches? signature, arguments, with_block
           argcount = arguments.length
-          parcount = signature.mandatory_positional_param_count
+          parcount = signature.parameters.count(&:arg?)
           parcount -= 1 if !signature.parameters.empty? && signature.parameters.last.block?
           return false if signature.block? && signature.block_required? && !with_block
           # @todo this and its caller should be changed so that this can
           #   look at the kwargs provided and check names against what
           #   we acccept
-          return false if argcount != parcount && !(argcount == parcount - 1 && signature.parameters.last.restarg?)
+          return true if argcount == parcount || (argcount == parcount - 1 && signature.parameters.last.restarg?)
+          parcount += signature.parameters.count(&:optarg?)
+          return false if argcount > parcount && !(argcount == parcount - 1 && signature.parameters.last.restarg?)
           true
         end
       end

@@ -106,6 +106,10 @@ module Solargraph
         decl == :restarg
       end
 
+      def optarg?
+        decl == :optarg
+      end
+
       def mandatory_positional?
         decl == :arg
       end
