@@ -10,14 +10,35 @@ module Solargraph
         include Solargraph::Parser::NodeMethods
 
         def resolve
-          # @todo We shouldn't need to check for local variables here. Local variables
-          #   are always the head of the chain, so they should go to the Head link.
-          #   This change will require a change to the way chainers work, so it might
-          #   have to wait until processes outside of Typedef stop using chains.
-          local_variable || yield_call || super_call || method_call
+          flow_sensitive_pins || pins
         end
 
         private
+
+        # Narrow the type of a variable reference using the control flow of
+        # the enclosing conditions, e.g., within the +then+ branch of
+        # +if a.is_a?(String)+, a reference to +a+ is narrowed to +String+.
+        #
+        # @return [Array<Pin::Base>, nil]
+        def flow_sensitive_pins
+          return unless pins.first.is_a?(Pin::BaseVariable)
+
+          range = Range.from_node(dictionary.chain.node)
+          tree = dictionary.source_map
+                           .source
+                           .tree_at(range.start.line, range.start.column)
+                           .select { |node| %i[if while until and or].include?(node.type) }
+                           .select { |node| here = Range.from_node(node); dictionary.closure.location.range.contain?(here.start) }
+          return if tree.empty?
+
+          first_type = pins.first.typedef_typeset
+          flow_type = VariableFlow.new(link.word, range.start, pins.first.typedef_typeset, tree).reduce
+          return [Pin::ProxyType.anonymous(flow_type.to_complex_type)] if flow_type.defined? && flow_type.to_s != first_type.to_s
+        end
+
+        def pins
+          @pins ||= local_variable || yield_call || super_call || method_call
+        end
 
         def local_variable
           found = if link.head?

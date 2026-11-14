@@ -2,18 +2,19 @@
 
 module Solargraph
   module Typedef
-    autoload :Path,       'solargraph/typedef/path'
-    autoload :Token,      'solargraph/typedef/token'
-    autoload :Concrete,   'solargraph/typedef/concrete'
-    autoload :Linker,     'solargraph/typedef/linker'
-    autoload :Memoizer,   'solargraph/typedef/memoizer'
-    autoload :Dictionary, 'solargraph/typedef/dictionary'
-    autoload :Filter,     'solargraph/typedef/filter'
-    autoload :Expansions, 'solargraph/typedef/expansions'
-    autoload :Typeset,    'solargraph/typedef/typeset'
-    autoload :Union,      'solargraph/typedef/union'
-    autoload :Tuple,      'solargraph/typedef/tuple'
-    autoload :Pairing,    'solargraph/typedef/pairing'
+    autoload :Path,         'solargraph/typedef/path'
+    autoload :Token,        'solargraph/typedef/token'
+    autoload :Concrete,     'solargraph/typedef/concrete'
+    autoload :Linker,       'solargraph/typedef/linker'
+    autoload :Memoizer,     'solargraph/typedef/memoizer'
+    autoload :Dictionary,   'solargraph/typedef/dictionary'
+    autoload :Filter,       'solargraph/typedef/filter'
+    autoload :Expansions,   'solargraph/typedef/expansions'
+    autoload :Typeset,      'solargraph/typedef/typeset'
+    autoload :Union,        'solargraph/typedef/union'
+    autoload :Tuple,        'solargraph/typedef/tuple'
+    autoload :Pairing,      'solargraph/typedef/pairing'
+    autoload :VariableFlow, 'solargraph/typedef/variable_flow'
 
     # Convert a value to a Path, Token, or Type
     # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]
