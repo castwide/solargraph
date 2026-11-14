@@ -13,6 +13,7 @@ module Solargraph
     autoload :Typeset,      'solargraph/typedef/typeset'
     autoload :Tuple,        'solargraph/typedef/tuple'
     autoload :VariableFlow, 'solargraph/typedef/variable_flow'
+
     # Convert a value to a Path or Token
     # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]
     # @return [Path, Token, Type]
