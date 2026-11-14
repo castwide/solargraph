@@ -826,6 +826,20 @@ describe Solargraph::Library do
     end
 
     context 'with a pin that stands for several definitions' do
+      # The convention adds an `@origin` to Foo#show in test.rb whose definitions
+      # are assignments in other.rb, the way solargraph-rails copies a controller's
+      # ivars into its views:
+      #
+      #   # other.rb
+      #   line 3:   @origin = 'a'   (column 2)
+      #   line 9: @origin = 'b'     (column 0, listed twice to check it is deduplicated)
+      #
+      #   # test.rb
+      #   class Foo
+      #     def show
+      #       @origin   # go to definition lists other.rb:3 and other.rb:9
+      #     end
+      #   end
       let(:convention) do
         Class.new(Solargraph::Convention::Base) do
           def local source_map
