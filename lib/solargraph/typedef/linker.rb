@@ -19,7 +19,7 @@ module Solargraph
         case link
         when Solargraph::Source::Chain::Head
           Head.resolve(self, link, closure)
-        when Solargraph::Source::Chain::Call
+        when Solargraph::Source::Chain::Call, Solargraph::Source::Chain::Parameter
           Call.resolve(self, link, closure)
         when Solargraph::Source::Chain::Constant
           Constant.resolve(self, link, closure)
