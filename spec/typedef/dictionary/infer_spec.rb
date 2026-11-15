@@ -781,5 +781,16 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [10, 8]).infer
       expect(typeset.to_s).to eq('Set[Integer]')
     end
+
+    it 'detects block parameter return self from core methods' do
+      api_map = Solargraph::ApiMap.new
+      code = %(
+        String.new.tap do |str|
+          str
+        end
+      )
+      typeset = dictionary_for(code, [2, 10]).infer
+      expect(typeset.to_s).to eq('String')
+    end
   end
 end
