@@ -516,6 +516,36 @@ describe Solargraph::Typedef::Dictionary do
       expect(typeset.to_s).to eq('Array[String]')
     end
 
+    it 'resolves relative return type names declared in another namespace' do
+      code = %(
+        module A
+          class Producer
+            # @return [Thing]
+            def make_thing
+              Thing.new
+            end
+          end
+          class Thing
+            # @return [String]
+            def name
+              'x'
+            end
+          end
+        end
+        module B
+          class Consumer
+            def use
+              p = A::Producer.new.make_thing
+              p.name
+            end
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [18, 10]).infer
+      expect(typeset.to_s).to eq('String')
+    end
+
     it 'infers nil for empty methods' do
       code = %(
         def foo; end
