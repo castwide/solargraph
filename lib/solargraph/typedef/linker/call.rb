@@ -418,6 +418,9 @@ module Solargraph
           namespace = if type.class?
             # @todo Handle multiple
             type.params.first.to_s
+          # @todo Exception for tuples
+          elsif type.base.to_s == 'Tuple'
+            'Array'
           else
             type.base.to_s
           end
