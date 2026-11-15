@@ -3,7 +3,7 @@
 module Solargraph
   module Typedef
     class Token
-      RESERVED_NAMES = %w[nil undefined].freeze
+      RESERVED_NAMES = %w[nil undefined Tuple].freeze
 
       attr_reader :name, :params
 

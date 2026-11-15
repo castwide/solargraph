@@ -11,7 +11,6 @@ module Solargraph
     autoload :Filter,       'solargraph/typedef/filter'
     autoload :Expansions,   'solargraph/typedef/expansions'
     autoload :Typeset,      'solargraph/typedef/typeset'
-    autoload :Tuple,        'solargraph/typedef/tuple'
     autoload :VariableFlow, 'solargraph/typedef/variable_flow'
 
     # Convert a value to a Path or Token
@@ -21,7 +20,7 @@ module Solargraph
       case value
       when String
         convert value
-      when Path, Token, Type, Typeset, Tuple
+      when Path, Token, Type, Typeset
         value
       when Array
         Typedef::Type.new(*value)

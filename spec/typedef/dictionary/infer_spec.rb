@@ -763,5 +763,23 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [12, 12]).infer
       expect(typeset.to_s).to eq('Blah')
     end
+
+    it 'picks correct overload in Hash#each_with_object and resolves return type' do
+      pending 'WIP'
+      code = %(
+        # @param klass [Class]
+        # @param pin_class_hash [Hash{String => Class}]
+        def pins_by_class klass, pin_class_hash
+          # @type [Set<Integer>]
+          s = Set.new
+          pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
+        end
+
+        out = pins_by_class Symbol, {}
+        out
+      )
+      typeset = dictionary_for(code, [10, 8]).infer
+      expect(typeset.to_s).to eq('Set[Integer]')
+    end
   end
 end
