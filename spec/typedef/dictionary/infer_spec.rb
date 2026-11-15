@@ -741,5 +741,27 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [2, 8]).infer
       expect(typeset.to_s).to eq('Array[String]')
     end
+
+    it 'resolves overloads based on kwarg existence' do
+      pending 'Confirm syntax'
+      code = %(
+        class Blah
+          # @param *strings [Array<String>] The type definitions to parse
+          # @return [Blah]
+          # @overload parse(*strings, partial:)
+          #   @param *strings [Array<String>] The type definitions to parse
+          #   @param partial [Boolean] True if the string is part of another type
+          #   @return [Array<Blah>]
+          def self.parse *strings, partial: false; end
+
+          def foo
+            x = Blah.parse('blah')
+            x
+          end
+        end
+      )
+      typeset = dictionary_for(code, [12, 12]).infer
+      expect(typeset.to_s).to eq('Blah')
+    end
   end
 end
