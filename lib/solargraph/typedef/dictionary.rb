@@ -53,6 +53,7 @@ module Solargraph
         Typedef.memos.fetch memo_key(:define), [] do
           pins, receiver = define_from_chain
           pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
+              .map { |pin| pin.proxy(pin.typedef_typeset.resolve_rooted(api_map, pin.gates).to_complex_type) }
         end
       end
 
