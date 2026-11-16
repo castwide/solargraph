@@ -112,8 +112,6 @@ module Solargraph
           break if index == last_index
 
           proxy = Filter.new(api_map, pins, receiver).proxy
-          # @todo Unclear why this is necessary
-          proxy = proxy.proxy(proxy.typedef_typeset.resolve_rooted(api_map, receiver.gates).to_complex_type)
           return [[], receiver] if proxy.typedef_typeset.undefined?
           receiver = proxy
         end
