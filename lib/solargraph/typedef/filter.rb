@@ -114,7 +114,6 @@ module Solargraph
       # @return [Typeset]
       def expand_root pin
         pin.typedef_typeset.resolve_rooted(api_map, pin.gates)
-           .resolve_rooted(api_map, receiver&.gates || [''])
       end
     end
   end
