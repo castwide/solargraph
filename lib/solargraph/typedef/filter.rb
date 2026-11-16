@@ -18,9 +18,9 @@ module Solargraph
       def initialize api_map, pins, receiver, infer: true
         @api_map = api_map
         @pins = if receiver
-                  pins.map { |pin| pin.proxy(expand_root(pin).to_complex_type) }
-                      .map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
+                  pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
                       .map { |pin| pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type) }
+                      .map { |pin| pin.proxy(expand_root(pin).to_complex_type) }
                 else
                   pins
                 end
@@ -114,6 +114,7 @@ module Solargraph
       # @return [Typeset]
       def expand_root pin
         pin.typedef_typeset.resolve_rooted(api_map, pin.gates)
+           .resolve_rooted(api_map, receiver&.gates || [''])
       end
     end
   end

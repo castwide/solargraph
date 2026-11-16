@@ -822,5 +822,24 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [2, 10]).infer
       expect(typeset.to_s).to eq('String')
     end
+
+    it 'resolves relative namespaces in parameters' do
+      code = %(
+        module Container
+          class External
+            # @return [String]
+            def baz; end
+          end
+          class Internal
+            # @param bar [External]
+            def foo bar
+              bar.baz
+            end
+          end
+        end
+      )
+      typeset = dictionary_for(code, [9, 18]).infer
+      expect(typeset.to_s).to eq('String')
+    end
   end
 end
