@@ -246,7 +246,7 @@ module Solargraph
                                           ptype,
                                           :method_call,
                                           %i[allow_empty_params allow_undefined])
-        ptype.generic?
+        ptype.any_generic?
       end
 
       # @sg-ignore flow sensitive typing needs to handle attrs

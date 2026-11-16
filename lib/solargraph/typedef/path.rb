@@ -52,6 +52,9 @@ module Solargraph
         false
       end
 
+      # See Token#any_generic? for why this alias exists.
+      alias any_generic? generic?
+
       def extract_generics _
         {}
       end

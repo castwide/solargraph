@@ -563,4 +563,47 @@ describe Solargraph::Source::Chain do
     type = chain.infer(api_map, obj_fn_pin, api_map.source_map('test.rb').locals)
     expect(type.to_s).to eq('String')
   end
+
+  it 'moves nil to the end of a union without reordering the other members' do
+    # Nine members: an unstable reordering is undetectable below eight.
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [nil, String, Integer, Symbol, Float]
+        def baz; end
+      end
+      class Bar
+        # @return [Range, Hash, Array, Proc]
+        def baz; end
+      end
+      # @type [Foo, Bar]
+      x = nil
+      x.baz
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.to_s).to eq('String, Integer, Symbol, Float, Range, Hash, Array, Proc, nil')
+  end
+
+  it 'defines and infers nothing when a link before the last is undefined' do
+    # Host#configure lowers the shared logger level; run this branch's
+    # debug message regardless of which specs ran first
+    old_level = Solargraph::Logging.logger.level
+    Solargraph::Logging.logger.level = Logger::DEBUG
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          nope_nothing.baz
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 24))
+    expect(chain.links.map(&:word)).to eq(%w[nope_nothing baz])
+    bar_pin = api_map.get_path_pins('Foo#bar').first
+    expect(chain.define(api_map, bar_pin, [])).to be_empty
+    expect(chain.infer(api_map, bar_pin, [])).to be_undefined
+  ensure
+    Solargraph::Logging.logger.level = old_level
+  end
 end

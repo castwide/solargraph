@@ -584,6 +584,23 @@ describe Solargraph::Source::Chain::Call do
     end
   end
 
+  it 'unions the result of a call on each member of a union' do
+    source = Solargraph::Source.load_string(%(
+      require 'date'
+      # @type [Date, Numeric]
+      x = date_or_number
+      y = x + 1
+      y
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    source_map = Solargraph::SourceMap.map(source)
+    api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['date'])
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 6))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, source_map.locals)
+    expect(type.rooted_tags).to eq('::Date, ::Numeric')
+  end
+
   it 'denies calls off of nilable objects when loose union mode is off' do
     source = Solargraph::Source.load_string(%(
       # @type [String, nil]

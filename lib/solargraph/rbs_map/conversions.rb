@@ -311,7 +311,7 @@ module Solargraph
       # @param decl [RBS::AST::Declarations::Class]
       # @return [void]
       def class_decl_to_pin decl
-        # @type [Hash{String => ComplexType, ComplexType::UniqueType}]
+        # @type [Hash{String => Type}]
         generic_defaults = {}
         decl.type_params.each do |param|
           next unless param.default_type
@@ -395,7 +395,7 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @param type [ComplexType, ComplexType::UniqueType]
+      # @param type [Type]
       # @param comments [String, nil]
       # @param decl [RBS::AST::Declarations::ClassAlias,
       #   RBS::AST::Declarations::Constant,
@@ -831,9 +831,10 @@ module Solargraph
       # @return [ComplexType]
       # @param [Object] implicit_nil
       def extract_method_type_return_type type, implicit_nil
-        tag = RbsTranslator.to_complex_type(type.type.return_type, type_alias_decls: type_alias_decls)
-        return ComplexType.parse("#{tag}, nil") if tag && implicit_nil
-        tag
+        return_type = RbsTranslator.to_complex_type(type.type.return_type, type_alias_decls: type_alias_decls)
+        return ComplexType.new([return_type, ComplexType::NIL]) if return_type && implicit_nil
+
+        return_type
       end
 
       # @param type_name [RBS::TypeName]

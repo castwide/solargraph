@@ -143,7 +143,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= return_type_from_inline_rbs || ComplexType.new(signatures.map(&:return_type).flat_map(&:items))
+        @return_type ||= return_type_from_inline_rbs || ComplexType.new(signatures.map(&:return_type))
       end
 
       # @param parameters [::Array<Parameter>]
@@ -599,7 +599,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType, nil]
+      # @return [Type, nil]
       def see_reference api_map
         # This should actually be an intersection type
         # @param ref [YARD::Tags::Tag, YARD::Tags::RefTag]
@@ -635,7 +635,7 @@ module Solargraph
 
       # @param ref [String]
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType, nil]
+      # @return [Type, nil]
       def resolve_reference ref, api_map
         parts = ref.split(/[.#]/)
         if parts.first.empty? || parts.one?

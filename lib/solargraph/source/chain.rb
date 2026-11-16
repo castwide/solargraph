@@ -101,37 +101,9 @@ module Solargraph
       # @return [::Array<Pin::Base>] Pins representing possible return
       #   types of this method.
       def define api_map, name_pin, locals
-        return [] if undefined?
-
-        # working_pin is the surrounding closure pin for the link
-        # being processed, whose #binder method will provide the LHS /
-        # 'self type' of the next link (same as the  #return_type method
-        # --the type of the result so far).
-        #
-        # @todo ProxyType uses 'type' for the binder, but '
-        working_pin = name_pin
-        # @sg-ignore Need to add nil check here
-        links[0..-2].each do |link|
-          pins = link.resolve(api_map, working_pin, locals)
-          type = infer_from_definitions(pins, working_pin, api_map, locals)
-          if type.undefined?
-            logger.debug do
-              "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) => [] - undefined type from #{link.desc}"
-            end
-            return []
-          end
-          # We continue to use the context from the head pin, in case
-          # we need it to, for instance, provide context for a block
-          # evaluation.  However, we use the last link's return type
-          # for the binder, as this is chaining off of it, and the
-          # binder is now the lhs of the rhs we are evaluating.
-          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin, source: :chain)
-          logger.debug do
-            "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
-          end
-        end
-        links.last.last_context = working_pin
-        links.last.resolve(api_map, working_pin, locals)
+        pins = []
+        on_last_link(api_map, name_pin, locals) { |pin| pins = links.fetch(-1).resolve(api_map, pin, locals) }
+        pins
       end
 
       # @param api_map [ApiMap]
@@ -159,16 +131,12 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param locals [::Array<Pin::LocalVariable>]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def infer_uncached api_map, name_pin, locals
-        pins = define(api_map, name_pin, locals)
-        if pins.empty?
-          logger.debug do
-            "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}) => undefined - no pins"
-          end
-          return ComplexType::UNDEFINED
+        type = ComplexType::UNDEFINED
+        on_last_link(api_map, name_pin, locals) do |pin|
+          type = links.fetch(-1).infer_type(api_map, pin, locals, &definitions_type(api_map, locals))
         end
-        type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
         out = maybe_nil(type, api_map)
         logger.debug do
           "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}, " \
@@ -256,13 +224,67 @@ module Solargraph
 
       private
 
+      # Yields the pin to evaluate the last link with: the closure
+      # +name_pin+, with the binder replaced by the type of everything
+      # before the last link. Does not yield when that type is undefined.
+      # A nil +name_pin+ with no links before the last is yielded as is.
+      #
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base]
+      # @param locals [::Array<Pin::LocalVariable>]
+      # @yieldparam pin [Pin::Base]
+      # @return [void]
+      def on_last_link api_map, name_pin, locals
+        return if undefined?
+
+        # working_pin is the surrounding closure pin for the link
+        # being processed, whose #binder method will provide the LHS /
+        # 'self type' of the next link (same as the  #return_type method
+        # --the type of the result so far).
+        #
+        # @todo ProxyType uses 'type' for the binder, but '
+        working_pin = name_pin
+        # @sg-ignore Need to add nil check here
+        links[0..-2].each do |link|
+          type = link.infer_type(api_map, working_pin, locals, &definitions_type(api_map, locals))
+          if type.undefined?
+            logger.debug do
+              "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) => [] - undefined type from #{link.desc}"
+            end
+            return nil
+          end
+          # We continue to use the context from the head pin, in case
+          # we need it to, for instance, provide context for a block
+          # evaluation.  However, we use the last link's return type
+          # for the binder, as this is chaining off of it, and the
+          # binder is now the lhs of the rhs we are evaluating.
+          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin, source: :chain)
+          logger.debug do
+            "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
+          end
+        end
+        links.fetch(-1).last_context = working_pin
+        yield working_pin
+      end
+
+      # The block Link#infer_type takes, giving the type of a link's pins
+      #
+      # @param api_map [ApiMap]
+      # @param locals [::Array<Pin::LocalVariable>]
+      # @return [Proc]
+      def definitions_type api_map, locals
+        # @param pins [::Array<Pin::Base>]
+        # @param pin [Pin::Base]
+        proc { |pins, pin| infer_from_definitions(pins, pin, api_map, locals) }
+      end
+
       # @param pins [::Array<Pin::Base>]
       # @param name_pin [Pin::Base]
       # @param api_map [ApiMap]
       # @param locals [::Enumerable<Pin::LocalVariable>]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def infer_from_definitions pins, name_pin, api_map, locals
-        # @type [::Array<ComplexType, ComplexType::UniqueType>]
+        # @type [::Array<Type>]
         types = []
         unresolved_pins = []
         # @todo this param tag shouldn't be needed to probe the type
@@ -276,7 +298,7 @@ module Solargraph
           type = pin.typify(api_map)
           @@inference_stack.pop
           if type.defined?
-            if type.generic?
+            if type.any_generic?
               # @todo even at strong, no typechecking complaint
               #   happens when a [Pin::Base,nil] is passed into a method
               #   that accepts only [Pin::Namespace] as an argument
@@ -309,10 +331,7 @@ module Solargraph
                  ComplexType::UNDEFINED
                elsif types.length > 1
                  # Move nil to the end by convention
-
-                 # @param a [ComplexType::UniqueType]
-                 sorted = types.flat_map(&:items).sort { |a, _| a.tag == 'nil' ? 1 : 0 }
-                 ComplexType.new(sorted.uniq)
+                 ComplexType.new(types).order_nil_last
                else
                  ComplexType.new(types)
                end
@@ -323,13 +342,13 @@ module Solargraph
         type.self_to_type(name_pin.context)
       end
 
-      # @param type [ComplexType, ComplexType::UniqueType]
+      # @param type [Type]
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def maybe_nil type, api_map
         return type if type.undefined? || type.void? || type.nullable?
         return type unless nullable?(api_map)
-        ComplexType.new(type.items + [ComplexType::NIL])
+        ComplexType.new([type, ComplexType::NIL])
       end
 
       protected

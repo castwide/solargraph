@@ -50,26 +50,26 @@ module Solargraph
       source_map.source
     end
 
-    # @param inferred [ComplexType, ComplexType::UniqueType]
-    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param inferred [Type]
+    # @param expected [Type]
     def return_type_conforms_to? inferred, expected
       conforms_to?(inferred, expected, :return_type)
     end
 
-    # @param inferred [ComplexType, ComplexType::UniqueType]
-    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param inferred [Type]
+    # @param expected [Type]
     def arg_conforms_to? inferred, expected
       conforms_to?(inferred, expected, :method_call)
     end
 
-    # @param inferred [ComplexType, ComplexType::UniqueType]
-    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param inferred [Type]
+    # @param expected [Type]
     def assignment_conforms_to? inferred, expected
       conforms_to?(inferred, expected, :assignment)
     end
 
-    # @param inferred [ComplexType, ComplexType::UniqueType]
-    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param inferred [Type]
+    # @param expected [Type]
     # @param scenario [Symbol]
     def conforms_to? inferred, expected, scenario
       rules_arr = []
@@ -260,7 +260,6 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         if pin.return_type.defined?
           declared = pin.typify(api_map)
-          next if declared.duck_type?
           if declared.defined? && pin.assignment
             if rules.validate_tags?
               inferred = pin.probe(api_map)
@@ -360,10 +359,11 @@ module Solargraph
             base = base.base
           end
           all_closest = all_found.map { |pin| pin.typify(api_map) }
-          closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
+          closest = ComplexType.new(all_closest)
           # @todo remove the internal_or_core? check at a higher-than-strict level
-          if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.generic? || ignored_pins.include?(found))
-            if closest.defined?
+          if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.any_generic? || ignored_pins.include?(found))
+            # An empty union is defined but names no receiver to report.
+            if closest.defined? && all_closest.any?
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
             else
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
@@ -536,7 +536,7 @@ module Solargraph
         if data.nil?
           # @todo Some level (strong, I guess) should require the param here
         else
-          # @type [ComplexType, ComplexType::UniqueType]
+          # @type [Type]
           ptype = data[:qualified]
           ptype = ptype.self_to_type(pin.context)
           unless ptype.undefined?
@@ -717,7 +717,7 @@ module Solargraph
           base = base.base
         end
         all_closest = all_found.map { |pin| pin.typify(api_map) }
-        closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
+        closest = ComplexType.new(all_closest)
         return false if !found || closest.defined? || internal?(found)
       end
       true

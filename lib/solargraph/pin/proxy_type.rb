@@ -5,7 +5,7 @@ module Solargraph
     class ProxyType < Base
       attr_reader :generics
 
-      # @param return_type [ComplexType, ComplexType::UniqueType]
+      # @param return_type [Type]
       # @param gates [Array<String>, nil] Namespaces to try while resolving non-rooted types
       # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @param gates [Array<String>, nil]

@@ -67,7 +67,7 @@ module Solargraph
       # @return [ComplexType]
       def infer
         result = cursor.chain.infer(api_map, closure, locals)
-        if result.tag == 'Class'
+        if result.tags == 'Class'
           # HACK: Exception to return BasicObject from Class#new
           dfn = cursor.chain.define(api_map, closure, locals).first
           return ComplexType.try_parse('::BasicObject') if dfn && dfn.path == 'Class#new'
@@ -218,7 +218,9 @@ module Solargraph
           end
         else
           type = cursor.chain.base.infer(api_map, closure, locals)
-          result.concat api_map.get_complex_type_methods(type, closure.binder.namespace, cursor.chain.links.length == 1)
+          result.concat(type.reachable_methods(api_map).select do |pin|
+            api_map.callable_from?(pin, closure.binder.namespace, self_receiver: self_receiver?)
+          end)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
               return package_completions(api_map.get_class_variable_pins(context_pin.full_context.namespace))
@@ -238,6 +240,19 @@ module Solargraph
           end
         end
         package_completions(result)
+      end
+
+      # Whether the method being completed is called on self, implicitly
+      # (`foo`) or explicitly (`self.foo`), which is where Ruby allows
+      # private methods.
+      #
+      # @return [Boolean]
+      def self_receiver?
+        links = cursor.chain.links
+        return true if links.length == 1
+
+        receiver = links.first
+        links.length == 2 && receiver.is_a?(Source::Chain::Head) && receiver.word == 'self'
       end
 
       # @return [Array<Pin::Base>]

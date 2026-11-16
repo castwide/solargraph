@@ -15,4 +15,9 @@ describe Solargraph::Typedef::Token do
     token = described_class.new('nil')
     expect(token).to be_resolved
   end
+
+  it 'treats generic placeholders as rooted' do
+    token = described_class.new('generic<T>')
+    expect(token).to be_rooted
+  end
 end

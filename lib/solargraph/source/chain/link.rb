@@ -33,6 +33,24 @@ module Solargraph
           []
         end
 
+        # The type this link evaluates to. Yields the pins it resolves to
+        # with the pin whose binder is +self+ in them; the block gives
+        # their type.
+        #
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @param locals [::Array<Pin::Base>]
+        # @yieldparam pins [::Array<Pin::Base>]
+        # @yieldparam name_pin [Pin::Base]
+        # @yieldreturn [Type]
+        # @return [Type]
+        def infer_type api_map, name_pin, locals
+          pins = resolve(api_map, name_pin, locals)
+          return ComplexType::UNDEFINED if pins.empty?
+
+          yield pins, name_pin
+        end
+
         def to_s
           desc
         end
