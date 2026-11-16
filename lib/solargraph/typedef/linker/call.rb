@@ -407,11 +407,6 @@ module Solargraph
                             .compact
         end
 
-        def private_kernel_methods type
-          return [] unless link.head?
-          api_map.get_methods('Kernel', scope: :instance, visibility: [:private])
-        end
-
         # @param pin [Pin::Base]
         # @param type [Typedef::Type]
         def get_methods type
