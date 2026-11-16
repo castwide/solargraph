@@ -120,7 +120,7 @@ module Solargraph
       end
 
       # @param action [Symbol]
-      # @return [Key]
+      # @return [Memoizer::Key]
       def memo_key action
         Memoizer::Key.new(filename: source_map.filename, api_map: api_map, chain: chain, closure: closure, action: action)
       end
