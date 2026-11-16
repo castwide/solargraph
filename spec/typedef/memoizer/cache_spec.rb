@@ -2,9 +2,9 @@
 
 describe Solargraph::Typedef::Memoizer::Cache do
   # rubocop:disable RSpec/IndexedLet
-  let(:key) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example1.rb', api_map: nil, chain: nil, action: :example, closure: nil) }
-  let(:key2) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example2.rb', api_map: nil, chain: nil, action: :example, closure: nil) }
-  let(:key3) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example3.rb', api_map: nil, chain: nil, action: :example, closure: nil) }
+  let(:key) { Solargraph::Typedef::Memoizer::Key.new(nil, 'example1.rb', { chain: nil, action: :example, closure: nil }) }
+  let(:key2) { Solargraph::Typedef::Memoizer::Key.new(nil, 'example2.rb', { chain: nil, action: :example, closure: nil }) }
+  let(:key3) { Solargraph::Typedef::Memoizer::Key.new(nil, 'example3.rb', { chain: nil, action: :example, closure: nil }) }
   # rubocop:enable RSpec/IndexedLet
   let(:memos) { described_class.new }
 
@@ -37,6 +37,11 @@ describe Solargraph::Typedef::Memoizer::Cache do
       memos.fetch(key, 'oops')
     end
     expect(result).to be('oops')
+  end
+
+  it 'is equal by value' do
+    key2 = key.clone
+    expect(key).to eq(key2)
   end
 
   it 'returns cache for equivalent keys' do
