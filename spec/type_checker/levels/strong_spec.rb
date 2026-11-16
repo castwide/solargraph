@@ -6,6 +6,32 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'accepts a nil argument for a parameter declared nilable' do
+      checker = type_checker(%(
+        # @param source [String, nil]
+        # @return [void]
+        def attach(source); end
+
+        attach nil
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'removes nil from a nilable hash value after a nil guard' do
+      checker = type_checker(%(
+        class Foo
+          # @param map [Hash{String => String, nil}]
+          # @return [String]
+          def bar map
+            v = map['a']
+            return '' unless v
+            v
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'requires strict return tags for attributes when nil is involved' do
       checker = type_checker(%(
         class Foo

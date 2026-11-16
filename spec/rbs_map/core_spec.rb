@@ -119,8 +119,8 @@ describe Solargraph::RbsMap::Core do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [3, 6])
-    expect(clip.infer.to_s).to eq('String')
-    expect(clip.infer.to_rbs).to eq('::String')
+    expect(clip.infer.to_s).to eq('""')
+    expect(clip.infer.to_rbs).to eq('""')
   end
 
   it 'treats literal nil as NilClass for method resolution' do
@@ -130,6 +130,6 @@ describe Solargraph::RbsMap::Core do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [2, 6])
-    expect(clip.infer.to_s).to eq('String')
+    expect(clip.infer.to_s).to eq('""')
   end
 end

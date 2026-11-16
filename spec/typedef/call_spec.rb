@@ -338,6 +338,38 @@ describe Solargraph::Typedef::Dictionary do
     expect(typeset.to_s).to eq('Class')
   end
 
+  it 'keeps declared literal return types' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [:foo]
+        def sym; end
+
+        # @return [1]
+        def int; end
+      end
+      Foo.new.sym
+      Foo.new.int
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(described_class.at(api_map, 'test.rb', [8, 14]).infer.to_s).to eq(':foo')
+    expect(described_class.at(api_map, 'test.rb', [9, 14]).infer.to_s).to eq('1')
+  end
+
+  it 'resolves methods on a declared literal receiver' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [:foo]
+        def sym; end
+      end
+      Foo.new.sym.to_proc
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    typeset = described_class.at(api_map, 'test.rb', [5, 18]).infer
+    expect(typeset.to_s).to eq('Proc')
+  end
+
   it 'detects flow-sensitive locations' do
     source = Solargraph::Source.load_string(%(
       # @type [String, Integer]
