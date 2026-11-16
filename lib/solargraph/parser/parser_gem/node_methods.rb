@@ -580,7 +580,7 @@ module Solargraph
                 # from above; now we need to also gather the value
                 # position nodes
                 if idx == nodes.length - 1
-                  result.concat from_value_position_statement(nodes.last,
+                  result.concat from_value_position_statement(nodes.fetch(-1),
                                                               include_explicit_returns: false)
                 end
               end
