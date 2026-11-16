@@ -32,9 +32,9 @@ module Solargraph
         @position ||= Range.from_node(chain&.node)&.ending
       end
 
-      # @return [Pin::Closure]
+      # @return [Pin::Closure, nil]
       def closure
-        @closure ||= source_map.locate_closure_pin(position.line, position.character)
+        @closure ||= position ? source_map.locate_closure_pin(position.line, position.character) : nil
       end
 
       # @return [Location]
@@ -81,7 +81,9 @@ module Solargraph
       # @param position [Position, Array(Integer, Integer), nil]
       def self.at api_map, source_map, position
         source_map = api_map.source_map(source_map) unless source_map.is_a?(SourceMap)
-        chain = Solargraph::Source::SourceChainer.chain(source_map.source, position)
+        position = Position.normalize(position)
+        tree = source_map.source.tree_at(position.line, position.column)
+        chain = Solargraph::Parser.chain(tree[0], source_map.filename, tree[1], tree)
         new(api_map, source_map, chain)
       end
 
@@ -99,7 +101,9 @@ module Solargraph
       # @param chain [Source::Chain]
       # @return [Array<Pin::Base>, Pin::Closure)]
       def define_from_chain
+        return [[], nil] if closure.nil? && chain.undefined?
         return [[closure], closure.closure] if chain.undefined?
+
         pins = []
         receiver = closure
         last_index = chain.links.length - 1
