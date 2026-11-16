@@ -167,5 +167,23 @@ describe Solargraph::Typedef::Dictionary do
       expect(pins.first.path).to eq('Example#bar')
       expect(pins.first.typedef_typeset.to_s).to eq('String')
     end
+
+    it 'resolves relative namespaces in parameters' do
+      code = %(
+        module Container
+          class External
+          end
+          class Internal
+            # @param bar [External]
+            def foo bar
+              bar
+            end
+          end
+        end
+      )
+      pins = dictionary_for(code, [7, 14]).define
+      expect(pins).to be_one
+      expect(pins.first.typedef_typeset.to_s).to eq('Container::External')
+    end
   end
 end
