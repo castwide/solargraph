@@ -13,7 +13,7 @@ module Solargraph
       # @return [SourceMap]
       attr_reader :source_map
 
-      # @return [Chain]
+      # @return [Source::Chain]
       attr_reader :chain
 
       # @param api_map [ApiMap]
@@ -99,7 +99,6 @@ module Solargraph
               .resolve_rooted(api_map, receiver.gates)
       end
 
-      # @param chain [Source::Chain]
       # @return [Array<Pin::Base>, Pin::Closure)]
       def define_from_chain
         return [[], nil] if closure.nil? && chain.undefined?
