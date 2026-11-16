@@ -19,8 +19,8 @@ module Solargraph
         @api_map = api_map
         @pins = if receiver
                   pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
-                      .map { |pin| pin.proxy(expand_root(pin, receiver).to_complex_type) }
                       .map { |pin| pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type) }
+                      .map { |pin| pin.proxy(expand_root(pin).to_complex_type) }
                 else
                   pins
                 end
@@ -104,8 +104,16 @@ module Solargraph
         end
       end
 
-      def expand_root pin, receiver
-        pin.typedef_typeset.resolve_rooted(api_map, receiver&.closure&.gates || [''])
+      # Resolve the relative type names declared by a pin against the context
+      # where the pin is defined. A relative name in a tag, e.g.,
+      # +@return [Thing]+ declared inside +Foo::Bar+, refers to a constant
+      # visible from the declaration, +Foo::Bar::Thing+, even when called
+      # from a context where that constant is not visible by that name.
+      #
+      # @param pin [Pin::Base]
+      # @return [Typeset]
+      def expand_root pin
+        pin.typedef_typeset.resolve_rooted(api_map, pin.gates)
       end
     end
   end

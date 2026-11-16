@@ -12,7 +12,6 @@ module Solargraph
     autoload :Expansions,   'solargraph/typedef/expansions'
     autoload :Typeset,      'solargraph/typedef/typeset'
     autoload :Union,        'solargraph/typedef/union'
-    autoload :Tuple,        'solargraph/typedef/tuple'
     autoload :Pairing,      'solargraph/typedef/pairing'
     autoload :VariableFlow, 'solargraph/typedef/variable_flow'
 

@@ -106,6 +106,10 @@ module Solargraph
         decl == :restarg
       end
 
+      def optarg?
+        decl == :optarg
+      end
+
       def mandatory_positional?
         decl == :arg
       end
@@ -197,6 +201,9 @@ module Solargraph
       end
 
       def typedef_typeset
+        # Proxied pins should already have their types declared
+        return super if proxied?
+
         tag = param_tag
         return super unless tag
 

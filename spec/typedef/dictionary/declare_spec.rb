@@ -376,6 +376,15 @@ describe Solargraph::Typedef::Dictionary do
         typeset = dictionary_for(code, [5, 16]).declare
         expect(typeset.to_s).to eq('undefined')
       end
+
+      it 'resolves tuples' do
+        code = %(
+          # @type [Array(String, Integer)]
+          x = tuple
+        )
+        typeset = dictionary_for(code, [2, 10]).declare
+        expect(typeset.to_s).to eq('Tuple[String, Integer]')
+      end
     end
   end
 end

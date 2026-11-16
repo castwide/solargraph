@@ -13,7 +13,7 @@ module Solargraph
       # @return [SourceMap]
       attr_reader :source_map
 
-      # @return [Chain]
+      # @return [Source::Chain]
       attr_reader :chain
 
       # @param api_map [ApiMap]
@@ -32,9 +32,9 @@ module Solargraph
         @position ||= Range.from_node(chain&.node)&.ending
       end
 
-      # @return [Pin::Closure]
+      # @return [Pin::Closure, nil]
       def closure
-        @closure ||= source_map.locate_closure_pin(position.line, position.character)
+        @closure ||= position ? source_map.locate_closure_pin(position.line, position.character) : nil
       end
 
       # @return [Location]
@@ -53,6 +53,7 @@ module Solargraph
         Typedef.memos.fetch memo_key(:define), [] do
           pins, receiver = define_from_chain
           pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
+              .map { |pin| pin.proxy(pin.typedef_typeset.resolve_rooted(api_map, pin.gates).to_complex_type) }
         end
       end
 
@@ -81,7 +82,9 @@ module Solargraph
       # @param position [Position, Array(Integer, Integer), nil]
       def self.at api_map, source_map, position
         source_map = api_map.source_map(source_map) unless source_map.is_a?(SourceMap)
-        chain = Solargraph::Source::SourceChainer.chain(source_map.source, position)
+        position = Position.normalize(position)
+        tree = source_map.source.tree_at(position.line, position.column)
+        chain = Solargraph::Parser.chain(tree[0], source_map.filename, tree[1], tree)
         new(api_map, source_map, chain)
       end
 
@@ -96,16 +99,17 @@ module Solargraph
               .resolve_rooted(api_map, receiver.gates)
       end
 
-      # @param chain [Source::Chain]
       # @return [Array<Pin::Base>, Pin::Closure)]
       def define_from_chain
+        return [[], nil] if closure.nil? && chain.undefined?
         return [[closure], closure.closure] if chain.undefined?
+
         pins = []
         receiver = closure
-        last_link = chain.links.last
-        chain.links.each do |link|
+        last_index = chain.links.length - 1
+        chain.links.each_with_index do |link, index|
           pins = hitch(link, receiver)
-          break if link == last_link
+          break if index == last_index
 
           proxy = Filter.new(api_map, pins, receiver).proxy
           return [[], receiver] if proxy.typedef_typeset.undefined?
@@ -115,9 +119,9 @@ module Solargraph
       end
 
       # @param action [Symbol]
-      # @return [Key]
+      # @return [Memoizer::Key]
       def memo_key action
-        Memoizer::Key.new(filename: source_map.filename, api_map: api_map, chain: chain, closure: closure, action: action)
+        Memoizer::Key.new(api_map, source_map.filename, { chain: chain, closure: closure, action: action })
       end
     end
   end

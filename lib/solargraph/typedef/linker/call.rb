@@ -181,7 +181,7 @@ module Solargraph
         def find_matching_signature pin, receiver
           signatures = pin.is_a?(Pin::Method) ? pin.signatures : [pin]
           signatures.each do |signature|
-            next unless signature.arity_matches?(link.arguments, link.with_block?)
+            next unless arity_matches?(signature, link.arguments, link.with_block?)
             next if !signature.block? && link.with_block?
 
             arguments = link.arguments.map do |arg|
@@ -407,17 +407,15 @@ module Solargraph
                             .compact
         end
 
-        def private_kernel_methods type
-          return [] unless link.head?
-          api_map.get_methods('Kernel', scope: :instance, visibility: [:private])
-        end
-
         # @param pin [Pin::Base]
         # @param type [Typedef::Concrete]
         def get_methods type
           namespace = if type.class?
             # @todo Handle multiple
             type.params.first.to_s
+          # @todo Exception for tuples
+          elsif type.base.to_s == 'Tuple'
+            'Array'
           else
             type.base.to_s
           end
@@ -438,6 +436,21 @@ module Solargraph
           # @todo Stop depending on complex types
           return [:public, :protected] if type.to_complex_type.to_s == dictionary.closure.context.to_s
           [:public]
+        end
+
+        # @todo Callable#arity_matches? doesn't work with Typedef, so it's reimplemented here
+        def arity_matches? signature, arguments, with_block
+          argcount = arguments.length
+          parcount = signature.parameters.count(&:arg?)
+          parcount -= 1 if !signature.parameters.empty? && signature.parameters.last.block?
+          return false if signature.block? && signature.block_required? && !with_block
+          # @todo this and its caller should be changed so that this can
+          #   look at the kwargs provided and check names against what
+          #   we acccept
+          return true if argcount == parcount || (argcount == parcount - 1 && signature.parameters.last.restarg?)
+          parcount += signature.parameters.count(&:optarg?)
+          return false if argcount > parcount && !(argcount == parcount - 1 && signature.parameters.last.restarg?)
+          true
         end
       end
     end

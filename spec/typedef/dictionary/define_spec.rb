@@ -152,5 +152,38 @@ describe Solargraph::Typedef::Dictionary do
       pins = dictionary_for(code, [5,20]).define
       expect(pins).to be_empty
     end
+
+    it 'returns local aliased method pins' do
+      code = %(
+        class Example
+          # @return [String]
+          def foo; end
+          alias bar foo
+        end
+        Example.new.bar
+      )
+      pins = dictionary_for(code, [6, 22]).define
+      expect(pins).to be_one
+      expect(pins.first.path).to eq('Example#bar')
+      expect(pins.first.typedef_typeset.to_s).to eq('String')
+    end
+
+    it 'resolves relative namespaces in parameters' do
+      code = %(
+        module Container
+          class External
+          end
+          class Internal
+            # @param bar [External]
+            def foo bar
+              bar
+            end
+          end
+        end
+      )
+      pins = dictionary_for(code, [7, 14]).define
+      expect(pins).to be_one
+      expect(pins.first.typedef_typeset.to_s).to eq('Container::External')
+    end
   end
 end

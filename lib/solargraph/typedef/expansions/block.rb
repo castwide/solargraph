@@ -35,6 +35,16 @@ module Solargraph
           pin.is_a?(Pin::BaseVariable) && !pin.assignment.nil?
         end
 
+        # Binds +self+ in a block signature's parameter types to the type of
+        # the receiver of the call that takes the block, e.g. in
+        # +String#tap { |str| ... }+ the +self+ returned by +tap+ must
+        # resolve to +String+.
+        #
+        # @return [Hash{String => Object}]
+        def self_binding
+          receiver_typeset.defined? ? { 'self' => receiver_typeset } : {}
+        end
+
         def source_map
           api_map.source_map(pin.filename)
         end
@@ -53,7 +63,7 @@ module Solargraph
             next unless pin.block
             parameter = pin.block.parameters[argument_index]
             next unless parameter&.return_type&.defined?
-            expanded = parameter.typedef_typeset.expand(signature_generic_values(pin))
+            expanded = parameter.typedef_typeset.expand(signature_generic_values(pin).merge(self_binding))
             return expanded if expanded.defined?
           end
           nil

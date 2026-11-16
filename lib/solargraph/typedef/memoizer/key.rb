@@ -6,40 +6,21 @@ module Solargraph
       # Unique identifier for memoized values in Memoizer::Cache
       #
       class Key
-        # @return [String, nil]
-        attr_reader :filename
+        include Equality
 
-        # @return [ApiMap, nil]
-        attr_reader :api_map
+        attr_reader :api_map, :filename, :detail
 
-        # @return [Chain, nil]
-        attr_reader :chain
-
-        # @return [Symbol]
-        attr_reader :action
-
-        # @return [Integer]
-        attr_reader :hash
-
-        # @return [Pin::Closure]
-        attr_reader :closure
-
-        def initialize filename:, api_map:, chain:, action:, closure:
-          @filename = filename
+        # @param api_map [ApiMap]
+        # @param filename [String, nil]
+        # @param detail [Hash]
+        def initialize api_map, filename, detail
           @api_map = api_map
-          @chain = chain
-          @action = action
-          @closure = closure
-          @hash = [filename, api_map, chain, action, closure].hash
-          freeze
+          @filename = filename
+          @detail = detail
         end
 
-        def eql? other
-          other.instance_of?(Key) &&
-            filename == other.filename &&
-            api_map == other.api_map &&
-            chain == other.chain &&
-            action == other.action
+        def equality_fields
+          [api_map, filename, detail]
         end
       end
     end

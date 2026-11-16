@@ -516,6 +516,36 @@ describe Solargraph::Typedef::Dictionary do
       expect(typeset.to_s).to eq('Array[String]')
     end
 
+    it 'resolves relative return type names declared in another namespace' do
+      code = %(
+        module A
+          class Producer
+            # @return [Thing]
+            def make_thing
+              Thing.new
+            end
+          end
+          class Thing
+            # @return [String]
+            def name
+              'x'
+            end
+          end
+        end
+        module B
+          class Consumer
+            def use
+              p = A::Producer.new.make_thing
+              p.name
+            end
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [18, 10]).infer
+      expect(typeset.to_s).to eq('String')
+    end
+
     it 'infers nil for empty methods' do
       code = %(
         def foo; end
@@ -691,6 +721,125 @@ describe Solargraph::Typedef::Dictionary do
       )
       typeset = dictionary_for(code, [5, 8]).infer
       expect(typeset.to_s).to eq('Integer')
+    end
+
+    it 'differentiates between local variables and methods' do
+      code = %(
+        a = 1 # => Integer
+        a.a   # => undefined (Integer#a does not exist)
+      )
+      typeset = dictionary_for(code, [2, 11]).infer
+      expect(typeset).to be_undefined
+    end
+
+    it 'infers Array#[] with (Integer) from overloads' do
+      code = %(
+       # @type [Array<String>]
+       arr = []
+       arr[1000]
+      )
+      typeset = dictionary_for(code, [2, 18]).infer
+      expect(typeset.to_s).to eq('String | nil')
+    end
+
+    it 'infers Array#[] with (Range) from overloads' do
+      pending 'WIP'
+      code = %(
+       # @type [Array<String>]
+       arr = []
+       arr[0..2]
+      )
+      typeset = dictionary_for(code, [2, 18]).infer
+      expect(typeset.to_s).to eq('Array[String] | nil')
+    end
+
+    it 'infers Array#[] with (Integer, Integer) from overloads' do
+      code = %(
+       # @type [Array<String>]
+       arr = []
+       arr[0, 2]
+      )
+      typeset = dictionary_for(code, [2, 18]).infer
+      expect(typeset.to_s).to eq('Array[String] | nil')
+    end
+
+    it 'resolves String#split overloads' do
+      code = %(
+        a = 'abc\ndef'.split('\n')
+        a
+      )
+      typeset = dictionary_for(code, [2, 8]).infer
+      expect(typeset.to_s).to eq('Array[String]')
+    end
+
+    it 'resolves overloads based on kwarg existence' do
+      pending 'Confirm syntax'
+      code = %(
+        class Blah
+          # @param *strings [Array<String>] The type definitions to parse
+          # @return [Blah]
+          # @overload parse(*strings, partial:)
+          #   @param *strings [Array<String>] The type definitions to parse
+          #   @param partial [Boolean] True if the string is part of another type
+          #   @return [Array<Blah>]
+          def self.parse *strings, partial: false; end
+
+          def foo
+            x = Blah.parse('blah')
+            x
+          end
+        end
+      )
+      typeset = dictionary_for(code, [12, 12]).infer
+      expect(typeset.to_s).to eq('Blah')
+    end
+
+    it 'picks correct overload in Hash#each_with_object and resolves return type' do
+      pending 'WIP'
+      code = %(
+        # @param klass [Class]
+        # @param pin_class_hash [Hash{String => Class}]
+        def pins_by_class klass, pin_class_hash
+          # @type [Set<Integer>]
+          s = Set.new
+          pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
+        end
+
+        out = pins_by_class Symbol, {}
+        out
+      )
+      typeset = dictionary_for(code, [10, 8]).infer
+      expect(typeset.to_s).to eq('Set[Integer]')
+    end
+
+    it 'detects block parameter return self from core methods' do
+      api_map = Solargraph::ApiMap.new
+      code = %(
+        String.new.tap do |str|
+          str
+        end
+      )
+      typeset = dictionary_for(code, [2, 10]).infer
+      expect(typeset.to_s).to eq('String')
+    end
+
+    it 'resolves relative namespaces in parameters' do
+      code = %(
+        module Container
+          class External
+            # @return [String]
+            def baz; end
+          end
+          class Internal
+            # @param bar [External]
+            def foo bar
+              bar.baz
+            end
+          end
+        end
+      )
+      typeset = dictionary_for(code, [9, 18]).infer
+      expect(typeset.to_s).to eq('String')
     end
   end
 end
