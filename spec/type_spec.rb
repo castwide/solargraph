@@ -118,12 +118,6 @@ describe Solargraph::Type do
     it_behaves_like 'a Type'
   end
 
-  describe Solargraph::Typedef::Tuple do
-    subject { described_class.new(Solargraph::Typedef.tokenize('Array'), Solargraph::Typedef.tokenize('String')) }
-
-    it_behaves_like 'a Type'
-  end
-
   describe Solargraph::Typedef::Union do
     subject { described_class.new([Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('String'))]) }
 

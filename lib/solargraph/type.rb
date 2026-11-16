@@ -2,8 +2,8 @@
 
 module Solargraph
   # Shared abstract interface for the composable kinds of type data used
-  # throughout Solargraph: a single type token (Typedef::Concrete, including
-  # its Typedef::Tuple subclass) and a collection of such tokens
+  # throughout Solargraph: a single type token (Typedef::Concrete) and a
+  # collection of such tokens
   # (Typedef::Typeset, itself abstract - Typedef::Union combines its
   # members with OR; a future Typedef::Intersection would combine them
   # with AND). A future kind at either level subclasses the right spot and

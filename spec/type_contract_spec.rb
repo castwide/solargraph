@@ -36,7 +36,7 @@ describe Solargraph::Type do
   let(:implementations) do
     [
       Solargraph::ComplexType, Solargraph::ComplexType::UniqueType,
-      Solargraph::Typedef::Concrete, Solargraph::Typedef::Tuple, Solargraph::Typedef::Union
+      Solargraph::Typedef::Concrete, Solargraph::Typedef::Union
     ]
   end
 
@@ -46,7 +46,6 @@ describe Solargraph::Type do
       Solargraph::ComplexType => typedef_protocol + delegated_to_first_member,
       Solargraph::ComplexType::UniqueType => typedef_protocol,
       Solargraph::Typedef::Concrete => not_yet_on_typedef,
-      Solargraph::Typedef::Tuple => not_yet_on_typedef,
       Solargraph::Typedef::Union => not_yet_on_typedef
     }
   end
