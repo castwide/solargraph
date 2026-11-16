@@ -44,7 +44,7 @@ module Solargraph
         result
       end
 
-      # @param result [Array(Symbol, String, Array<Integer, nil>)]
+      # @param result [Array(Symbol, String, Array(Integer, Integer))]
       # @return [void]
       def create_snippet result
         # @sg-ignore https://github.com/castwide/solargraph/pull/1463
