@@ -551,8 +551,10 @@ module Solargraph
           type_parameter_names method_type
         end
         annotations = method_annotations(decl)
-        if decl.overloading? && decl.overloads.empty?
-          # 'def name: ...' only adds its annotations to a method declared elsewhere
+        if decl.overloading? && decl.overloads.empty? && annotations.any?
+          # '%a{pure} def name: ...' only adds its annotations to a method
+          # declared elsewhere; a plain 'def name: ...', e.g. Range#to_a,
+          # still declares the method in this class
           annotation_overrides(decl, closure, annotations)
           return
         end
@@ -617,8 +619,6 @@ module Solargraph
       # @param annotations [Set<String>]
       # @return [void]
       def annotation_overrides decl, closure, annotations
-        return if annotations.empty?
-
         location = location_decl_to_pin_location(decl.location)
         paths = []
         paths.push "#{closure.path}##{decl.name}" if decl.instance?

@@ -171,6 +171,32 @@ describe Solargraph::RbsMap::Conversions do
       end
     end
 
+    context 'with a plain reopen of an inherited method' do
+      let(:rbs) do
+        <<~RBS
+          module Listy[E]
+            def to_a: () -> ::Array[E]
+          end
+
+          class Foo
+            include Listy[String]
+
+            def to_a: ...
+
+            alias entries to_a
+          end
+        RBS
+      end
+
+      it 'declares the method in the reopening class' do
+        expect(api_map.get_path_pins('Foo#to_a').length).to eq(1)
+      end
+
+      it 'resolves an alias to it' do
+        expect(api_map.get_method_stack('Foo', 'entries')).not_to be_empty
+      end
+    end
+
     context 'with RBS that annotates a core method' do
       let(:rbs) do
         <<~RBS
