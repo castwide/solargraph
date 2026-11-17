@@ -98,6 +98,7 @@ module Solargraph
         cmd = ['ruby', '-e', bundle_script]
         o, e, s = Open3.capture3(*cmd, chdir: directory)
         if s.success?
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
           @bundled_group_map = json[:groups].transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
