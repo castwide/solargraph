@@ -193,9 +193,9 @@ module Solargraph
           # @sg-ignore flow sensitive typing should support case/when
           ComplexType.new([build_type(type.name, type.args, type_alias_decls, expanding_aliases)])
         when RBS::Types::ClassSingleton
-          # e.g., singleton(String)
+          # e.g., singleton(String) is the class object, Class<String>
           # @sg-ignore flow sensitive typing should support case/when
-          ComplexType.new([build_type(type.name, [], type_alias_decls, expanding_aliases)])
+          named_type('Class', [build_type(type.name, [], type_alias_decls, expanding_aliases)])
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
           # `Bottom`` is used in contexts where nothing will ever return
           # - e.g., it could be the return type of 'exit()' or 'raise'

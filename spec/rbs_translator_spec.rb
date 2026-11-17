@@ -37,7 +37,7 @@ describe Solargraph::RbsTranslator do
       'true | false' => '::Boolean',
       '{ a: String }' => '::Hash',
       '^() -> void' => '::Proc',
-      'singleton(::String)' => '::String',
+      'singleton(::String)' => '::Class<::String>',
       '::_ToS' => '::_ToS',
       '::String & ::Comparable' => '::String, ::Comparable',
       'T' => 'generic<T>',

@@ -1604,6 +1604,32 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'accepts a subclass for an rbs singleton keyword parameter' do
+      checker = type_checker(%(
+        class Resource; end
+        class Task < Resource; end
+        class Collection
+          #: (type: singleton(Resource)) -> void
+          def initialize(type:); end
+        end
+        Collection.new(type: Task)
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'complains on an instance passed to an rbs singleton parameter' do
+      checker = type_checker(%(
+        class Resource; end
+        class Collection
+          #: (type: singleton(Resource)) -> void
+          def initialize(type:); end
+        end
+        Collection.new(type: Resource.new)
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq ['Wrong argument type for Collection.new: type expected Class<Resource>, received Resource']
+    end
+
     it 'complains on an inline rbs assertion that does not match' do
       checker = type_checker(%(
         x = 'x'.size #: String
