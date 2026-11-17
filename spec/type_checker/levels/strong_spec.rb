@@ -1404,7 +1404,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it 'ends index narrowing in a block whose parameter shadows the argument or receiver' do
+    it 'drops index narrowing only inside a block whose parameter shadows the argument or receiver' do
       checker = type_checker(%(
         class Repro
           # @param cp [Array<Array<Integer>>]
@@ -1416,6 +1416,7 @@ describe Solargraph::TypeChecker do
             [1].each do |i|
               cp[i].map { |n| n + i }
             end
+            cp[i].map { |n| n }
           end
 
           # @param cp [Array<Array<Integer>>]

@@ -9,12 +9,14 @@ module Solargraph
       # fixed by the source text
       LITERAL_ARGUMENTS = %i[int sym str true false nil].freeze
 
-      # Nodes that bind a local variable, e.g. 'i = 1', 'i += 1' or the 'i'
-      # in '|i|': each ends the narrowing of a call that takes 'i'
-      LOCAL_BINDINGS = %i[
-        lvasgn arg optarg restarg kwarg kwoptarg kwrestarg blockarg shadowarg
-        procarg0 match_var
-      ].freeze
+      # Nodes that assign a local variable, e.g. 'i = 1', 'i += 1' or the 'i'
+      # in 'in [i]': each ends the narrowing of a call that takes 'i'
+      LOCAL_BINDINGS = %i[lvasgn match_var].freeze
+
+      # Parameter nodes, e.g. the 'i' in '|i|': a block with one is a new
+      # scope, where 'list[i]' reads another 'i', but the outer 'i' is the
+      # same again after the block
+      PARAMETERS = %i[arg optarg restarg kwarg kwoptarg kwrestarg blockarg shadowarg procarg0].freeze
 
       # Nodes whose body can run again, so a write late in the body changes
       # what an earlier read in the body sees on the next pass
@@ -299,7 +301,9 @@ module Solargraph
       # Ends each presence of a call-chain pin, e.g. 'pin.location' or
       # 'location.filename', at the first write that can change what the chain
       # returns, e.g. 'pin = other' or 'pin.location = nil', or at the start
-      # of a loop or block inside the presence that contains such a write.
+      # of a loop or block inside the presence that contains such a write,
+      # and leaves out each block whose parameter shadows a variable the
+      # chain reads, e.g. 'each { |pin| ... }'.
       #
       # @param pin [Pin::BaseVariable]
       # @param presences [Array<Range>]
@@ -313,10 +317,57 @@ module Solargraph
         # @type [::Array<::Array<Position>>]
         writes = []
         collect_writes(enclosing_compound_statement_pin.node, words, writes, [])
-        presences.map do |presence|
+        # @type [::Array<Range>]
+        shadows = []
+        collect_shadows(enclosing_compound_statement_pin.node, [words.first, *argument_locals(words)], shadows)
+        presences.flat_map do |presence|
           cut = writes.filter_map { |positions| positions.find { |pos| presence.include?(pos) } }.min
-          cut ? Range.new(presence.start, cut) : presence
+          unshadowed(cut ? Range.new(presence.start, cut) : presence, shadows)
         end
+      end
+
+      # @param range [Range] a presence
+      # @param shadows [::Array<Range>] see #collect_shadows
+      # @return [::Array<Range>] the parts of `range` outside `shadows`
+      def unshadowed range, shadows
+        pieces = [range]
+        shadows.each { |shadow| pieces = pieces.flat_map { |piece| outside(piece, shadow) } }
+        pieces
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param names [::Array<String>] e.g. ['list', 'i'] for 'list[i]'
+      # @param shadows [::Array<Range>] gets each block with a parameter
+      #   named in `names`, e.g. 'each { |i| ... }'
+      # @return [void]
+      def collect_shadows node, names, shadows
+        range = Range.from_node(node)
+        shadows.push range if range && node.type == :block && parameter?(node.children[1], names)
+        node.children.each do |child|
+          collect_shadows(child, names, shadows) if child.is_a?(::Parser::AST::Node)
+        end
+      end
+
+      # @param node [Parser::AST::Node, Object] e.g. a block's '|i, (j, k)|'
+      # @param names [::Array<String>]
+      # @return [Boolean] true if `node` declares a parameter named in `names`
+      def parameter? node, names
+        return false unless node.is_a?(::Parser::AST::Node)
+        return true if PARAMETERS.include?(node.type) && names.include?(node.children[0].to_s)
+
+        node.children.any? { |child| parameter?(child, names) }
+      end
+
+      # @param range [Range] a presence
+      # @param hole [Range] a block whose parameter shadows what `range`
+      #   narrows
+      # @return [::Array<Range>] the parts of `range` before and after
+      #   `hole`, or `range` itself unless `hole` starts inside it
+      def outside range, hole
+        return [range] unless range.include?(hole.start)
+
+        before = Range.new(range.start, hole.start)
+        range.include?(hole.ending) ? [before, Range.new(hole.ending, range.ending)] : [before]
       end
 
       # @param node [Parser::AST::Node]
@@ -346,8 +397,7 @@ module Solargraph
         return false unless target.is_a?(::Parser::AST::Node)
 
         variable = target.children[0].to_s
-        # 'i += 1' or a block's '|i|' changes what 'list[i]' reads, and a
-        # block's '|list|' is another 'list'
+        # 'i = 1' or 'i += 1' changes what 'list[i]' reads
         return true if LOCAL_BINDINGS.include?(target.type) && [words.first, *argument_locals(words)].include?(variable)
 
         # an attr_reader on self reads its same-named instance variable
