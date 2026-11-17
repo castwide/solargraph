@@ -69,7 +69,7 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (372):
+      # pending code fixes (378):
       #
       # @todo 141: Need to add nil check here
       # @todo 33: pin.closure relies on closure always resolved
@@ -112,6 +112,12 @@ module Solargraph
       # @todo 1: Wrong argument type for Solargraph::LanguageServer::Host#receive: request expected Hash{String => undefined}, received Hash, nil
       # @todo 1: Wrong argument type for Solargraph::Library#contain?: filename expected String, received String, nil
       # @todo 1: Wrong argument type for Solargraph::Parser::ParserGem::NodeChainer.chain: node expected Parser::AST::Node, received Parser::AST::Node, nil
+      # @todo 1: Unresolved call to nil?
+      # @todo 1: Unresolved call to map
+      # @todo 1: Unresolved call to query_symbols
+      # @todo 1: Unresolved call to gates
+      # @todo 1: Unresolved call to best_location
+      # @todo 1: Declared return type ::Solargraph::Pin::Base, nil does not match inferred type ::Solargraph::Pin::Base, nil, ::Enumerator<undefined, undefined, ::NilClass> for Solargraph::Pin::Base#choose_pin_attr
       #
       # flow sensitive typing could handle (165):
       #
