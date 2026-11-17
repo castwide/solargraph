@@ -256,11 +256,11 @@ module Solargraph
           end
 
           # Add includes, prepends, and extends
-          [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
-            # @sg-ignore Unresolved call to nil?
+          # @type [Array<Array<Pin::Reference>>]
+          ref_lists = [get_includes(current), get_prepends(current), get_extends(current)]
+          ref_lists.each do |refs|
             next if refs.nil?
             # @param ref [String]
-            # @sg-ignore Unresolved call to map
             refs.map(&:type).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref
