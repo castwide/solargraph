@@ -1626,8 +1626,10 @@ describe Solargraph::SourceMap::Mapper do
     names = map.locals.map(&:name)
     expect(names).to include('a', 'rest', 'k', 'jj', 'alt', 'mid', 'first', 'h', 'others', 'e', 's', 'n', 'pair',
                              'u', 'mixed')
-    expect(names.count('a')).to eq(1)
-    expect(names.count('jj')).to eq(1)
+    # A narrowing of a capture shares its location
+    captures = map.locals.uniq(&:location).map(&:name)
+    expect(captures.count('a')).to eq(1)
+    expect(captures.count('jj')).to eq(1)
   end
 
   it 'keeps pattern match captures present until the end of the closure' do

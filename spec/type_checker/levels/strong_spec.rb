@@ -67,7 +67,7 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message))
-        .to eq(['Wrong argument type for Foo#takes_int: i expected Integer, received String, Integer, nil'])
+        .to eq(['Wrong argument type for Foo#takes_int: i expected Integer, received String, Integer'])
     end
 
     it 'does not narrow a case/in subject to an inherited value constant' do

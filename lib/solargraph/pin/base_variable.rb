@@ -382,6 +382,12 @@ module Solargraph
       # @return [Range]
       attr_writer :presence
 
+      # @return [ComplexType] the declared type, without the
+      #   intersection #return_type falls back to
+      def declared_return_type
+        generate_complex_type || @return_type || ComplexType::UNDEFINED
+      end
+
       private
 
       # @param api_map [ApiMap]
@@ -449,7 +455,7 @@ module Solargraph
       # @param other [self]
       # @return [ComplexType, nil]
       def combine_return_type other
-        combine_types(other, :return_type)
+        combine_types(other, :declared_return_type)
       end
 
       # @param other [self]

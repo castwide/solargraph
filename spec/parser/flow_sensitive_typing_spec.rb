@@ -1069,7 +1069,7 @@ end
     let(:api_map) { Solargraph::ApiMap.new.map(source) }
 
     it 'types a const capture' do
-      expect(api_map.clip_at('test.rb', [7, 4]).infer.to_s).to eq('Foo, nil')
+      expect(api_map.clip_at('test.rb', [7, 4]).infer.to_s).to eq('Foo')
     end
 
     it 'narrows the subject in the matching clause' do
@@ -1128,7 +1128,7 @@ end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     expect(api_map.clip_at('test.rb', [8, 12]).infer.to_s).to eq('String, Integer')
-    expect(api_map.clip_at('test.rb', [9, 12]).infer.to_s).to eq('String, Integer, nil')
+    expect(api_map.clip_at('test.rb', [9, 12]).infer.to_s).to eq('String, Integer')
   end
 
   it 'narrows captures of an `in` match to non-nil in its true branch' do
@@ -1147,6 +1147,26 @@ end
     expect(api_map.clip_at('test.rb', [4, 10]).infer.to_s).to eq('String')
     expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('Integer')
     expect(api_map.clip_at('test.rb', [8, 8]).infer.to_s).to eq('String, nil')
+  end
+
+  it 'narrows case/in captures to non-nil in their clause' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Array<String>, Integer]
+      def m(x)
+        case x
+        in [String => a]
+          a
+        in Integer => i if i.positive?
+          i
+        end
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [6, 27]).infer.to_s).to eq('Integer')
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Integer')
+    expect(api_map.clip_at('test.rb', [9, 8]).infer.to_s).to eq('String, nil')
   end
 
   it 'lets a reassignment in the true branch replace a narrowed `in` capture' do
@@ -1195,7 +1215,7 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String, Integer, nil')
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String, Integer')
     expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String, Integer')
     expect(api_map.clip_at('test.rb', [8, 10]).infer.to_s).to eq('String, Integer, Symbol')
   end
@@ -1218,8 +1238,6 @@ end
   end
 
   it 'types array-index captures in a case clause' do
-    pending 'Captures read by index or rest stay non-nil when the match can fail: BaseVariable cannot add nil to a mass assignment'
-
     source = Solargraph::Source.load_string(%(
       # @param t [Array<String>]
       def m(t)
@@ -1231,8 +1249,8 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String, nil')
-    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String, nil')
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String')
   end
 
   it 'types tuple-index captures by position' do
@@ -1277,7 +1295,7 @@ end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    expect(api_map.clip_at('test.rb', [4, 26]).infer.to_s).to eq('String, nil')
+    expect(api_map.clip_at('test.rb', [4, 26]).infer.to_s).to eq('String')
   end
 
   it 'narrows an instance variable subject with a const_pattern' do

@@ -218,6 +218,25 @@ module Solargraph
         end
       end
 
+      # A case/in clause runs its guard and body only when its pattern
+      # matched, so a capture whose pattern cannot match nil is not nil there
+      #
+      # @param in_pattern [Parser::AST::Node] (in_pattern PATTERN GUARD BODY)
+      # @param vars [Array<Parser::AST::Node>] match_var nodes of those captures
+      #
+      # @return [void]
+      def process_in_captures in_pattern, vars
+        presence = in_clause_presence(in_pattern)
+        return unless presence
+
+        vars.each do |var|
+          pin = find_capture(var)
+          next unless pin
+
+          process_facts({ pin => [{ not_type: ComplexType::NIL }] }, [presence])
+        end
+      end
+
       class << self
         include Logging
       end
@@ -307,6 +326,15 @@ module Solargraph
 
           process_facts({ pin => [{ not_type: ComplexType::NIL }] }, true_presences)
         end
+      end
+
+      # @param var [Parser::AST::Node] a match_var node
+      # @return [Pin::LocalVariable, nil] the capture var declares, not an
+      #   earlier one of the same name
+      def find_capture var
+        name = var.children.fetch(0).to_s
+        start = get_node_start_position(var)
+        locals.find { |pin| pin.name == name && pin.location&.range&.start == start }
       end
 
       # @param pattern [Parser::AST::Node]
@@ -533,17 +561,24 @@ module Solargraph
         return if binds_name?(pattern, pin.name)
 
         type_name = pattern_type_name(pattern)
+        presence = in_clause_presence(in_pattern)
+        return if type_name.nil? || presence.nil?
+
+        process_facts({ pin => [{ type: ComplexType.parse(type_name) }] }, [presence])
+      end
+
+      # @param in_pattern [Parser::AST::Node] (in_pattern PATTERN GUARD BODY)
+      # @return [Range, nil] the clause's guard and body, or nil if it has neither
+      def in_clause_presence in_pattern
         guard_and_body = in_pattern.children.drop(1).compact
-        return if type_name.nil? || guard_and_body.empty?
+        return if guard_and_body.empty?
 
         first_node = guard_and_body.fetch(0)
         last_node = guard_and_body.fetch(-1)
         return unless first_node.is_a?(::Parser::AST::Node) && last_node.is_a?(::Parser::AST::Node)
 
         before_loc = first_node.location.expression.adjust(begin_pos: -1)
-        presence = Range.new(Position.new(before_loc.line, before_loc.column),
-                             get_node_end_position(last_node))
-        process_facts({ pin => [{ type: ComplexType.parse(type_name) }] }, [presence])
+        Range.new(Position.new(before_loc.line, before_loc.column), get_node_end_position(last_node))
       end
 
       # @param pattern [Parser::AST::Node]

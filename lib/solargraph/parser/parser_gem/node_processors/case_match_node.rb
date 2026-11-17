@@ -17,10 +17,11 @@ module Solargraph
 
           # @return [void]
           def process
-            FlowSensitiveTyping.new(locals,
-                                    ivars,
-                                    enclosing_breakable_pin,
-                                    enclosing_compound_statement_pin).process_case_match(node)
+            flow_sensitive_typing = FlowSensitiveTyping.new(locals,
+                                                            ivars,
+                                                            enclosing_breakable_pin,
+                                                            enclosing_compound_statement_pin)
+            flow_sensitive_typing.process_case_match(node)
             subject = node.children.fetch(0)
             return unless subject.is_a?(::Parser::AST::Node)
 
@@ -42,7 +43,9 @@ module Solargraph
 
               pattern, guard, body = clause.children
               # Captures first, so a guard reading one resolves it
+              @non_nil_captures = []
               add_captures(pattern, subject) if pattern.is_a?(::Parser::AST::Node)
+              flow_sensitive_typing.process_in_captures(clause, @non_nil_captures)
               NodeProcessor.process(guard, region, pins, locals, ivars) if guard.is_a?(::Parser::AST::Node)
               process_body(body) if body.is_a?(::Parser::AST::Node)
             end
@@ -107,6 +110,8 @@ module Solargraph
               add_capture(var, return_type: ComplexType::UNDEFINED,
                                intersection_return_type: ComplexType.parse(type_name))
             end
+            # Only a failed match leaves var nil, so its clause can drop the nil
+            @non_nil_captures&.push(var) unless type_name.nil? || ComplexType.parse(type_name).nullable?
             add_captures(inner, subject)
           end
 
