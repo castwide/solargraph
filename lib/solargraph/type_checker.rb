@@ -286,7 +286,7 @@ module Solargraph
           end
         elsif pin.assignment
           inferred = pin.probe(api_map)
-          ignored_pins.push pin if inferred.undefined? && declared_externally?(pin)
+          ignored_pins.push pin if inferred.undefined? && !rules.require_untyped_gem_results_support_call? && declared_externally?(pin)
         end
       end
       result
