@@ -572,6 +572,7 @@ module Solargraph
             generics: generics,
             visibility: visibility,
             annotations: annotations,
+            overloading: decl.overloading?,
             source: :rbs
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
@@ -595,6 +596,7 @@ module Solargraph
           signatures: [],
           generics: generics,
           annotations: annotations,
+          overloading: decl.overloading?,
           source: :rbs
         )
         pin.signatures.concat method_def_to_sigs(decl, pin)
