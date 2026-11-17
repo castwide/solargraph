@@ -247,6 +247,9 @@ module Solargraph
       found = Gem::Specification.find_by_name(name)
       Solargraph.logger.warn "Repo could not find #{name} #{version} in current environment, defaulting to #{name} #{found.version}"
       found
+    rescue Gem::MissingSpecError => _e
+      Solargraph.logger.warn "Repo could not find any version of #{name} in current environment"
+      nil
     end
 
     # Find a gemspec file in a gem home, accounting for platform-specific
