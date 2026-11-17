@@ -313,7 +313,6 @@ module Solargraph
             lines = []
             param_tags.each do |p|
               l = "* #{p.name}"
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1258
               l += " [#{escape_brackets(p.types.join(', '))}]" unless p.types.nil? || p.types.empty?
               l += " #{p.text}"
               lines.push l
@@ -327,7 +326,6 @@ module Solargraph
             lines = []
             yieldparam_tags.each do |p|
               l = "* #{p.name}"
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1258
               l += " [#{escape_brackets(p.types.join(', '))}]" unless p.types.nil? || p.types.empty?
               l += " #{p.text}"
               lines.push l
@@ -341,7 +339,6 @@ module Solargraph
             lines = []
             yieldreturn_tags.each do |r|
               l = '*'
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1258
               l += " [#{escape_brackets(r.types.join(', '))}]" unless r.types.nil? || r.types.empty?
               l += " #{r.text}"
               lines.push l
@@ -355,7 +352,6 @@ module Solargraph
             lines = []
             return_tags.each do |r|
               l = '*'
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1258
               l += " [#{escape_brackets(r.types.join(', '))}]" unless r.types.nil? || r.types.empty?
               l += " #{r.text}"
               lines.push l
@@ -733,7 +729,6 @@ module Solargraph
         return if example_tags.empty?
         @documentation += "\n\nExamples:\n\n```ruby\n"
         @documentation += example_tags.map do |tag|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           (tag.name && !tag.name.empty? ? "# #{tag.name}\n" : '') +
             "#{tag.text}\n"
         end
