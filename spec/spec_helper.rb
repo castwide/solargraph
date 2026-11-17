@@ -28,6 +28,14 @@ RSpec.configure do |c|
   c.example_status_persistence_file_path = 'rspec-examples.txt'
 end
 require 'solargraph'
+
+['external_bundled_gem', 'external_gemspec'].each do |dir|
+  Solargraph.with_clean_env do
+    fixture = File.join('spec', 'fixtures', dir)
+    Dir.chdir(fixture) { `bundle install --prefer-local` }
+  end
+end
+
 # execute any logging blocks to make sure they don't blow up
 Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
 # ...but still suppress logger output in specs (if possible)
@@ -51,21 +59,6 @@ end
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = 'tmp/rspec_status.txt'
-
-  config.before(:suite) do
-    ['external_bundled_gem', 'external_gemspec'].each do |dir|
-      Solargraph.with_clean_env do
-        fixture = File.join('spec', 'fixtures', dir)
-        Dir.chdir(fixture) { %w[bundle install --prefer-local] }
-      end
-    end
-  end
-
-  config.after(:suite) do
-    ['external_bundled_gem', 'external_gemspec'].each do |dir|
-      FileUtils.rm_rf File.join('spec', 'fixtures', dir, 'Gemfile.lock')
-    end
-  end
 end
 
 def capture_stdout &block
