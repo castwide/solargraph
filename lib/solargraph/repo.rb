@@ -259,6 +259,7 @@ module Solargraph
       Solargraph.logger.warn "Repo could not find #{name} #{version} in current environment, defaulting to #{name} #{found.version}"
       [found.full_gem_path, found.spec_file]
     rescue Gem::MissingSpecError => _e
+      Solargraph.logger.warn "Repo could not find any version of #{name} in current environment"
       nil
     end
 
