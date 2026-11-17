@@ -6,7 +6,10 @@ module Solargraph
       # @param metagem [Metagem]
       def initialize metagem
         super()
-        loader.add path: Pathname.new(metagem.full_path)
+        # Gems ship their signatures in sig/, the directory RBS itself
+        # loads; other .rbs files (e.g., the rbs gem's core/) are not the
+        # gem's own API
+        loader.add path: Pathname.new(metagem.full_path).join('sig')
       end
     end
   end

@@ -41,4 +41,19 @@ describe Solargraph::RbsMap::Gem do
     root_pin = root_pins.first
     expect(root_pin.return_type.to_s).to eq('RBS::Namespace, nil')
   end
+
+  it 'ignores signatures outside the sig directory' do
+    # The rbs gem ships Ruby core signatures in core/, which must not
+    # shadow the core pins Solargraph maps itself
+    expect(gem.path_pins('Hash#[]')).to be_empty
+  end
+
+  it 'does not shadow core fills with the rbs gem core signatures' do
+    # CoreFills overrides Class#allocate to return self; the rbs gem
+    # copy in core/ returns untyped and would win the method stack
+    api_map = Solargraph::ApiMap.new(pins: gem.pins)
+    source = Solargraph::Source.load_string('String.allocate', 'test.rb')
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 10))
+    expect(chain.infer(api_map, Solargraph::Pin::ROOT_PIN, []).to_s).to eq('String')
+  end
 end

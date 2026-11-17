@@ -35,7 +35,9 @@ describe Solargraph::LanguageServer::Transport::Adapter do
     tester = AdapterTester.new
     Backport.run do
       tester.opening
-      Backport.prepare_interval 0.1 do
+      # Works around https://github.com/castwide/backport/pull/7
+      Thread.new do
+        sleep 0.1
         tester.host.stop
       end
     end
