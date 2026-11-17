@@ -111,10 +111,14 @@ module Solargraph
 
           match = true
           atypes = []
+          # keyword arguments arrive as a trailing hash, so only positional
+          # parameters line up with arguments by index
+          positional_params = overload.parameters.reject { |p| p.keyword? || p.kwrestarg? || p.block? }
+          restarg = positional_params.find(&:restarg?)
           arguments.each_with_index do |arg, idx|
-            param = overload.parameters[idx]
+            param = positional_params[idx] || restarg
             if param.nil?
-              match = overload.parameters.any?(&:restarg?)
+              match = arg.links.last.is_a?(Chain::Hash) && overload.parameters.any? { |p| p.keyword? || p.kwrestarg? }
               break
             end
             arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
@@ -122,6 +126,12 @@ module Solargraph
                                                     gates: name_pin.gates,
                                                     source: :chain)
             atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
+            last_link = arg.links.last
+            # @sg-ignore flow sensitive typing should handle is_a? and next
+            if !param.restarg? && last_link.is_a?(Chain::Literal) && last_link.literal_mismatch?(param.return_type)
+              match = false
+              break
+            end
             # @sg-ignore flow sensitive typing should handle is_a? and next
             unless param.compatible_arg?(atype, api_map) || param.restarg?
               match = false

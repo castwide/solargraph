@@ -20,12 +20,19 @@ module Solargraph
           super("<#{type}>")
           @node = node
 
+          # @todo We might be able to do some light inference from literals and
+          #   tuples as long as literal values are intransitive.
+
           if node.is_a?(::Parser::AST::Node)
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             if node.type == :true
               @value = true
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             elsif node.type == :false
               @value = false
-            elsif %i[int sym].include?(node.type)
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+            elsif %i[int sym str].include?(node.type)
+              # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
               @value = node.children.first
             end
           end
@@ -39,6 +46,19 @@ module Solargraph
         protected def equality_fields
           # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           super + [@value, @type, @literal_type, @complex_type]
+        end
+
+        # True if the declared type is made up only of literal types (e.g.
+        # `:user, :person` or `'foo'`) and none of them equals this literal's
+        # value. Always false when the value or the type is not a literal.
+        #
+        # @param type [ComplexType]
+        def literal_mismatch? type
+          return false if @value.nil? || type.undefined?
+          return false unless type.items.all? { |t| t.name != 'nil' && t.non_literal_name != t.name }
+
+          names = @value.is_a?(::String) ? [@value.inspect, "'#{@value}'"] : [@value.inspect]
+          type.items.none? { |t| names.include?(t.name) }
         end
 
         def resolve api_map, name_pin, locals
