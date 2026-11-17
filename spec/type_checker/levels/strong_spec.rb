@@ -1155,6 +1155,40 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'infers an ivar from assignments in a shorter and a longer file' do
+      base = Solargraph::Source.load_string(%(
+        class WidgetBase
+          # Clears the name.
+          def reset
+            @name = nil
+          end
+        end
+      ), 'a.rb')
+      sub = Solargraph::Source.load_string(%(
+        class Widget < WidgetBase
+          #{"\n" * 20}
+          # @return [String]
+          def name
+            @name = 'x' if @name.nil?
+            @name.to_s
+          end
+
+          # @return [void]
+          def append
+            @name += 'y'
+          end
+        end
+      ), 'widget.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.catalog(Solargraph::Bench.new(source_maps: [
+                                              Solargraph::SourceMap.map(base),
+                                              Solargraph::SourceMap.map(sub)
+                                            ]))
+      checker = described_class.new('widget.rb', api_map: api_map, level: :strong)
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'supports !@x.nil && @x.y' do
       checker = type_checker(%(
         class Bar
