@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Solargraph::Convention::StructDefinition do
+describe Solargraph::Parser::ParserGem::NodeProcessors::StructDefinition do
   describe 'parsing docs' do
     it 'supports keyword args' do
       source = Solargraph::SourceMap.load_string(%(
