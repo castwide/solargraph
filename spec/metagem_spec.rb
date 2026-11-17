@@ -58,10 +58,9 @@ describe Solargraph::Metagem do
 
     it 'uses `require_paths=` from spec file' do
       gem_path = File.join('spec', 'fixtures', 'gem-with-require-paths')
-      metagem = described_class.new(**attributes.merge({
-        full_path: gem_path,
-        spec_file: File.join(gem_path, 'gem-with-require-paths.gemspec')
-      }))
+      metagem = described_class.new(**attributes,
+                                                         full_path: gem_path,
+                                                         spec_file: File.join(gem_path, 'gem-with-require-paths.gemspec'))
       expect(metagem.require_paths).to eq(['other'])
     end
   end

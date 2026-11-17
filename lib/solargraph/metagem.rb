@@ -73,16 +73,18 @@ module Solargraph
                   dependencies: gem.runtime_dependencies.map(&:name))
     end
 
+    # @parse [String, nil]
     # @return [Array<String>]
-    def self.parse_require_paths(spec_file)
+    def self.parse_require_paths spec_file
       return ['lib'] unless spec_file && File.file?(spec_file)
 
       source = Solargraph::Source.load(spec_file)
       node = Parser::NodeMethods.call_nodes_from(source.node)
                                 .flatten
                                 .find { |node| node.children[1] == :require_paths= }
-      return ['lib'] unless node && node.children[2]&.type == :array &&
-        node.children[2].children.all? { |elem| elem.type == :str }
+      return ['lib'] unless node &&
+                            node.children[2]&.type == :array &&
+                            node.children[2].children.all? { |elem| elem.type == :str }
 
       node.children[2]
           .children
