@@ -660,6 +660,23 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean')
   end
 
+  it 'uses .nil? in a ternary whose branch returns to refine types after it' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          baz.nil? ? return : 1
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
   it 'uses .nil? in a return if() in a block to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       class Foo
