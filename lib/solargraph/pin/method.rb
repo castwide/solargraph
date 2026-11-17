@@ -10,6 +10,12 @@ module Solargraph
       # Parameter declarations for a block passed by reference.
       BLOCK_PASS_DECLS = %i[block blockarg].freeze
 
+      # Matches the prefix of an inline RBS method type, either `#: () -> T`
+      # or `# @rbs () -> T`. Other `@rbs` forms, such as `@rbs x: Integer`,
+      # are not method types.
+      INLINE_RBS_PREFIX = /\A(?:: |@rbs\s+(?=[(\[{]|\?\{|->))/
+      private_constant :INLINE_RBS_PREFIX
+
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
 
@@ -901,8 +907,8 @@ module Solargraph
       # @return [String]
       def inline_rbs
         comments.lines
-                .select { |line| line.start_with?(': ') }
-                .map { |line| line[2..].strip }
+                .grep(INLINE_RBS_PREFIX)
+                .map { |line| line.sub(INLINE_RBS_PREFIX, '').strip }
                 .join("\n")
       end
     end
