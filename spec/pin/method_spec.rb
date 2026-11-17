@@ -873,6 +873,63 @@ describe Solargraph::Pin::Method do
       expect(types).to eq(['Bar', 'Array<Bar>'])
     end
 
+    it 'sets return types from @rbs method types' do
+      source = Solargraph::Source.load_string(%(
+        # @rbs () -> String
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('String')
+    end
+
+    it 'ignores @rbs tags that are not method types' do
+      source = Solargraph::Source.load_string(%(
+        #: (Integer) -> String
+        # @rbs bar: Integer
+        def foo(bar); end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('String')
+    end
+
+    it 'sets return types from @rbs in @!method directives' do
+      source = Solargraph::Source.load_string(%(
+        class Foo
+          # @!method foo
+          #   @rbs () -> String
+        end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('Foo#foo').first
+      expect(pin.return_type.to_s).to eq('String')
+    end
+
+    it 'sets return types from @rbs in macro-expanded methods' do
+      source = Solargraph::Source.load_string(%(
+        class Foo
+          # @!macro [new] typed_method
+          #   @!method $1
+          #     @rbs () -> $2
+          # @param name [Symbol]
+          # @param type [Class]
+          # @return [void]
+          def self.typed_method(name, type); end
+
+          # @!macro typed_method
+          typed_method :foo, String
+        end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('Foo#foo').first
+      expect(pin.return_type.to_s).to eq('String')
+    end
+
     it 'rescues parsing errors' do
       source = Solargraph::Source.load_string(%[
         #: (* -> broke
