@@ -154,17 +154,18 @@ module Solargraph
     # @param spec [Bundler::LazySpecification]
     # @return [Metagem, nil]
     def installed_gem_from_lock spec
-      gemspec = find_installed_gemspec(spec.name, spec.version.to_s)
-      unless gemspec
-        Solargraph.logger.warn "Skipping #{spec.name} (#{spec.version}): not installed"
+      version = spec.version.to_s
+      location = locate_installed_gem(spec.name, version)
+      unless location
+        Solargraph.logger.warn "Skipping #{spec.name} (#{version}): not installed"
         return
       end
+      full_path, spec_file = location
       Metagem.new(name: spec.name,
-                  full_path: gemspec.full_gem_path,
-                  spec_file: gemspec.spec_file,
+                  full_path: full_path,
+                  spec_file: spec_file,
                   source: rubygems_source_string(spec.source),
-                  version: spec.version.to_s,
-                  require_paths: gemspec.require_paths,
+                  version: version,
                   dependencies: spec.dependencies.map(&:name))
     end
 
@@ -176,13 +177,11 @@ module Solargraph
       root = File.expand_path(remote.to_s, directory)
       spec_file = File.join(root, "#{spec.name}.gemspec")
       spec_file = Dir[File.join(root, '*.gemspec')].first unless File.file?(spec_file)
-      gemspec = spec_file && File.file?(spec_file) ? Gem::Specification.load(spec_file) : nil
       Metagem.new(name: spec.name,
                   full_path: root,
                   spec_file: spec_file,
                   source: "source at #{root}",
                   version: spec.version.to_s,
-                  require_paths: gemspec&.require_paths || ['lib'],
                   dependencies: spec.dependencies.map(&:name))
     end
 
@@ -197,13 +196,11 @@ module Solargraph
           spec_file = File.join(dir, "#{spec.name}.gemspec")
           spec_file = Dir[File.join(dir, '*.gemspec')].first unless File.file?(spec_file)
           next unless spec_file && File.file?(spec_file)
-          gemspec = Gem::Specification.load(spec_file)
           return Metagem.new(name: spec.name,
                              full_path: dir,
                              spec_file: spec_file,
                              source: spec.source.to_s,
                              version: spec.version.to_s,
-                             require_paths: gemspec&.require_paths || ['lib'],
                              dependencies: spec.dependencies.map(&:name))
         end
       end
@@ -211,42 +208,74 @@ module Solargraph
       nil
     end
 
-    # Locate an installed gemspec by name and version, searching both the
-    # system gems and any local bundle path configured for the directory.
+    # Locate an installed gem by name and version without loading its
+    # gemspec, searching both any local bundle path configured for the
+    # directory and the system gems.
     #
     # @param name [String]
     # @param version [String]
-    # @return [Gem::Specification, nil]
-    def find_installed_gemspec name, version
+    # @return [Array(String, String), nil] the gem directory and spec file
+    def locate_installed_gem name, version
       # Gems installed to a local bundle path take precedence, mirroring the
       # resolution performed by Bundler at runtime.
-      find_gemspec_in_homes(local_gem_home_paths, name, version) ||
-        Gem::Specification.find_all_by_name(name).find { |gs| gs.version.to_s == version } ||
-        find_gemspec_in_homes(gem_home_paths, name, version) ||
-        find_gemspec_fallback(name, version)
+      locate_gem_in_homes(local_gem_home_paths, name, version) ||
+        locate_loaded_gem(name, version) ||
+        locate_gem_in_homes(gem_home_paths, name, version) ||
+        locate_loaded_gem_fallback(name, version)
     end
 
     # @param homes [Array<String>]
     # @param name [String]
     # @param version [String]
-    # @return [Gem::Specification, nil]
-    def find_gemspec_in_homes homes, name, version
+    # @return [Array(String, String), nil]
+    def locate_gem_in_homes homes, name, version
       homes.each do |home|
         file = locate_spec_file(home, name, version)
         next unless file
-        begin
-          return Gem::Specification.load(file)
-        rescue StandardError => e
-          Solargraph.logger.warn "Failed to load gemspec #{file}: #{e}"
-        end
+        dir = gem_dir_from_spec_file(home, file, name, version)
+        return [dir, file] if dir
       end
       nil
     end
 
-    def find_gemspec_fallback name, version
+    # Find a matching gem among the specifications already loaded by
+    # RubyGems.
+    #
+    # @param name [String]
+    # @param version [String]
+    # @return [Array(String, String), nil]
+    def locate_loaded_gem name, version
+      spec = Gem::Specification.find_all_by_name(name).find { |gs| gs.version.to_s == version }
+      spec && [spec.full_gem_path, spec.spec_file]
+    end
+
+    # Fall back to any installed version of the gem.
+    #
+    # @param name [String]
+    # @param version [String]
+    # @return [Array(String, String), nil]
+    def locate_loaded_gem_fallback name, version
       found = Gem::Specification.find_by_name(name)
       Solargraph.logger.warn "Repo could not find #{name} #{version} in current environment, defaulting to #{name} #{found.version}"
-      found
+      [found.full_gem_path, found.spec_file]
+    rescue Gem::MissingSpecError => _e
+      nil
+    end
+
+    # Derive a gem's directory from the location of its spec file,
+    # accounting for platform-specific variants such as
+    # name-1.0.0-x86_64-linux.
+    #
+    # @param home [String]
+    # @param spec_file [String]
+    # @param name [String]
+    # @param version [String]
+    # @return [String, nil]
+    def gem_dir_from_spec_file home, spec_file, name, version
+      stem = File.basename(spec_file, '.gemspec')
+      dir = File.join(home, 'gems', stem)
+      return dir if File.directory?(dir)
+      Dir[File.join(home, 'gems', "#{name}-#{version}*")].find { |d| File.directory?(d) }
     end
 
     # Find a gemspec file in a gem home, accounting for platform-specific
