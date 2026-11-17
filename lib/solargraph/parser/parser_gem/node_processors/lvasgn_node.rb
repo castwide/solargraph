@@ -20,6 +20,9 @@ module Solargraph
               comments: comments_for(node),
               type_assertion: type_assertion_for(node),
               presence: presence,
+              # false inside an if/while/rescue body, which may not run
+              definite: !region.compound_statement.conditional,
+              compound_statement: region.compound_statement,
               source: :parser
             )
             process_children

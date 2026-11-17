@@ -16,6 +16,10 @@ module Solargraph
               comments: comments_for(node),
               type_assertion: type_assertion_for(node),
               assignment: node.children[1],
+              # dominates a read only within its compound statement - see
+              # Pin::InstanceVariable#definitely_visible_at?
+              definite: false,
+              compound_statement: region.compound_statement,
               source: :parser
             )
             if region.visibility == :module_function

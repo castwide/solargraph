@@ -520,4 +520,13 @@ describe Solargraph::Pin::Parameter do
       expect(clip.infer.rooted_tags).to eq('::A::B::Method')
     end
   end
+
+  it 'keeps both declared types when combining overloads of one parameter' do
+    method = Solargraph::Pin::Method.new(name: 'plus')
+    integer = described_class.new(name: 'other', closure: method,
+                                  return_type: Solargraph::ComplexType.parse('Integer'))
+    float = described_class.new(name: 'other', closure: method,
+                                return_type: Solargraph::ComplexType.parse('Float'))
+    expect(integer.combine_with(float).return_type.to_s).to eq('Integer, Float')
+  end
 end
