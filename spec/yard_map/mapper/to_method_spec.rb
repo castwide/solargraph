@@ -82,4 +82,31 @@ describe Solargraph::YardMap::Mapper::ToMethod do
     expect(param.name).to eq('')
     expect(param.full).to eq('&')
   end
+
+  context 'with a module function on Kernel whose instance copy Ruby marks private' do
+    before do
+      YARD::Registry.clear
+      YARD.parse_string(<<~RUBY)
+        module Kernel
+          def loop
+          end
+          module_function :loop
+        end
+      RUBY
+    end
+
+    let(:closure) { Solargraph::Pin::Namespace.new(name: 'Kernel') }
+
+    it 'makes the instance copy private' do
+      code_object = YARD::Registry.at('Kernel#loop')
+      pin = described_class.make(code_object, 'loop', :instance, nil, closure)
+      expect(pin.visibility).to eq(:private)
+    end
+
+    it 'leaves the singleton copy public' do
+      code_object = YARD::Registry.at('Kernel.loop')
+      pin = described_class.make(code_object, 'loop', :class, nil, closure)
+      expect(pin.visibility).to eq(:public)
+    end
+  end
 end
