@@ -110,23 +110,23 @@ module Solargraph
           # @return [String]
           # @sg-ignore https://github.com/castwide/solargraph/pull/1463
           def arg_name a
-            # @sg-ignore Unresolved call to gsub on Array, nil
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1474
             a[0].gsub(/[^a-z0-9_]/i, '')
           end
 
           # @param a [Array(String, String | nil)]
           # @return [::Symbol]
           def arg_type a
-            # @sg-ignore Unresolved call to start_with? on Array, nil
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1474
             if a[0].start_with?('**')
               :kwrestarg
-            # @sg-ignore Unresolved call to start_with? on Array, nil
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1474
             elsif a[0].start_with?('*')
               :restarg
-            # @sg-ignore Unresolved call to start_with? on Array, nil
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1474
             elsif a[0].start_with?('&')
               :blockarg
-            # @sg-ignore Unresolved call to end_with? on Array, nil
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1474
             elsif a[0].end_with?(':')
               a[1] ? :kwoptarg : :kwarg
             elsif a[1]

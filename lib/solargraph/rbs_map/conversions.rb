@@ -57,7 +57,12 @@ module Solargraph
         core_aware_environment(loader, fallback: environment).type_alias_decls.each_value do |entry|
           type_alias_decls[entry.decl.name.to_s] = entry.decl
         end
-        # @sg-ignore https://github.com/apiology/solargraph/pull/427
+        # @sg-ignore Wrong argument type for Solargraph::RbsMap::Conversions#convert_decl_to_pin: decl expected RBS::AST::Declarations::Base,
+        #   received RBS::AST::Ruby::Declarations::ClassDecl, RBS::AST::Ruby::Declarations::ModuleDecl,
+        #   RBS::AST::Ruby::Declarations::ConstantDecl, RBS::AST::Ruby::Declarations::ClassModuleAliasDecl, RBS::AST::Declarations::Class,
+        #   RBS::AST::Declarations::Module, RBS::AST::Declarations::Interface, RBS::AST::Declarations::Constant,
+        #   RBS::AST::Declarations::Global, RBS::AST::Declarations::TypeAlias, RBS::AST::Declarations::ClassAlias,
+        #   RBS::AST::Declarations::ModuleAlias
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
       rescue RBS::DuplicatedDeclarationError => e
         Solargraph.logger.warn "RBS conversion failed due to duplicate declarations: [#{e.class}] #{e.message}"
@@ -103,7 +108,7 @@ module Solargraph
         decls.any? do |name, entry|
           # @sg-ignore https://github.com/castwide/solargraph/pull/1461
           type = entry.decl.type
-          # @sg-ignore Unresolved call to is_a? on generic<D>
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1491
           next false unless type.is_a?(RBS::Types::Alias)
 
           # @sg-ignore https://github.com/castwide/solargraph/pull/1461

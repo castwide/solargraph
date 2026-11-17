@@ -69,20 +69,19 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (372):
+      # pending code fixes (367):
       #
       # @todo 141: Need to add nil check here
       # @todo 33: pin.closure relies on closure always resolved
       # @todo 30: Range.from_node result assumed always present
       # @todo 26: Translate to something flow sensitive typing understands
       # @todo 22: String/Array Range slice relies on valid bounds
-      # @todo 19: pin.location relies on location always resolved
+      # @todo 18: pin.location relies on location always resolved
       # @todo 20: Need a downcast here
       # @todo 12: MatchData relies on regex always matching
       # @todo 12: Array#[] integer index relies on fixed arity
       # @todo 11: node.children[] relies on grammar-guaranteed arity
       # @todo 7: Missing @return tag
-      # @todo 3: Unresolved call to start_with? on Array, nil
       # @todo 3: Array literals infer bare Array without element types
       # @todo 3: Array#first/#last relies on non-empty invariant
       # @todo 2: probably nil false alarm
@@ -90,8 +89,6 @@ module Solargraph
       # @todo 2: Unresolved call to links on Solargraph::Source::Chain, nil
       # @todo 1: Yielded tuples are not destructured into block params
       # @todo 1: Unresolved call to ==
-      # @todo 1: Unresolved call to gsub on Array, nil
-      # @todo 1: Unresolved call to end_with? on Array, nil
       # @todo 1: Unresolved call to []=
       # @todo 1: Unresolved constant BlankRubocopFormatter
       # @todo 1: Proc#call return type isn't inferred without generics
@@ -105,13 +102,14 @@ module Solargraph
       # @todo 1: Hash#[] relies on key always being present
       # @todo 1: Unresolved call to type; Unresolved call to children
       # @todo 1: Unresolved call to version on String
-      # @todo 1: Unresolved call to empty?
       # @todo 1: Declared return type ::String, nil does not match inferred type ::String, nil, ::Symbol, ::NilClass for Solargraph::ApiMap::Constants#resolve
       # @todo 1: Declared return type ::Solargraph::Pin::Signature, nil does not match inferred type ::Symbol, ::Solargraph::Pin::Signature, nil for Solargraph::Pin::Method#block
       # @todo 1: Solargraph::Source::Chain::Parameter#current_index return type could not be inferred
       # @todo 1: Wrong argument type for Solargraph::LanguageServer::Host#receive: request expected Hash{String => undefined}, received Hash, nil
       # @todo 1: Wrong argument type for Solargraph::Library#contain?: filename expected String, received String, nil
       # @todo 1: Wrong argument type for Solargraph::Parser::ParserGem::NodeChainer.chain: node expected Parser::AST::Node, received Parser::AST::Node, nil
+      # @todo 1: Unresolved call to []
+      # @todo 1: Wrong argument type for Solargraph::RbsMap::Conversions#convert_decl_to_pin: decl expected RBS::AST::Declarations::Base,
       #
       # flow sensitive typing could handle (165):
       #
