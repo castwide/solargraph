@@ -68,7 +68,7 @@ module Solargraph
             else
               ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
               stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-              pin = stack.first
+              pin = with_overloaded_signatures(stack)
             end
             if pin.nil?
               unresolved_type = true
@@ -91,6 +91,32 @@ module Solargraph
         end
 
         private
+
+        # An RBS `def m: (A) -> B | ...` adds overloads to the
+        # declaration of the same method that it reopens rather than
+        # replacing it, so match the call's arguments against both.
+        #
+        # @param stack [::Array<Pin::Base>]
+        # @return [Pin::Base, nil]
+        def with_overloaded_signatures stack
+          pin = stack.first
+          return pin unless pin.is_a?(Pin::Method) && pin.source == :rbs
+
+          # @type [::Array<Pin::Method>]
+          same_method = stack.select do |other|
+            other.is_a?(Pin::Method) && other.source == :rbs && other.path == pin.path
+          end
+          overloading, declared = same_method.partition(&:overloading?)
+          return pin if overloading.empty?
+
+          # The stack does not follow RBS load order, so the reopened
+          # declaration need not come after the ones reopening it
+          signatures = overloading.flat_map(&:signatures)
+          reopened = declared.first
+          signatures.concat reopened.signatures if reopened
+          # a gem's sig and its stdlib copy declare the same overloads
+          pin.with_signatures(signatures.uniq(&:to_rbs))
+        end
 
         # Checks whether a single overload signature matches the call's
         # arguments/block and, if so, resolves its return type. Threaded
