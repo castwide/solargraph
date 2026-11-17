@@ -1,0 +1,10 @@
+module Gem
+  # A name, version and platform that identify a gem
+  class NameTuple
+    attr_reader name: String
+
+    attr_reader version: Gem::Version
+
+    attr_reader platform: String
+  end
+end

@@ -1199,6 +1199,53 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
+    it 'does not type a method by an empty (see) reference' do
+      checker = type_checker(%(
+        class SeeFoo
+          # (see )
+          def bar; end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include(a_string_including('Declared return type'))
+    end
+
+    it 'accepts any return from an override of a void-inclusive ancestor return tag' do
+      checker = type_checker(%(
+        class Base
+          # @return [Boolean]
+          # @return [void]
+          def process
+            true
+          end
+        end
+
+        class Sub < Base
+          def process
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'validates an untagged override against a non-void ancestor return tag' do
+      checker = type_checker(%(
+        class Base
+          # @return [Boolean]
+          def process
+            true
+          end
+        end
+
+        class Sub < Base
+          def process
+            'done'
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message))
+        .to include('Declared return type ::Boolean does not match inferred type ::String for Sub#process')
+    end
+
     it 'resolves the operators TrueClass and FalseClass share on Boolean' do
       checker = type_checker(%(
         class Foo

@@ -77,6 +77,26 @@ describe Solargraph::Workspace::RequirePaths do
     end
   end
 
+  context 'with a gemspec file that prints only newlines' do
+    let(:dir_path) { File.realpath(Dir.mktmpdir) }
+    let(:gemspec_file) { File.join(dir_path, 'blank.gemspec') }
+
+    before do
+      File.write(gemspec_file, "puts\n:not_a_spec\n")
+      allow(Solargraph.logger).to receive(:warn).and_call_original
+    end
+
+    it 'includes the lib directory' do
+      expect(paths).to eq([File.join(dir_path, 'lib')])
+    end
+
+    it 'does not log an error reading the gemspec' do
+      paths
+
+      expect(Solargraph.logger).not_to have_received(:warn).with(/Error reading/)
+    end
+  end
+
   context 'with no gemspec file' do
     let(:dir_path) { File.realpath(Dir.mktmpdir) }
 
