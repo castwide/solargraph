@@ -15,7 +15,9 @@ module Solargraph
     def load metagem
       key = best_key(metagem)
       return [] unless key
-      mem_cache[key] ||= RbsMap::Path.pins(gem_path_map[key])
+      path = gem_path_map[key]
+      return [] unless path
+      mem_cache[key] ||= RbsMap::Path.pins(path)
     end
 
     def gem_keys
@@ -30,22 +32,25 @@ module Solargraph
     #
     # @return [Array<String>]
     def stdlib_names
-      @stdlib_names ||= raw_data[:gems].select { |gem| gem.dig(:source, :type).to_s == 'stdlib' }
-                                       .map { |gem| gem[:name].to_s }.uniq
+      @stdlib_names ||= gems.select { |gem| gem.dig(:source, :type).to_s == 'stdlib' }
+                            .map { |gem| gem[:name].to_s }.uniq
     end
 
     private
 
+    # Gems whose lockfile entry resolves to no path are left out.
+    #
+    # @return [Hash{String => String}]
     def gem_path_map
-      @gem_path_map ||= raw_data[:gems].to_h { |gem| ["#{gem[:name]}-#{gem[:version]}", gem_source_path(gem)] }
+      @gem_path_map ||= gems.to_h { |gem| ["#{gem[:name]}-#{gem[:version]}", gem_source_path(gem)] }.compact
     end
 
     # The versions available in the collection for each gem name.
     #
     # @return [Hash{String => Array<String>}]
     def versions_by_name
-      @versions_by_name ||= raw_data[:gems].group_by { |gem| gem[:name].to_s }
-                                           .transform_values { |gems| gems.map { |gem| gem[:version].to_s } }
+      @versions_by_name ||= gems.group_by { |gem| gem[:name].to_s }
+                                .transform_values { |gems| gems.map { |gem| gem[:version].to_s } }
     end
 
     def best_key metagem
@@ -103,13 +108,29 @@ module Solargraph
       @gem_rbs_collection_path ||= File.expand_path(raw_data[:path]) if raw_data[:path]
     end
 
-    # @return [Hash]
+    # @return [Array<Hash{Symbol => String, Hash{Symbol => String}}>]
+    def gems
+      gems = raw_data[:gems]
+      return gems if gems.is_a?(Array) && gems.all?(Hash)
+
+      raise TypeError, "Expected an Array of gem Hashes in #{lockfile}"
+    end
+
+    # @return [Hash{Symbol => String, Array<Hash{Symbol => String, Hash{Symbol => String}}>}]
     def raw_data
       @raw_data ||= if lockfile && File.file?(lockfile)
-                      YAML.load_file(lockfile, symbolize_names: true)
+                      load_lockfile
                     else
                       { gems: [] }
                     end
+    end
+
+    # @return [Hash{Symbol => String, Array<Hash{Symbol => String, Hash{Symbol => String}}>}]
+    def load_lockfile
+      data = YAML.load_file(lockfile, symbolize_names: true)
+      return data if data.is_a?(Hash)
+
+      raise TypeError, "Expected a Hash in #{lockfile}"
     end
 
     def mem_cache

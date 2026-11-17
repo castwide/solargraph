@@ -34,8 +34,19 @@ module Solargraph
 
       private
 
+      # @return [Array<Pin::Base>, nil]
       def file_cache_pins
-        Marshal.load(File.read(cache_file, mode: 'rb')) if File.exist?(cache_file) # rubocop:disable Security/MarshalLoad
+        return nil unless File.exist?(cache_file)
+
+        loaded = Marshal.load(File.read(cache_file, mode: 'rb')) # rubocop:disable Security/MarshalLoad
+        raise TypeError, "#{cache_file} does not contain an array of pins" unless loaded.is_a?(Array)
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        pins = loaded.grep(Pin::Base)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        raise TypeError, "#{cache_file} contains a non-pin" unless pins.length == loaded.length
+
+        pins
       end
 
       def generate_pin_caches

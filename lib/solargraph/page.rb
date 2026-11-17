@@ -71,11 +71,12 @@ module Solargraph
     # @param template [String]
     # @param layout [Boolean]
     # @param locals [Hash]
-    # @sg-ignore
     # @return [String]
     def render template, layout: true, locals: {}
-      # @type [String]
-      @render_method.call(template, layout: layout, locals: locals)
+      result = @render_method.call(template, layout: layout, locals: locals)
+      return result if result.is_a?(String)
+
+      raise TypeError, "Expected #{template} to render a String"
     end
 
     # @param directories [Array<String>]
