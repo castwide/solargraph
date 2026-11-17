@@ -122,10 +122,6 @@ module Solargraph
         report?(:require_all_unique_types_support_call, :strong)
       end
 
-      def require_gem_results_support_call?
-        report?(:require_gem_results_support_call, :alpha)
-      end
-
       def require_no_undefined_args?
         report?(:require_no_undefined_args, :alpha)
       end
