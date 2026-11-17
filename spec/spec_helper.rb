@@ -28,6 +28,14 @@ RSpec.configure do |c|
   c.example_status_persistence_file_path = 'rspec-examples.txt'
 end
 require 'solargraph'
+
+['external_bundled_gem', 'external_gemspec'].each do |dir|
+  Solargraph.with_clean_env do
+    fixture = File.join('spec', 'fixtures', dir)
+    Dir.chdir(fixture) { `bundle install --prefer-local` }
+  end
+end
+
 # execute any logging blocks to make sure they don't blow up
 Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
 # ...but still suppress logger output in specs (if possible)
