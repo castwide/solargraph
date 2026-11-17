@@ -7,6 +7,12 @@ module Solargraph
     class Method < Callable
       include Solargraph::Parser::NodeMethods
 
+      # Matches the prefix of an inline RBS method type, either `#: () -> T`
+      # or `# @rbs () -> T`. Other `@rbs` forms, such as `@rbs x: Integer`,
+      # are not method types.
+      INLINE_RBS_PREFIX = /\A(?:: |@rbs\s+(?=[(\[{]|\?\{|->))/
+      private_constant :INLINE_RBS_PREFIX
+
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
 
@@ -24,9 +30,10 @@ module Solargraph
       # @param anon_splat [Boolean]
       # @param context [ComplexType, ComplexType::UniqueType, nil]
       # @param call_site_templates [::Array<Object>, nil]
+      # @param overloading [Boolean] true for an RBS `def m: ... | ...` that adds to an earlier declaration's overloads
       # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
-                     context: nil, call_site_templates: nil, **splat
+                     context: nil, call_site_templates: nil, overloading: false, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -37,6 +44,7 @@ module Solargraph
         @anon_splat = anon_splat
         @context = context if context
         @call_site_templates = call_site_templates if call_site_templates
+        @overloading = overloading
       end
 
       # Summaries, recorded while mapping the method's body, of the methods
@@ -391,6 +399,23 @@ module Solargraph
 
       def attribute?
         @attribute
+      end
+
+      # True when this pin's signatures add to, rather than replace,
+      # those of an earlier declaration of the same method.
+      #
+      # @return [Boolean]
+      def overloading?
+        !!@overloading
+      end
+
+      # @param signatures [::Array<Signature>]
+      # @return [self]
+      def with_signatures signatures
+        m = proxy ComplexType.new(signatures.map(&:return_type).flat_map(&:items).uniq)
+        m.reset_generated!
+        m.signatures = signatures
+        m
       end
 
       # @parm other [self]
@@ -780,8 +805,8 @@ module Solargraph
       # @return [String]
       def inline_rbs
         comments.lines
-                .select { |line| line.start_with?(': ') }
-                .map { |line| line[2..].strip }
+                .grep(INLINE_RBS_PREFIX)
+                .map { |line| line.sub(INLINE_RBS_PREFIX, '').strip }
                 .join("\n")
       end
     end
