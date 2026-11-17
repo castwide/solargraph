@@ -7,6 +7,7 @@ module Solargraph
     class BaseVariable < Base
       # include Solargraph::Source::NodeMethods
       include Solargraph::Parser::NodeMethods
+      include Narrowing
 
       # @return [Array<Parser::AST::Node>]
       attr_reader :assignments
@@ -18,6 +19,11 @@ module Solargraph
 
       # @return [String, nil]
       attr_reader :type_assertion
+
+      # @return [String]
+      def subject
+        name
+      end
 
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
