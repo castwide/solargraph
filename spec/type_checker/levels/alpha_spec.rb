@@ -6,6 +6,23 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
     end
 
+    # TypeChecker.load_string builds a bare ApiMap without gem pins.
+    # Cataloging a Bench with external_requires loads just the gems
+    # named in `requires`.
+    #
+    # @param code [String]
+    # @param requires [::Array<String>]
+    # @return [Solargraph::TypeChecker]
+    def type_checker_with_gems code, requires
+      rules = Solargraph::TypeChecker::Rules.new(:alpha, {})
+      api_map = Solargraph::ApiMap.new(loose_unions: !rules.require_all_unique_types_support_call?)
+      source = Solargraph::Source.load_string(code, 'test.rb')
+      bench = Solargraph::Bench.new(source_maps: [Solargraph::SourceMap.map(source)],
+                                    external_requires: requires)
+      api_map.catalog bench
+      Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :alpha, rules: rules)
+    end
+
     it 'reports use of superclass when subclass is required' do
       checker = type_checker(%(
         class Sup; end
@@ -173,6 +190,16 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'reports calls on an undefined return value from a gem method' do
+      checker = type_checker_with_gems(%(
+        require 'kramdown-parser-gfm'
+
+        value = Kramdown::Parser::GFM.new(nil, nil).parse
+        value.no_such_method
+      ), ['kramdown-parser-gfm'])
+      expect(checker.problems.map(&:message)).to include('Unresolved call to no_such_method')
+    end
+
     it 'resolves self correctly in arguments' do
       checker = type_checker(%(
         class Foo
@@ -225,33 +252,6 @@ describe Solargraph::TypeChecker do
       ))
 
       expect(checker.problems.map(&:message)).to eq([])
-    end
-
-    # TypeChecker.load_string builds a bare ApiMap without gem pins.
-    # Cataloging a Bench with external_requires loads just the gems
-    # named in `requires`.
-    #
-    # @param code [String]
-    # @param requires [::Array<String>]
-    # @return [Solargraph::TypeChecker]
-    def type_checker_with_gems code, requires
-      rules = Solargraph::TypeChecker::Rules.new(:alpha, {})
-      api_map = Solargraph::ApiMap.new(loose_unions: !rules.require_all_unique_types_support_call?)
-      source = Solargraph::Source.load_string(code, 'test.rb')
-      bench = Solargraph::Bench.new(source_maps: [Solargraph::SourceMap.map(source)],
-                                    external_requires: requires)
-      api_map.catalog bench
-      Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :alpha, rules: rules)
-    end
-
-    it 'reports calls on an undefined return value from a gem method' do
-      checker = type_checker_with_gems(%(
-        require 'kramdown-parser-gfm'
-
-        value = Kramdown::Parser::GFM.new(nil, nil).parse
-        value.no_such_method
-      ), ['kramdown-parser-gfm'])
-      expect(checker.problems.map(&:message)).to include('Unresolved call to no_such_method')
     end
   end
 end

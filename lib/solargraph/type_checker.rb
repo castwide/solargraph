@@ -286,7 +286,7 @@ module Solargraph
           end
         elsif pin.assignment
           inferred = pin.probe(api_map)
-          ignored_pins.push pin if inferred.undefined? && !rules.require_untyped_gem_results_support_call? && declared_externally?(pin)
+          ignored_pins.push pin if inferred.undefined? && declared_externally?(pin)
         end
       end
       result
@@ -322,6 +322,9 @@ module Solargraph
     # @return [Array<Problem>]
     def call_problems
       result = []
+      # An undeclared variable is in ignored_pins only because its gem assignment
+      # is untyped; this rule reports calls on it anyway.
+      ignored_pins.select! { |pin| pin.return_type.defined? } if rules.require_untyped_gem_results_support_call?
       Solargraph::Parser::NodeMethods.call_nodes_from(source.node).each do |call|
         rng = Solargraph::Range.from_node(call)
         # @sg-ignore Need to add nil check here
