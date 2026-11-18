@@ -5,8 +5,7 @@ module Solargraph
     # A problem reported by TypeChecker.
     #
     class Problem
-      # @todo Missed nil violation
-      # @return [Solargraph::Location]
+      # @return [Solargraph::Location, nil]
       attr_reader :location
 
       # @return [String]

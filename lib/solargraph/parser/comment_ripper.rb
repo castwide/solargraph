@@ -25,8 +25,8 @@ module Solargraph
         # @sg-ignore
         # @type [Array(Symbol, String, Array([Integer, nil], [Integer, nil]))]
         result = super
-        # @sg-ignore Need to add nil check here
-        if @buffer_lines[result[2][0]][0..result[2][1]].strip =~ /^#/
+        # @sg-ignore Unresolved call to [] on Symbol, String, Array, nil
+        if @buffer_lines.fetch(result[2][0])[0..result[2][1]]&.strip =~ /^#/
           chomped = result[1].chomp
           if result[2][0].zero? && chomped.encode('UTF-8', 'binary', invalid: :replace, undef: :replace,
                                                                      replace: '').match(/^#\s*frozen_string_literal:/)

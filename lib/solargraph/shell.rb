@@ -233,9 +233,15 @@ module Solargraph
                                           workspace: workspace)
           problems = checker.problems
           next if problems.empty?
-          problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
+          problems.sort_by! do |prob|
+            location = prob.location
+            location.nil? ? 0 : location.range.start.line
+          end
           puts problems.map { |prob|
-            "#{prob.location.filename}:#{prob.location.range.start.line + 1}: #{prob.message}"
+            location = prob.location
+            next "#{file}: #{prob.message}" if location.nil?
+
+            "#{location.filename}:#{location.range.start.line + 1}: #{prob.message}"
           }.join("\n")
           filecount += 1
           probcount += problems.length

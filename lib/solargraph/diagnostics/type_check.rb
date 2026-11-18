@@ -12,11 +12,14 @@ module Solargraph
         severity = Diagnostics::Severities::ERROR
         level = args.reverse.find { |a| %w[normal typed strict strong].include?(a) } || 'normal'
         checker = Solargraph::TypeChecker.new(source.filename, api_map: api_map, level: level.to_sym)
-        checker.problems
-               .sort { |a, b| a.location.range.start.line <=> b.location.range.start.line }
-               .map do |problem|
+        sorted = checker.problems.sort_by do |problem|
+          location = problem.location
+          location.nil? ? 0 : location.range.start.line
+        end
+        sorted.map do |problem|
+          location = problem.location
           {
-            range: extract_first_line(problem.location, source),
+            range: location.nil? ? Solargraph::Range.from_to(0, 0, 0, 0).to_hash : extract_first_line(location, source),
             severity: severity,
             source: 'Typecheck',
             message: problem.message

@@ -884,14 +884,18 @@ module Solargraph
     # @return [Array<Problem>]
     def without_ignored problems
       problems.reject do |problem|
-        node = source.node_at(problem.location.range.start.line, problem.location.range.start.column)
+        location = problem.location
+        # An sg-ignore cannot point at a problem with no location
+        next false if location.nil?
+
+        node = source.node_at(location.range.start.line, location.range.start.column)
         ignored = node && source.comments_for(node)&.include?('@sg-ignore')
-        unless !ignored || all_sg_ignore_lines.include?(problem.location.range.start.line)
+        unless !ignored || all_sg_ignore_lines.include?(location.range.start.line)
           # :nocov:
           Solargraph.assert_or_log(:sg_ignore) { "@sg-ignore accounting issue - node is #{node}" }
           # :nocov:
         end
-        sg_ignore_lines_processed.add problem.location.range.start.line if ignored
+        sg_ignore_lines_processed.add location.range.start.line if ignored
         ignored
       end
     end
