@@ -112,7 +112,7 @@ describe Solargraph::RbsMap::Conversions do
       it 'adds the annotations to the one method pin and keeps its signatures' do
         pins = api_map.get_path_pins('Foo#bar')
         expect(pins.length).to eq(1)
-        expect(pins.first.annotations).to eq(Set['pure', 'example'])
+        expect(pins.first.rbs_annotations).to eq(Set['pure', 'example'])
         expect(pins.first.signatures.length).to eq(2)
       end
     end
@@ -130,7 +130,7 @@ describe Solargraph::RbsMap::Conversions do
       it 'adds the annotation to the core method and keeps its signatures' do
         pins = api_map.get_path_pins('Array#sample')
         expect(pins.length).to eq(1)
-        expect(pins.first.annotations).to include('example')
+        expect(pins.first.rbs_annotations).to include('example')
         expect(pins.first.signatures.length).to be > 1
       end
     end
