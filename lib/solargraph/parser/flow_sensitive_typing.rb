@@ -224,7 +224,7 @@ module Solargraph
         if pin.is_a?(Pin::ExpressionNarrowing)
           locals.push Pin::ExpressionNarrowing.new(steps: pin.steps, presence: presence,
                                                    exclude_return_type: downcast_not_type,
-                                                   intersection_return_type: downcast_type,
+                                                   intersection_return_types: [downcast_type].compact,
                                                    closure: pin.closure, location: pin.location,
                                                    source: :flow_sensitive_typing)
           return
