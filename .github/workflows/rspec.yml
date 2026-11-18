@@ -60,7 +60,6 @@ jobs:
     - name: Update gems
       run: |
         bundle update rbs # use latest available for this Ruby version
-    - name: Install spec fixture bundles
     - name: Update types
       run: bundle exec rbs collection update
     - name: Run tests
