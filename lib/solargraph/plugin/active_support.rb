@@ -78,10 +78,16 @@ module Solargraph
 
         kwargs = Parser::ParserGem::NodeMethods.convert_hash(args.node)
                                                .select { |_, val| val.literal? }
-                                               # @sg-ignore Chain#literal? does not narrow links.last to Chain::Literal
-                                               .transform_values { |val| val.links.last.value }
+                                               .transform_values { |val| literal_value(val) }
         return defaults unless kwargs.is_a?(Hash)
         defaults.merge(kwargs)
+      end
+
+      # @param chain [Source::Chain]
+      # @return [Object, nil]
+      def literal_value chain
+        link = chain.links.last
+        link.value if link.is_a?(Source::Chain::Literal)
       end
 
       # @param call [SourceMap::Call]
