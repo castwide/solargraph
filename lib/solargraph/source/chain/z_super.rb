@@ -18,7 +18,7 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Narrowing>]
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
         def resolve api_map, name_pin, locals
           super_pins(api_map, name_pin)
         end

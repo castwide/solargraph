@@ -42,12 +42,11 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Closure] name_pin.binder should give us the type of the object on which 'word' will be invoked
-        # @param locals [::Array<Pin::Narrowing>]
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
-          # @sg-ignore Wrong argument type for Solargraph::ApiMap#var_at_location: candidates expected Array<Solargraph::Pin::BaseVariable>, received Array<Solargraph::Pin::Narrowing>
-          found = api_map.var_at_location(locals.grep(Pin::BaseVariable), word, name_pin, location) if head?
+          found = api_map.var_at_location(Pin::Narrowing.variables(locals), word, name_pin, location) if head?
 
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
           binder = name_pin.binder
@@ -129,7 +128,7 @@ module Solargraph
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Narrowing>]
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
         # @param type [ComplexType]
         # @param new_signature_pin [Pin::Signature, nil]
         # @return [::Array(ComplexType, Pin::Signature)]
@@ -213,7 +212,7 @@ module Solargraph
         # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base] its #binder resolves `self` in the declarations of `pins`
-        # @param locals [::Array<Pin::Narrowing>]
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
         # @return [::Array<Pin::Base>]
         def inferred_pins pins, api_map, name_pin, locals
           result = pins.map do |p|
@@ -293,7 +292,7 @@ module Solargraph
         # @param pin [Pin::Base]
         # @param api_map [ApiMap]
         # @param context [ComplexType, ComplexType::UniqueType]
-        # @param locals [::Array<Pin::Narrowing>]
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
@@ -313,7 +312,7 @@ module Solargraph
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param context [ComplexType, ComplexType::UniqueType]
-        # @param locals [::Array<Pin::Narrowing>]
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
         # @return [Pin::ProxyType]
         def process_directive pin, api_map, context, locals
           pin.directives.each do |dir|
@@ -330,7 +329,7 @@ module Solargraph
         # @param macro [YARD::Tags::MacroDirective]
         # @param api_map [ApiMap]
         # @param context [ComplexType, ComplexType::UniqueType]
-        # @param locals [::Array<Pin::Narrowing>]
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
@@ -421,7 +420,7 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param context [ComplexType, ComplexType::UniqueType]
         # @param block_parameter_types [::Array<ComplexType>]
-        # @param locals [::Array<Pin::Narrowing>]
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
         # @return [ComplexType, nil]
         def block_symbol_call_type api_map, context, block_parameter_types, locals
           # Ruby's shorthand for sending the passed in method name
@@ -452,7 +451,7 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Narrowing>]
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
         # @return [ComplexType, nil]
         def block_call_type api_map, name_pin, locals
           return nil unless with_block?

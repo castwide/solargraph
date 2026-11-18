@@ -17,7 +17,7 @@ module Solargraph
       end
 
       # @sg-ignore Translate to something flow sensitive typing understands
-      # @return [Array<Solargraph::Pin::Narrowing>]
+      # @return [Array<Solargraph::Pin::Narrowing>] the file's variables and expression narrowings
       def locals
         generate
         @locals || []

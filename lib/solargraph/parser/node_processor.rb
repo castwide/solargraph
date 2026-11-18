@@ -35,7 +35,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @param region [Region]
       # @param pins [Array<Pin::Base>]
-      # @param locals [Array<Pin::Narrowing>]
+      # @param locals [Array<Pin::Narrowing>] the file's variables and expression narrowings
       # @param ivars [Array<Pin::InstanceVariable>]
       # @return [Array(Array<Pin::Base>, Array<Pin::Narrowing>, Array<Pin::InstanceVariable>)]
       def self.process node, region = Region.new, pins = [], locals = [], ivars = []

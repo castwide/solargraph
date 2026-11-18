@@ -96,8 +96,7 @@ module Solargraph
       #       in the chain, it changes.  (e.g., for 'b' in a.b.c, it
       #       should represent the type of 'a').
       #
-      # @param locals [::Array<Pin::Narrowing>] Any local
-      #   variables / method parameters etc visible by the statement
+      # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
       #
       # @return [::Array<Pin::Base>] Pins representing possible return
       #   types of this method.
@@ -140,7 +139,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base] The pin for the closure in which this code runs
-      # @param locals [::Array<Pin::Narrowing>]
+      # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
       # @return [ComplexType]
       # @sg-ignore
       def infer api_map, name_pin, locals
@@ -162,7 +161,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
-      # @param locals [::Array<Pin::Narrowing>]
+      # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
       # @return [ComplexType, ComplexType::UniqueType]
       def infer_uncached api_map, name_pin, locals
         pins = define(api_map, name_pin, locals)
@@ -268,7 +267,7 @@ module Solargraph
       # @param pins [::Array<Pin::Base>]
       # @param name_pin [Pin::Base]
       # @param api_map [ApiMap]
-      # @param locals [::Array<Pin::Narrowing>]
+      # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
       # @return [ComplexType, ComplexType::UniqueType]
       def infer_from_definitions pins, name_pin, api_map, locals
         # @type [::Array<ComplexType, ComplexType::UniqueType>]
@@ -336,7 +335,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param working_pin [Pin::Base] its binder is the receiver's type
-      # @param locals [::Array<Pin::Narrowing>]
+      # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
       # @return [Pin::ExpressionNarrowing, nil] the narrowing in `locals`
       #   that proves `link` present, if it is an 'h[k]' lookup
       def index_narrowing link, api_map, name_pin, working_pin, locals

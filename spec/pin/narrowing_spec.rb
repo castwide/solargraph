@@ -11,4 +11,18 @@ describe Solargraph::Pin::Narrowing do
     expect(variable.subject).to eq('x')
     expect(variable.presence).to be_a(Solargraph::Range)
   end
+
+  describe '.variables' do
+    it 'keeps variables and drops expression narrowings' do
+      map = Solargraph::SourceMap.load_string(%(
+        # @param h [Hash{Symbol => Integer}]
+        def foo h
+          return 0 unless h.key?(:a)
+          h[:a]
+        end
+      ), 'test.rb')
+      expect(map.locals.map(&:class)).to include(Solargraph::Pin::ExpressionNarrowing)
+      expect(described_class.variables(map.locals).map(&:name)).to eq(['h'])
+    end
+  end
 end

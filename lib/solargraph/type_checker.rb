@@ -294,7 +294,7 @@ module Solargraph
 
     # @return [Array<Pin::BaseVariable>]
     def all_variables
-      source_map.pins_by_class(Pin::BaseVariable) + source_map.locals.grep(Pin::LocalVariable)
+      source_map.pins_by_class(Pin::BaseVariable) + Pin::Narrowing.variables(source_map.locals)
     end
 
     # @return [Array<Problem>]
@@ -380,7 +380,7 @@ module Solargraph
     # @param chain [Solargraph::Source::Chain]
     # @param api_map [Solargraph::ApiMap]
     # @param closure_pin [Solargraph::Pin::Closure]
-    # @param locals [Array<Solargraph::Pin::Narrowing>]
+    # @param locals [Array<Solargraph::Pin::Narrowing>] variables and expression narrowings visible at this point
     # @param location [Solargraph::Location]
     # @return [Array<Problem>]
     def argument_problems_for chain, api_map, closure_pin, locals, location
@@ -437,7 +437,7 @@ module Solargraph
     end
 
     # @param location [Location]
-    # @param locals [Array<Pin::Narrowing>]
+    # @param locals [Array<Pin::Narrowing>] variables and expression narrowings visible at this point
     # @param closure_pin [Pin::Closure]
     # @param params [Hash{String => undefined}]
     # @param arguments [Array<Source::Chain>]
@@ -516,7 +516,7 @@ module Solargraph
     # @param argchain [Solargraph::Source::Chain]
     # @param api_map [ApiMap]
     # @param closure_pin [Pin::Closure]
-    # @param locals [Array<Pin::Narrowing>]
+    # @param locals [Array<Pin::Narrowing>] variables and expression narrowings visible at this point
     # @param location [Location]
     # @param pin [Pin::Method]
     # @param params [Hash{String => Hash{Symbol => undefined}}]
@@ -557,7 +557,7 @@ module Solargraph
 
     # @param api_map [ApiMap]
     # @param closure_pin [Pin::Closure]
-    # @param locals [Array<Pin::Narrowing>]
+    # @param locals [Array<Pin::Narrowing>] variables and expression narrowings visible at this point
     # @param location [Location]
     # @param pin [Pin::Method]
     # @param params [Hash{String => nil, Hash}]

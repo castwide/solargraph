@@ -27,7 +27,7 @@ module Solargraph
       pins + convention_pins
     end
 
-    # @return [Array<Pin::Narrowing>]
+    # @return [Array<Pin::Narrowing>] the file's variables and expression narrowings
     def locals
       data.locals
     end
@@ -129,9 +129,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
       # return nil unless location.start_with?("#{filename}:")
-      # narrowings of expressions such as h[k] are not variables
-      pins.select { |pin| pin.location == location } +
-        locals.select { |pin| pin.is_a?(Pin::BaseVariable) && pin.location == location }
+      (pins + Pin::Narrowing.variables(locals)).select { |pin| pin.location == location }
     end
 
     # @param line [Integer]
@@ -162,7 +160,7 @@ module Solargraph
     end
 
     # @param location [Location]
-    # @return [Array<Pin::Narrowing>]
+    # @return [Array<Pin::Narrowing>] variables and expression narrowings visible at this point
     def locals_at location
       return [] if location.filename != filename
       closure = locate_closure_pin(location.range.start.line, location.range.start.character)

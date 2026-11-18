@@ -19,7 +19,7 @@ module Solargraph
       # so that it may no longer match the entry stored under it
       KEY_MUTATORS = %i[<< []= concat prepend insert replace clear push append unshift setbyte force_encoding].freeze
 
-      # @param locals [Array<Solargraph::Pin::Narrowing>]
+      # @param locals [Array<Solargraph::Pin::Narrowing>] the file's variables and expression narrowings
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]

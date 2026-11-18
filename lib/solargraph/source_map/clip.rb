@@ -81,7 +81,7 @@ module Solargraph
       # position. Locals can be local variables, method parameters, or block
       # parameters. The array starts with the nearest local pin.
       #
-      # @return [::Array<Solargraph::Pin::Narrowing>]
+      # @return [::Array<Solargraph::Pin::Narrowing>] variables and expression narrowings visible at this point
       def locals
         @locals ||= source_map.locals_at(location)
       end
@@ -228,8 +228,7 @@ module Solargraph
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
             end
-            # narrowings of expressions such as h[k] are not variables
-            result.concat(locals.grep(Pin::BaseVariable))
+            result.concat(Pin::Narrowing.variables(locals))
             result.concat file_global_methods unless closure.binder.namespace.empty?
             result.concat api_map.get_constants(context_pin.context.namespace, *gates)
             result.concat api_map.get_methods(closure.binder.namespace, scope: closure.binder.scope,

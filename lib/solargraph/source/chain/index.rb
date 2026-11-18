@@ -27,7 +27,7 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param receiver_type [ComplexType, ComplexType::UniqueType] the type of 'h'
-        # @param locals [::Array<Pin::Narrowing>]
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
         # @sg-ignore Declared return type ::Solargraph::Pin::ExpressionNarrowing, nil does not match inferred type ::Solargraph::Pin::Narrowing, nil for Solargraph::Source::Chain::Index#narrowing
         # @return [Pin::ExpressionNarrowing, nil]
         def narrowing api_map, name_pin, receiver_type, locals
@@ -53,8 +53,8 @@ module Solargraph
         # @param node [::Parser::AST::Node, nil] a node #steps_from_node accepts
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Narrowing>]
-        # @param bindings [::Array<Pin::LocalVariable>] gets the local
+        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param bindings [::Array<Pin::BaseVariable>] gets the local
         #   variables `node` reads
         # @return [Boolean] true unless `node` calls a method other than
         #   an attr_reader, or reads a local variable that isn't in sight
@@ -68,8 +68,7 @@ module Solargraph
 
             # every same-named variable in sight, as #define merges a block
             # parameter with the outer variable it shadows
-            found = locals.grep(Pin::LocalVariable).select do |pin|
-              # @sg-ignore Unresolved call to name on Solargraph::Pin::Narrowing
+            found = Pin::Narrowing.variables(locals).select do |pin|
               pin.name == node.children[0].to_s && pin.visible_at?(name_pin, location)
             end
             bindings.concat(found)

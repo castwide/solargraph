@@ -17,6 +17,14 @@ module Solargraph
       #   @abstract
       #   @return [String, ::Array<::Array>] what the refinement is about:
       #     a variable name, or ExpressionNarrowing steps
+
+      # @sg-ignore Declared return type ::Array<::Solargraph::Pin::BaseVariable> does not match inferred type ::Array<::Solargraph::Pin::Narrowing> for Solargraph::Pin::Narrowing.variables
+      # @param narrowings [::Array<Narrowing>] e.g. a source map's locals
+      # @return [::Array<BaseVariable>] the variables among `narrowings`,
+      #   without expression narrowings such as h[k]
+      def self.variables narrowings
+        narrowings.grep(BaseVariable)
+      end
     end
   end
 end
