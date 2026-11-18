@@ -20,11 +20,6 @@ module Solargraph
       # @return [String, nil]
       attr_reader :type_assertion
 
-      # @return [String]
-      def narrowing_subject
-        name
-      end
-
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
@@ -225,6 +220,11 @@ module Solargraph
         return false unless super
         # @sg-ignore Should add type check on other
         assignment == other.assignment
+      end
+
+      # @return [String]
+      def narrowing_subject
+        name
       end
 
       def type_desc
