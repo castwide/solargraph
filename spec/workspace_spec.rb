@@ -196,4 +196,38 @@ describe Solargraph::Workspace do
       expect(api_map.external.plugin_versions.keys).to eq(['workspace_probe_plugin'])
     end
   end
+
+  context 'without a directory, with a plugin gem loaded by require' do
+    let(:plugin_root) { File.realpath(Dir.mktmpdir) }
+
+    before do
+      plugin_file = File.join(plugin_root, 'lib', 'required_probe_plugin.rb')
+      plugin_spec = Gem::Specification.new do |s|
+        s.name = 'required-probe-plugin'
+        s.version = '1.2.3'
+      end
+      FileUtils.mkdir_p File.dirname(plugin_file)
+      File.write(plugin_file, <<~RUBY)
+        module RequiredProbePlugin
+          class Convention < Solargraph::Convention::Base; end
+        end
+        Solargraph::Convention.register RequiredProbePlugin::Convention
+      RUBY
+      loaded_specs = Gem.loaded_specs.merge('required-probe-plugin' => plugin_spec)
+      allow(plugin_spec).to receive(:full_gem_path).and_return(plugin_root)
+      allow(Gem).to receive(:loaded_specs).and_return(loaded_specs)
+      load plugin_file
+    end
+
+    after do
+      Solargraph::Convention.unregister RequiredProbePlugin::Convention
+      FileUtils.rm_rf plugin_root
+    end
+
+    it 'keys the ApiMap gem cache on the plugin gem, as solargraph gems does' do
+      api_map = Solargraph::ApiMap.new
+      api_map.catalog Solargraph::Bench.new
+      expect(api_map.external.plugin_versions).to eq('required-probe-plugin' => '1.2.3')
+    end
+  end
 end

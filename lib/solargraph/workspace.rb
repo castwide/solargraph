@@ -35,6 +35,9 @@ module Solargraph
       load_sources
       @gemnames = []
       @plugin_versions = require_plugins!
+      # Without a directory there is no workspace config to name the plugins,
+      # so use the plugin gems the process has loaded
+      @plugin_versions = Convention.plugin_versions.merge(@plugin_versions) if directory.empty?
     end
 
     # The configured Solargraph plugins that loaded. Each key is the name of
