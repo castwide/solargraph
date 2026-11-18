@@ -5,11 +5,11 @@ module Solargraph
     # The base class for method and attribute pins.
     #
     class Method < Callable
-      include Solargraph::Parser::NodeMethods
-
       # One RBS annotation, e.g. %a{pure}, with any delimiter RBS allows
       RBS_ANNOTATION = /%a(?:\{[^}]*\}|\([^)]*\)|\[[^\]]*\]|<[^>]*>|\|[^|]*\|)/
       private_constant :RBS_ANNOTATION
+
+      include Solargraph::Parser::NodeMethods
 
       # Matches the prefix of an inline RBS method type, either `#: () -> T`
       # or `# @rbs () -> T`, with any annotations before the type. Other
