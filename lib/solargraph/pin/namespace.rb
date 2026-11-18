@@ -58,7 +58,7 @@ module Solargraph
       end
 
       def to_rbs
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         "#{@type} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 

@@ -61,7 +61,7 @@ module Solargraph
           @method_name ||= method_call.word
         end
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1494
         # @return [Chain::Link]
         def method_call
           @method_call_chain.links.last

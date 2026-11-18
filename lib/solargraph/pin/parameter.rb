@@ -281,7 +281,7 @@ module Solargraph
             found = p
             break
           end
-          # @sg-ignore Unresolved call to name
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
             found = params[index]
           end

@@ -82,7 +82,7 @@ module Solargraph
         }
         kwargs = Parser::ParserGem::NodeMethods.convert_hash(args.node)
                                                .select { |_, val| val.literal? }
-                                               # @sg-ignore Need a downcast here
+                                               # @sg-ignore Unresolved call to value on Solargraph::Source::Chain::Link, nil
                                                .transform_values { |val| val.links.last.value }
         return defaults unless kwargs.is_a?(Hash)
         defaults.merge(kwargs)

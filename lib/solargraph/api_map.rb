@@ -154,12 +154,12 @@ module Solargraph
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           next unless node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
-          # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+          # @sg-ignore Unresolved call to find on Set<Solargraph::Pin::Method>, nil
           match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
             get_complex_type_methods(closure.return_type).include?(pin)
           end
           next unless match
-          # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+          # @sg-ignore Unresolved call to macros
           match.macros.each do |macro|
             macro_pins.concat macro.generate_pins_from(chain, match, source_map)
           end

@@ -35,7 +35,7 @@ module Solargraph
       # The part of the word before the current position. Given the text
       # `foo.bar`, the start_of_word at position(0, 6) is `ba`.
       #
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1385
+      # @sg-ignore Declared return type ::String does not match inferred type ::String, nil for Solargraph::Source::Cursor#start_of_word
       # @return [String]
       def start_of_word
         @start_of_word ||= begin
@@ -139,7 +139,7 @@ module Solargraph
       # @return [Position]
       def node_position
         @node_position ||= if start_of_word.empty?
-                             # @sg-ignore slice [0, n] is nil only for a negative n
+                             # @sg-ignore Unresolved call to match on String, nil
                              match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
                              if match
                                # @sg-ignore Wrong argument type for Solargraph::Position.from_offset: offset expected Integer, received BigDecimal; Unresolved call to []

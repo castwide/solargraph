@@ -118,7 +118,7 @@ module Solargraph
   #
   # @generic T
   # @yieldreturn [generic<T>]
-  # @sg-ignore dynamic send has no inferable return type
+  # @sg-ignore Solargraph.with_clean_env return type could not be inferred
   # @return [generic<T>]
   def self.with_clean_env(&)
     meth = if Bundler.respond_to?(:with_original_env)

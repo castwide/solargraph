@@ -9,7 +9,7 @@ module Solargraph
       class FlawedBuilder < ::Parser::Builders::Default
         # @param token [::Parser::AST::Node]
         # @return [String]
-        # @sg-ignore https://github.com/ruby/gem_rbs_collection/pull/1104
+        # @sg-ignore Solargraph::Parser::ParserGem::FlawedBuilder#string_value return type could not be inferred
         def string_value token
           value(token)
         end

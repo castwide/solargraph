@@ -69,7 +69,7 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (385):
+      # pending code fixes (394):
       #
       # @todo 141: Need to add nil check here
       # @todo 33: pin.closure relies on closure always resolved
@@ -77,7 +77,7 @@ module Solargraph
       # @todo 26: Translate to something flow sensitive typing understands
       # @todo 22: String/Array Range slice relies on valid bounds
       # @todo 18: pin.location relies on location always resolved
-      # @todo 20: Need a downcast here
+      # @todo 19: Need a downcast here
       # @todo 12: MatchData relies on regex always matching
       # @todo 12: Array#[] integer index relies on fixed arity
       # @todo 11: node.children[] relies on grammar-guaranteed arity
@@ -95,8 +95,7 @@ module Solargraph
       # @todo 1: super is typed void though it returns a value
       # @todo 1: parser gem's Builders::Default#value has no return type
       # @todo 1: @@inference_cache has no declared value type
-      # @todo 1: Use fetch to suppress false alarm
-      # @todo 3: Unresolved call to name
+      # @todo 2: Unresolved call to name
       # @todo 1: Solargraph::Plugin::ActiveSupport#classmethod_pins return type could not be inferred
       # @todo 1: Solargraph::Plugin::ActiveSupport#attribute_pins return type could not be inferred
       # @todo 1: Hash#[] relies on key always being present
@@ -106,9 +105,21 @@ module Solargraph
       # @todo 1: Declared return type ::Solargraph::Pin::Signature, nil does not match inferred type ::Symbol, ::Solargraph::Pin::Signature, nil for Solargraph::Pin::Method#block
       # @todo 1: Solargraph::Source::Chain::Parameter#current_index return type could not be inferred
       # @todo 1: Wrong argument type for Solargraph::LanguageServer::Host#receive: request expected Hash{String => undefined}, received Hash, nil
-      # @todo 1: Wrong argument type for Solargraph::Library#contain?: filename expected String, received String, nil
-      # @todo 1: Wrong argument type for Solargraph::Parser::ParserGem::NodeChainer.chain: node expected Parser::AST::Node, received Parser::AST::Node, nil
       # @todo 1: Unresolved call to []
+      # @todo 1: Wrong argument type for Solargraph::Range.from_to: c1 expected Integer, received BigDecimal; Unresolved call to []
+      # @todo 1: Unresolved call to value on Solargraph::Source::Chain::Link, nil
+      # @todo 1: Unresolved call to sub on String, nil
+      # @todo 2: Unresolved call to match on String, nil
+      # @todo 1: Unresolved call to macros
+      # @todo 1: Unresolved call to length on String, nil
+      # @todo 1: Unresolved call to find on Set<Solargraph::Pin::Method>, nil
+      # @todo 1: Unresolved call to docstring= on YARD::CodeObjects::Base, nil
+      # @todo 1: Unresolved call to << on Array<Solargraph::Pin::Signature>, nil
+      # @todo 1: Solargraph::Parser::ParserGem::FlawedBuilder#string_value return type could not be inferred
+      # @todo 1: Solargraph::Parser::FlowSensitiveTyping#find_var return type could not be inferred
+      # @todo 1: Solargraph.with_clean_env return type could not be inferred
+      # @todo 1: Declared return type ::String does not match inferred type ::String, nil for Solargraph::Source::Cursor#start_of_word
+      # @todo 1: Declared return type ::Class<::Solargraph::LanguageServer::Message::Base> does not match
       # @todo 6: Unresolved call to join on Array<String>, nil
       # @todo 2: Unrecognized keyword argument kwargs to Solargraph::Pin::Base#initialize
       # @todo 1: Declared return type ::Array<::Solargraph::ComplexType::UniqueType> does not match inferred type ::Array<::Proc> for Solargraph::ComplexType#map
@@ -119,9 +130,8 @@ module Solargraph
       # @todo 1: Variable type could not be inferred for raw_ptype; Unresolved call to [] on Hash{Symbol => undefined}, nil
       # @todo 1: Unresolved call to + on String, nil
       # @todo 1: Wrong argument type for Solargraph::Position.from_offset: offset expected Integer, received BigDecimal; Unresolved call to []
-      # @todo 1: Wrong argument type for Solargraph::RbsMap::Conversions#convert_decl_to_pin: decl expected RBS::AST::Declarations::Base,
       #
-      # flow sensitive typing could handle (165):
+      # flow sensitive typing could handle (164):
       #
       # @todo 30: https://github.com/castwide/solargraph/issues/1249
       # @todo 28: https://github.com/castwide/solargraph/issues/1241
@@ -135,7 +145,7 @@ module Solargraph
       # @todo 4: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 4: flow sensitive typing needs to handle 'raise if'
       # @todo 2: flow sensitive typing should handle is_a? and next
-      # @todo 3: flow sensitive typing needs to handle "if foo = bar"
+      # @todo 2: flow sensitive typing needs to handle "if foo = bar"
       # @todo 3: Should better support meaning of '&' in RBS
       # @todo 2: flow sensitive typing needs to create separate ranges for postfix if
       # @todo 2: Need better handling of #compact
