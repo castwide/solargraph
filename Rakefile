@@ -68,7 +68,7 @@ def undercover
   status
 rescue StandardError => e
   warn "hit error: #{e.message}"
-  # @sg-ignore Unresolved call to join on Array<String>, nil
+  # @sg-ignore Should better support meaning of '&' in RBS
   warn "Backtrace:\n#{e.backtrace.join("\n")}"
   warn "output: #{output}"
   puts 'Flushing'

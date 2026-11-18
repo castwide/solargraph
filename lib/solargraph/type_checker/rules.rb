@@ -69,7 +69,7 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (408):
+      # pending code fixes (402):
       #
       # @todo 141: Need to add nil check here
       # @todo 33: pin.closure relies on closure always resolved
@@ -133,7 +133,6 @@ module Solargraph
       # @todo 1: Solargraph.with_clean_env return type could not be inferred
       # @todo 1: Declared return type ::String does not match inferred type ::String, nil for Solargraph::Source::Cursor#start_of_word
       # @todo 1: Declared return type ::Class<::Solargraph::LanguageServer::Message::Base> does not match
-      # @todo 6: Unresolved call to join on Array<String>, nil
       # @todo 2: Unrecognized keyword argument kwargs to Solargraph::Pin::Base#initialize
       # @todo 1: Declared return type ::Array<::Solargraph::ComplexType::UniqueType> does not match inferred type ::Array<::Proc> for Solargraph::ComplexType#map
       # @todo 1: Unresolved call to length on Array<Diff::LCS::Change>, nil
@@ -144,7 +143,7 @@ module Solargraph
       # @todo 1: Unresolved call to + on String, nil
       # @todo 1: Wrong argument type for Solargraph::Position.from_offset: offset expected Integer, received BigDecimal; Unresolved call to []
       #
-      # flow sensitive typing could handle (164):
+      # flow sensitive typing could handle (170):
       #
       # @todo 30: https://github.com/castwide/solargraph/issues/1249
       # @todo 28: https://github.com/castwide/solargraph/issues/1241
@@ -159,7 +158,7 @@ module Solargraph
       # @todo 4: flow sensitive typing needs to handle 'raise if'
       # @todo 2: flow sensitive typing should handle is_a? and next
       # @todo 2: flow sensitive typing needs to handle "if foo = bar"
-      # @todo 3: Should better support meaning of '&' in RBS
+      # @todo 9: Should better support meaning of '&' in RBS
       # @todo 2: flow sensitive typing needs to create separate ranges for postfix if
       # @todo 2: Need better handling of #compact
       # @todo 2: downcast output of Enumerable#select
