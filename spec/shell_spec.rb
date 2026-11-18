@@ -198,6 +198,15 @@ describe Solargraph::Shell do
       expect($LOADED_FEATURES).to include(end_with('cache_probe_plugin.rb'))
     end
 
+    it 'looks up the bundle in the plugin gem cache directory' do
+      metagem = instance_double(Solargraph::Metagem)
+      allow(Solargraph::Repo).to receive(:new).and_return(instance_double(Solargraph::Repo, bundled?: true,
+                                                                                            bundled: [metagem]))
+      allow(Solargraph::Collection::Gem).to receive(:cached?).and_return(true)
+      capture_both { described_class.new([], directory: temp_dir).bundle }
+      expect(Solargraph::Collection::Gem).to have_received(:cached?).with(metagem, { 'cache_probe_plugin' => nil })
+    end
+
     it 'loads the plugin before uncaching' do
       capture_both { described_class.new([], directory: temp_dir).uncache('nonexistentgem8675309') }
       expect($LOADED_FEATURES).to include(end_with('cache_probe_plugin.rb'))

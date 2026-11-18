@@ -204,14 +204,15 @@ module Solargraph
     desc 'bundle', 'Cache all bundled gems'
     option :directory, type: :string, desc: 'Workspace directory', default: Dir.pwd
     def bundle
+      plugin_versions = require_plugins!
       repo = Solargraph::Repo.new(options[:directory])
       raise "Bundle not found in #{options[:directory]}" unless repo.bundled?
 
       repo.bundled.each do |metagem|
-        next if Collection::Gem.cached?(metagem)
+        next if Collection::Gem.cached?(metagem, plugin_versions)
 
         puts "Caching #{metagem.name} #{metagem.version}"
-        Collection::Gem.load(metagem)
+        Collection::Gem.load(metagem, plugin_versions)
       end
     end
 
