@@ -144,13 +144,13 @@ module Bundler
   def self.which: (untyped executable) -> untyped
 
   # @deprecated Use `with\_unbundled\_env` instead
-  def self.with_clean_env: () { () -> untyped } -> untyped
+  def self.with_clean_env: [T] () { () -> T } -> T
 
-  def self.with_unbundled_env: () { () -> untyped } -> untyped
+  def self.with_unbundled_env: [T] () { () -> T } -> T
 
   # Run block with environment present before
   # [`Bundler`](https://docs.ruby-lang.org/en/2.7.0/Bundler.html) was activated
-  def self.with_original_env: () { () -> untyped } -> untyped
+  def self.with_original_env: [T] () { () -> T } -> T
 end
 
 Bundler::FREEBSD: untyped

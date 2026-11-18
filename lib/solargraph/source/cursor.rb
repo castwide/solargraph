@@ -138,8 +138,7 @@ module Solargraph
       # @return [Position]
       def node_position
         @node_position ||= if start_of_word.empty?
-                             # @sg-ignore Need to add nil check here
-                             match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
+                             match = source.code[0, offset].to_s.match(/\s*(\.|:+)\s*$/)
                              if match
                                # @sg-ignore Need to add nil check here
                                Position.from_offset(source.code, offset - match[0].length)

@@ -54,13 +54,13 @@ module Solargraph
 
         private
 
-        # @todo '?' methods should type like RBS 'boolish' rather than a strict true or false
-        # @sg-ignore
+        # @return [Boolean]
         def support_workspace_folders?
-          params['capabilities'] &&
-            params['capabilities']['workspace'] &&
-            params['capabilities']['workspace']['workspaceFolders'] &&
-            params['workspaceFolders']
+          supported = params['capabilities'] &&
+                      params['capabilities']['workspace'] &&
+                      params['capabilities']['workspace']['workspaceFolders'] &&
+                      params['workspaceFolders']
+          supported ? true : false
         end
 
         # @return [Hash{Symbol => undefined}]
@@ -180,16 +180,14 @@ module Solargraph
 
         # @param section [String]
         # @param capability [String]
-        # @todo Need support for RBS' boolish "type", which doesn't
-        #   enforce strict true/false-ness
-        # @sg-ignore
+        # @return [Boolean]
         def dynamic_registration_for? section, capability
           result = params['capabilities'] &&
                    params['capabilities'][section] &&
                    params['capabilities'][section][capability] &&
                    params['capabilities'][section][capability]['dynamicRegistration']
           host.allow_registration("#{section}/#{capability}") if result
-          result
+          result ? true : false
         end
       end
     end

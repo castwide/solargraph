@@ -62,11 +62,10 @@ module Solargraph
           result = commit text, fixed
           # @sg-ignore flow sensitive typing needs to handle attrs
           off = Position.to_offset(text, range.start)
-          # @sg-ignore Need to add nil check here
-          match = result[0, off].match(/[.:]+\z/)
+          match = result[0, off].to_s.match(/[.:]+\z/)
           if match
             # @sg-ignore flow sensitive typing should be able to handle redefinition
-            result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..]
+            result = result[0, off].to_s.sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..].to_s
           end
           result
         end
