@@ -10,7 +10,7 @@ module Solargraph
     # @return [String]
     attr_reader :full_path
 
-    # @return [String]
+    # @return [String, nil]
     attr_reader :spec_file
 
     # @return [String]
@@ -30,7 +30,7 @@ module Solargraph
 
     # @param name [String]
     # @param full_path [String]
-    # @param spec_file [String]
+    # @param spec_file [String, nil]
     # @param source [String]
     # @param version [String]
     # @param require_paths [Array<String>]

@@ -178,7 +178,6 @@ module Solargraph
       spec_file = File.join(root, "#{spec.name}.gemspec")
       spec_file = Dir[File.join(root, '*.gemspec')].first unless File.file?(spec_file)
       gemspec = spec_file && File.file?(spec_file) ? Gem::Specification.load(spec_file) : nil
-      # @sg-ignore Need to add nil check here
       Metagem.new(name: spec.name,
                   full_path: root,
                   spec_file: spec_file,
