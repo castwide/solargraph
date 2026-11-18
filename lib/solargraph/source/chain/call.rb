@@ -413,6 +413,8 @@ module Solargraph
           return nil unless with_block?
 
           block_pin = find_block_pin(api_map)
+          return nil if block_pin.nil?
+
           # We use the block pin as the closure, as the parameters
           # here will only be defined inside the block itself and we
           # need to be able to see them

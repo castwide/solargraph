@@ -57,9 +57,9 @@ module Solargraph
           @method_name ||= method_call.word
         end
 
-        # @return [Chain::Call]
+        # @return [Chain::Link]
         def method_call
-          @method_call_chain.links.last
+          @method_call_chain.links.fetch(-1)
         end
 
         # The index of the literal in the method call chain.

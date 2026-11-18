@@ -215,10 +215,11 @@ module Solargraph
         # This property is not cached in an instance variable because it can
         # change when pins get proxied.
         detail = String.new
+        first_signature = signatures.first
         detail += if signatures.length > 1
                     '(*) '
-                  else
-                    "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
+                  elsif first_signature && !first_signature.parameters.empty?
+                    "(#{first_signature.parameters.map(&:full).join(', ')}) "
                   end.to_s
         unless return_type.undefined?
           detail += "=#{if probed?
