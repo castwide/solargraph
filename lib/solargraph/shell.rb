@@ -195,6 +195,20 @@ module Solargraph
     end
     map 'gems' => :cache
 
+    desc 'bundle', 'Cache all bundled gems'
+    option :directory, type: :string, desc: 'Workspace directory', default: Dir.pwd
+    def bundle
+      repo = Solargraph::Repo.new(options[:directory])
+      raise "Bundle not found in #{options[:directory]}" unless repo.bundled?
+
+      repo.bundled.each do |metagem|
+        next if Collection::Gem.cached?(metagem)
+
+        puts "Caching #{metagem.name} #{metagem.version}"
+        Collection::Gem.load(metagem)
+      end
+    end
+
     desc 'reporters', 'Get a list of diagnostics reporters'
     # @return [void]
     def reporters

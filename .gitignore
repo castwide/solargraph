@@ -15,3 +15,4 @@ coverage
 /.pryrc
 /.rspec-local
 vendor/cache
+/spec/fixtures/**/Gemfile.lock
