@@ -7,11 +7,20 @@ module Solargraph
     class Method < Callable
       include Solargraph::Parser::NodeMethods
 
+      # One RBS annotation, e.g. %a{pure}, with any delimiter RBS allows
+      RBS_ANNOTATION = /%a(?:\{[^}]*\}|\([^)]*\)|\[[^\]]*\]|<[^>]*>|\|[^|]*\|)/
+      private_constant :RBS_ANNOTATION
+
       # Matches the prefix of an inline RBS method type, either `#: () -> T`
-      # or `# @rbs () -> T`. Other `@rbs` forms, such as `@rbs x: Integer`,
-      # are not method types.
-      INLINE_RBS_PREFIX = /\A(?:: |@rbs\s+(?=[(\[{]|\?\{|->))/
+      # or `# @rbs () -> T`, with any annotations before the type. Other
+      # `@rbs` forms, such as `@rbs x: Integer`, are not method types.
+      INLINE_RBS_PREFIX = /\A(?:: (?:#{RBS_ANNOTATION}\s*)*|@rbs\s+(?:#{RBS_ANNOTATION}\s*)*(?=[(\[{]|\?\{|->))/
       private_constant :INLINE_RBS_PREFIX
+
+      # Matches the annotations of `# @rbs %a{pure}`, alone or before a
+      # method type, as in rbs-inline
+      INLINE_RBS_ANNOTATIONS = /\A(?::|@rbs)\s+((?:#{RBS_ANNOTATION}\s*)+)/
+      private_constant :INLINE_RBS_ANNOTATIONS
 
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
@@ -49,6 +58,7 @@ module Solargraph
         @rbs_annotations = rbs_annotations.to_set
         @context = context if context
         @overloading = overloading
+        @rbs_annotations |= inline_rbs_annotations
       end
 
       # @param other [Pin::Method]
@@ -820,6 +830,15 @@ module Solargraph
                 .grep(INLINE_RBS_PREFIX)
                 .map { |line| line.sub(INLINE_RBS_PREFIX, '').strip }
                 .join("\n")
+      end
+
+      # @return [::Set<::String>]
+      def inline_rbs_annotations
+        comments.lines
+                .filter_map { |line| line[INLINE_RBS_ANNOTATIONS, 1] }
+                .join(' ')
+                .scan(RBS_ANNOTATION)
+                .to_set { |annotation| annotation[3..-2] }
       end
     end
   end

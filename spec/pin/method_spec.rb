@@ -896,6 +896,22 @@ describe Solargraph::Pin::Method do
       expect(pin.return_type.to_s).to eq('String')
     end
 
+    it 'reads rbs-inline annotations alone or before a method type' do
+      source = Solargraph::Source.load_string(%(
+        # @rbs %a{pure} %a[example]
+        def foo; end
+
+        #: %a<pure> () -> String
+        def bar; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      foo = api_map.get_path_pins('#foo').first
+      bar = api_map.get_path_pins('#bar').first
+      expect([foo.rbs_annotations, bar.rbs_annotations, bar.return_type.to_s])
+        .to eq([Set['pure', 'example'], Set['pure'], 'String'])
+    end
+
     it 'sets return types from @rbs in @!method directives' do
       source = Solargraph::Source.load_string(%(
         class Foo

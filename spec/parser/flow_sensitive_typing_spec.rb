@@ -1243,6 +1243,47 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Float')
   end
 
+  it 'narrows a repeated call to a method an rbs-inline comment declares %a{pure}' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Lexer
+        # @rbs %a{pure}
+        # @return [Location, nil]
+        def next_token; end
+      end
+
+      # @param lexer [Lexer]
+      def scan(lexer)
+        return nil unless lexer.next_token
+        lexer.next_token
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [12, 16])
+    expect(clip.infer.rooted_tags).to eq('::Location')
+  end
+
+  it 'narrows a repeated call to a method whose rbs-inline type has %a{pure}' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Lexer
+        # @rbs %a(pure) () -> Location?
+        def next_token; end
+      end
+
+      # @param lexer [Lexer]
+      def scan(lexer)
+        return nil unless lexer.next_token
+        lexer.next_token
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [11, 16])
+    expect(clip.infer.rooted_tags).to eq('::Location')
+  end
+
   it 'does not narrow a repeated call to an RBS method without %a{pure}' do
     source = Solargraph::Source.load_string(%(
       # @param names [Array<String>]
