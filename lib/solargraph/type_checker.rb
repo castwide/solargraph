@@ -294,7 +294,7 @@ module Solargraph
 
     # @return [Array<Pin::BaseVariable>]
     def all_variables
-      source_map.pins_by_class(Pin::BaseVariable) + Pin::Narrowing.variables(source_map.locals)
+      source_map.pins_by_class(Pin::BaseVariable) + Pin::ExpressionType.variables(source_map.expression_types)
     end
 
     # @return [Array<Problem>]
@@ -309,8 +309,8 @@ module Solargraph
         closure_pin.rebind(api_map)
         # @sg-ignore Need to add nil check here
         location = Location.new(filename, rng)
-        locals = source_map.locals_at(location)
-        pins = chain.define(api_map, closure_pin, locals)
+        expression_types = source_map.expression_types_at(location)
+        pins = chain.define(api_map, closure_pin, expression_types)
         if pins.empty?
           result.push Problem.new(location, "Unresolved constant #{Solargraph::Parser::NodeMethods.unpack_name(const)}")
           @marked_ranges.push location.range
@@ -341,9 +341,9 @@ module Solargraph
         closure_pin.rebind(api_map)
         # @sg-ignore Need to add nil check here
         location = Location.new(filename, rng)
-        locals = source_map.locals_at(location)
+        expression_types = source_map.expression_types_at(location)
         # @sg-ignore Need to add nil check here
-        type = chain.infer(api_map, closure_pin, locals)
+        type = chain.infer(api_map, closure_pin, expression_types)
         if type.undefined? && !rules.ignore_all_undefined?
           base = chain
           missing = chain
@@ -353,7 +353,7 @@ module Solargraph
           all_found = []
           until base.links.first.undefined?
             # @sg-ignore Need to add nil check here
-            all_found = base.define(api_map, closure_pin, locals)
+            all_found = base.define(api_map, closure_pin, expression_types)
             found = all_found.first
             break if found
             missing = base
@@ -372,7 +372,7 @@ module Solargraph
           end
         end
         # @sg-ignore Need to add nil check here
-        result.concat argument_problems_for(chain, api_map, closure_pin, locals, location)
+        result.concat argument_problems_for(chain, api_map, closure_pin, expression_types, location)
       end
       result
     end
@@ -380,10 +380,10 @@ module Solargraph
     # @param chain [Solargraph::Source::Chain]
     # @param api_map [Solargraph::ApiMap]
     # @param closure_pin [Solargraph::Pin::Closure]
-    # @param locals [Array<Solargraph::Pin::Narrowing>] variables and expression narrowings visible at this point
+    # @param expression_types [Array<Solargraph::Pin::ExpressionType>] variables and expression narrowings visible at this point
     # @param location [Solargraph::Location]
     # @return [Array<Problem>]
-    def argument_problems_for chain, api_map, closure_pin, locals, location
+    def argument_problems_for chain, api_map, closure_pin, expression_types, location
       result = []
       base = chain
       last_base_link = base.links.last
@@ -392,7 +392,7 @@ module Solargraph
       arguments = last_base_link.arguments
       return [] if any_forwarded_args?(arguments.map(&:node))
 
-      pins = base.define(api_map, closure_pin, locals)
+      pins = base.define(api_map, closure_pin, expression_types)
 
       first_pin = pins.first
       if first_pin.is_a?(Pin::DelegatedMethod) && !first_pin.resolvable?(api_map)
@@ -406,7 +406,7 @@ module Solargraph
                fqns = if base.links.one?
                         closure_pin.namespace
                       else
-                        base.base.infer(api_map, closure_pin, locals).namespace
+                        base.base.infer(api_map, closure_pin, expression_types).namespace
                       end
                init = api_map.get_method_stack(fqns, 'initialize').first
 
@@ -422,7 +422,7 @@ module Solargraph
         pin.signatures.sort_by { |sig| sig.parameters.length }.each do |sig|
           params = param_details_from_stack(sig, pins)
 
-          signature_errors = signature_argument_problems_for location, locals, closure_pin, params, arguments, sig, pin
+          signature_errors = signature_argument_problems_for location, expression_types, closure_pin, params, arguments, sig, pin
 
           if signature_errors.empty?
             # we found a signature that works - meaning errors from
@@ -437,7 +437,7 @@ module Solargraph
     end
 
     # @param location [Location]
-    # @param locals [Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+    # @param expression_types [Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
     # @param closure_pin [Pin::Closure]
     # @param params [Hash{String => undefined}]
     # @param arguments [Array<Source::Chain>]
@@ -445,7 +445,7 @@ module Solargraph
     # @param pin [Pin::Method]
     #
     # @return [Array<Problem>]
-    def signature_argument_problems_for location, locals, closure_pin, params, arguments, sig, pin
+    def signature_argument_problems_for location, expression_types, closure_pin, params, arguments, sig, pin
       errors = []
       # @todo add logic mapping up restarg parameters with
       #   arguments (including restarg arguments).  Use tuples
@@ -492,7 +492,7 @@ module Solargraph
             if ptype.nil?
               # @todo Some level (strong, I guess) should require the param here
             else
-              argtype = argchain.infer(api_map, closure_pin, locals)
+              argtype = argchain.infer(api_map, closure_pin, expression_types)
               argtype = argtype.self_to_type(closure_pin.context)
               if argtype.defined? && ptype.defined? && !arg_conforms_to?(argtype, ptype)
                 errors.push Problem.new(location,
@@ -501,7 +501,7 @@ module Solargraph
               end
             end
           else
-            errors.concat kwarg_problems_for sig, argchain, api_map, closure_pin, locals, location, pin, params, idx
+            errors.concat kwarg_problems_for sig, argchain, api_map, closure_pin, expression_types, location, pin, params, idx
             next
           end
         elsif par.decl == :kwarg
@@ -516,21 +516,21 @@ module Solargraph
     # @param argchain [Solargraph::Source::Chain]
     # @param api_map [ApiMap]
     # @param closure_pin [Pin::Closure]
-    # @param locals [Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+    # @param expression_types [Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
     # @param location [Location]
     # @param pin [Pin::Method]
     # @param params [Hash{String => Hash{Symbol => undefined}}]
     # @param idx [Integer]
     #
     # @return [Array<Problem>]
-    def kwarg_problems_for sig, argchain, api_map, closure_pin, locals, location, pin, params, idx
+    def kwarg_problems_for sig, argchain, api_map, closure_pin, expression_types, location, pin, params, idx
       result = []
       kwargs = convert_hash(argchain.node)
       par = sig.parameters[idx]
       # @type [Solargraph::Source::Chain]
       argchain = kwargs[par.name.to_sym]
       if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
-        result.concat kwrestarg_problems_for(api_map, closure_pin, locals, location, pin, params, kwargs)
+        result.concat kwrestarg_problems_for(api_map, closure_pin, expression_types, location, pin, params, kwargs)
       elsif argchain
         data = params[par.name]
         if data.nil?
@@ -541,7 +541,7 @@ module Solargraph
           ptype = ptype.self_to_type(pin.context)
           unless ptype.undefined?
             # @type [ComplexType]
-            argtype = argchain.infer(api_map, closure_pin, locals).self_to_type(closure_pin.context)
+            argtype = argchain.infer(api_map, closure_pin, expression_types).self_to_type(closure_pin.context)
             # @todo Unresolved call to defined?
             if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
               result.push Problem.new(location,
@@ -557,13 +557,13 @@ module Solargraph
 
     # @param api_map [ApiMap]
     # @param closure_pin [Pin::Closure]
-    # @param locals [Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+    # @param expression_types [Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
     # @param location [Location]
     # @param pin [Pin::Method]
     # @param params [Hash{String => nil, Hash}]
     # @param kwargs [Hash{Symbol => Source::Chain}]
     # @return [Array<Problem>]
-    def kwrestarg_problems_for api_map, closure_pin, locals, location, pin, params, kwargs
+    def kwrestarg_problems_for api_map, closure_pin, expression_types, location, pin, params, kwargs
       result = []
       kwargs.each_pair do |pname, argchain|
         next unless params.key?(pname.to_s)
@@ -571,7 +571,7 @@ module Solargraph
         # @type [ComplexType]
         raw_ptype = params[pname.to_s][:qualified]
         ptype = raw_ptype.self_to_type(pin.context)
-        argtype = argchain.infer(api_map, closure_pin, locals)
+        argtype = argchain.infer(api_map, closure_pin, expression_types)
         argtype = argtype.self_to_type(closure_pin.context)
         if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
           result.push Problem.new(location,
@@ -702,8 +702,8 @@ module Solargraph
       closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
       # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       location = Location.new(filename, Range.from_node(pin.assignment))
-      locals = source_map.locals_at(location)
-      type = chain.infer(api_map, closure_pin, locals)
+      expression_types = source_map.expression_types_at(location)
+      type = chain.infer(api_map, closure_pin, expression_types)
       if type.undefined? && !rules.ignore_all_undefined?
         base = chain
         # @type [Solargraph::Pin::Base, nil]
@@ -711,7 +711,7 @@ module Solargraph
         # @type [Array<Solargraph::Pin::Base>]
         all_found = []
         until base.links.first.undefined?
-          all_found = base.define(api_map, closure_pin, locals)
+          all_found = base.define(api_map, closure_pin, expression_types)
           found = all_found.first
           break if found
           base = base.base

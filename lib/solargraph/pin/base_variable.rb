@@ -7,7 +7,7 @@ module Solargraph
     class BaseVariable < Base
       # include Solargraph::Source::NodeMethods
       include Solargraph::Parser::NodeMethods
-      include Narrowing
+      include ExpressionType
 
       # @return [Array<Parser::AST::Node>]
       attr_reader :assignments
@@ -176,7 +176,7 @@ module Solargraph
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
             # @sg-ignore Need to add nil check here
-            result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
+            result = chain.infer(api_map, closure, clip.expression_types).self_to_type(closure.context)
             types.push result unless result.undefined?
           end
         end
@@ -223,7 +223,7 @@ module Solargraph
       end
 
       # @return [String]
-      def narrowing_subject
+      def expression
         name
       end
 

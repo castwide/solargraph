@@ -40,12 +40,12 @@ module Solargraph
         end
 
         # @param source [Source]
-        # @return [Array(Array<Pin::Base>, Array<Pin::Narrowing>)]
+        # @return [Array(Array<Pin::Base>, Array<Pin::ExpressionType>)]
         def map source
           # @sg-ignore Need to add nil check here
-          pins, locals, ivars = NodeProcessor.process(source.node, Region.new(source: source))
+          pins, expression_types, ivars = NodeProcessor.process(source.node, Region.new(source: source))
           pins.concat(ivars)
-          [pins, locals]
+          [pins, expression_types]
         end
 
         # @param source [Source]

@@ -435,7 +435,7 @@ module Solargraph
                 end
               end
             elsif node.children[2].type == :def
-              NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals, ivars
+              NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, expression_types, ivars
             end
           end
 

@@ -8,7 +8,7 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            FlowSensitiveTyping.new(locals,
+            FlowSensitiveTyping.new(expression_types,
                                     ivars,
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_while(node)

@@ -8,7 +8,7 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            FlowSensitiveTyping.new(locals,
+            FlowSensitiveTyping.new(expression_types,
                                     ivars,
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_if(node)
@@ -20,7 +20,7 @@ module Solargraph
                 node: condition_node,
                 source: :parser
               )
-              NodeProcessor.process(condition_node, region, pins, locals, ivars)
+              NodeProcessor.process(condition_node, region, pins, expression_types, ivars)
             end
             then_node = node.children[1]
             if then_node
@@ -30,7 +30,7 @@ module Solargraph
                 node: then_node,
                 source: :parser
               )
-              NodeProcessor.process(then_node, region, pins, locals, ivars)
+              NodeProcessor.process(then_node, region, pins, expression_types, ivars)
             end
 
             else_node = node.children[2]
@@ -41,7 +41,7 @@ module Solargraph
                 node: else_node,
                 source: :parser
               )
-              NodeProcessor.process(else_node, region, pins, locals, ivars)
+              NodeProcessor.process(else_node, region, pins, expression_types, ivars)
             end
 
             true

@@ -13,8 +13,8 @@ module Solargraph
           @links = links
         end
 
-        def resolve api_map, name_pin, locals
-          types = @links.map { |link| link.infer(api_map, name_pin, locals) }
+        def resolve api_map, name_pin, expression_types
+          types = @links.map { |link| link.infer(api_map, name_pin, expression_types) }
           combined_type = Solargraph::ComplexType.new(types)
           unless types.all?(&:nullable?)
             # @sg-ignore flow sensitive typing should be able to handle redefinition

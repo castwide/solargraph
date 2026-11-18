@@ -42,13 +42,13 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Closure] name_pin.binder should give us the type of the object on which 'word' will be invoked
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
-        def resolve api_map, name_pin, locals
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
+        def resolve api_map, name_pin, expression_types
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
-          found = api_map.var_at_location(Pin::Narrowing.variables(locals), word, name_pin, location) if head?
+          found = api_map.var_at_location(Pin::ExpressionType.variables(expression_types), word, name_pin, location) if head?
 
-          return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
+          return inferred_pins([found], api_map, name_pin, expression_types) unless found.nil?
           binder = name_pin.binder
           # this is a q_call - i.e., foo&.bar - assume result of call
           # will be nil or result as if binder were not nil -
@@ -80,7 +80,7 @@ module Solargraph
                                                      gates: name_pin.gates,
                                                      binder: context,
                                                      source: :chain)
-            resolved.concat inferred_pins([pin], api_map, type_name_pin, locals)
+            resolved.concat inferred_pins([pin], api_map, type_name_pin, expression_types)
           end
           return [] if unresolved_type && !api_map.loose_unions
           return [] if resolved.empty?
@@ -128,11 +128,11 @@ module Solargraph
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
         # @param type [ComplexType]
         # @param new_signature_pin [Pin::Signature, nil]
         # @return [::Array(ComplexType, Pin::Signature)]
-        def match_overload_type overload, pin, api_map, name_pin, locals, type, new_signature_pin
+        def match_overload_type overload, pin, api_map, name_pin, expression_types, type, new_signature_pin
           return [type, new_signature_pin] unless overload.arity_matches?(arguments, with_block?)
 
           match = true
@@ -147,7 +147,7 @@ module Solargraph
                                                     closure: name_pin.closure,
                                                     gates: name_pin.gates,
                                                     source: :chain)
-            atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
+            atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, expression_types)
             # @sg-ignore flow sensitive typing should handle is_a? and next
             unless param.compatible_arg?(atype, api_map) || param.restarg?
               match = false
@@ -162,9 +162,9 @@ module Solargraph
             # @sg-ignore Need to add nil check here
             blocktype = if block.links.map(&:class) == [BlockSymbol]
                           # like the bar in foo(&:bar)
-                          block_symbol_call_type(api_map, name_pin.context, block_atypes, locals)
+                          block_symbol_call_type(api_map, name_pin.context, block_atypes, expression_types)
                         else
-                          block_call_type(api_map, name_pin, locals)
+                          block_call_type(api_map, name_pin, expression_types)
                         end
           end
           new_signature_pin = overload.resolve_generics_from_context_until_complete(overload.generics, atypes, nil, nil,
@@ -212,9 +212,9 @@ module Solargraph
         # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base] its #binder resolves `self` in the declarations of `pins`
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
         # @return [::Array<Pin::Base>]
-        def inferred_pins pins, api_map, name_pin, locals
+        def inferred_pins pins, api_map, name_pin, expression_types
           result = pins.map do |p|
             next p unless p.is_a?(Pin::Method)
             overloads = p.signatures
@@ -234,17 +234,17 @@ module Solargraph
             # @sg-ignore flow sensitive typing should handle is_a? and next
             # @param ol [Pin::Signature]
             sorted_overloads.each do |ol|
-              type, new_signature_pin = match_overload_type(ol, p, api_map, name_pin, locals, type, new_signature_pin)
+              type, new_signature_pin = match_overload_type(ol, p, api_map, name_pin, expression_types, type, new_signature_pin)
               break if type.defined?
             end
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
-              result = process_macro(p, api_map, name_pin.context, locals)
+              result = process_macro(p, api_map, name_pin.context, expression_types)
               # @sg-ignore flow sensitive typing should be able to handle redefinition
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?
-              result = process_directive(p, api_map, name_pin.context, locals)
+              result = process_directive(p, api_map, name_pin.context, expression_types)
               # @sg-ignore flow sensitive typing should be able to handle redefinition
               next result unless result.return_type.undefined?
             end
@@ -292,9 +292,9 @@ module Solargraph
         # @param pin [Pin::Base]
         # @param api_map [ApiMap]
         # @param context [ComplexType, ComplexType::UniqueType]
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
         # @return [Pin::Base]
-        def process_macro pin, api_map, context, locals
+        def process_macro pin, api_map, context, expression_types
           pin.macros.each do |macro|
             # @todo 'Wrong argument type for
             #   Solargraph::Source::Chain::Call#inner_process_macro:
@@ -303,7 +303,7 @@ module Solargraph
             #   in the 'Chain::Array' class internally, leaving
             #   ::Array#each shadowed when it shouldn't be.
             # @sg-ignore macro is Solargraph::YardMap::Macro, wraps a YARD::Tags::MacroDirective
-            result = inner_process_macro(pin, macro, api_map, context, locals)
+            result = inner_process_macro(pin, macro, api_map, context, expression_types)
             return result unless result.return_type.undefined?
           end
           Pin::ProxyType.anonymous(ComplexType::UNDEFINED, source: :chain)
@@ -312,14 +312,14 @@ module Solargraph
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
         # @param context [ComplexType, ComplexType::UniqueType]
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
         # @return [Pin::ProxyType]
-        def process_directive pin, api_map, context, locals
+        def process_directive pin, api_map, context, expression_types
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
             next if macro.nil?
             # @sg-ignore macro is Solargraph::YardMap::Macro, wraps a YARD::Tags::MacroDirective
-            result = inner_process_macro(pin, macro, api_map, context, locals)
+            result = inner_process_macro(pin, macro, api_map, context, expression_types)
             return result unless result.return_type.undefined?
           end
           Pin::ProxyType.anonymous ComplexType::UNDEFINED, source: :chain
@@ -329,10 +329,10 @@ module Solargraph
         # @param macro [YARD::Tags::MacroDirective]
         # @param api_map [ApiMap]
         # @param context [ComplexType, ComplexType::UniqueType]
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
         # @return [Pin::ProxyType]
-        def inner_process_macro pin, macro, api_map, context, locals
-          vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
+        def inner_process_macro pin, macro, api_map, context, expression_types
+          vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, expression_types), source: :chain) }
           txt = macro.tag.text.clone
           # @sg-ignore Need to add nil check here
           if txt.empty? && macro.tag.name
@@ -420,9 +420,9 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param context [ComplexType, ComplexType::UniqueType]
         # @param block_parameter_types [::Array<ComplexType>]
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
         # @return [ComplexType, nil]
-        def block_symbol_call_type api_map, context, block_parameter_types, locals
+        def block_symbol_call_type api_map, context, block_parameter_types, expression_types
           # Ruby's shorthand for sending the passed in method name
           # to the first yield parameter with no arguments
           # @sg-ignore Need to add nil check here
@@ -451,9 +451,9 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
         # @return [ComplexType, nil]
-        def block_call_type api_map, name_pin, locals
+        def block_call_type api_map, name_pin, expression_types
           return nil unless with_block?
 
           block_pin = find_block_pin(api_map)
@@ -461,7 +461,7 @@ module Solargraph
           # here will only be defined inside the block itself and we
           # need to be able to see them
           # @sg-ignore Need to add nil check here
-          block.infer(api_map, block_pin, locals)
+          block.infer(api_map, block_pin, expression_types)
         end
 
         protected

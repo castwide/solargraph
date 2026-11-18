@@ -10,7 +10,7 @@ module Solargraph
           super
         end
 
-        def resolve api_map, name_pin, locals
+        def resolve api_map, name_pin, expression_types
           return [Pin::ROOT_PIN] if word.empty?
           if word.start_with?('::')
             base = word[2..]

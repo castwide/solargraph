@@ -36,7 +36,7 @@ module Solargraph
               location = get_node_location(lhs)
               pin = if lhs.type == :lvasgn
                       # lvasgn is a local variable
-                      Pin::Narrowing.variables(locals).find { |l| l.location == location }
+                      Pin::ExpressionType.variables(expression_types).find { |l| l.location == location }
                     elsif lhs.type == :ivasgn
                       # ivasgn is an instance variable assignment
                       ivars.find { |iv| iv.location == location }

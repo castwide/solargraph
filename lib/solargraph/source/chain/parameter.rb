@@ -22,11 +22,11 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
         # @return [::Array<Pin::Base>]
-        def resolve api_map, name_pin, locals
+        def resolve api_map, name_pin, expression_types
           # @type [Pin::Method]
-          method_pin = method_call_chain.define(api_map, name_pin, locals)&.first
+          method_pin = method_call_chain.define(api_map, name_pin, expression_types)&.first
           return [] unless method_pin
 
           # Use indexed lookup for better performance

@@ -21,7 +21,7 @@ module Solargraph
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
       def define
         return [] if cursor.comment? || cursor.chain.literal? || cursor.chain.require_parameter?
-        result = cursor.chain.define(api_map, closure, locals)
+        result = cursor.chain.define(api_map, closure, expression_types)
         result.concat file_global_methods
         if result.empty?
           result.concat((source_map.pins + source_map.locals).select do |p|
@@ -61,15 +61,15 @@ module Solargraph
         if name_pin.nil?
           name_pin = Pin::ProxyType.anonymous(ComplexType.try_parse('::Object'))
         end
-        chain.define(api_map, name_pin, locals).select { |pin| pin.is_a?(Pin::Method) }
+        chain.define(api_map, name_pin, expression_types).grep(Pin::Method)
       end
 
       # @return [ComplexType]
       def infer
-        result = cursor.chain.infer(api_map, closure, locals)
+        result = cursor.chain.infer(api_map, closure, expression_types)
         if result.tag == 'Class'
           # HACK: Exception to return BasicObject from Class#new
-          dfn = cursor.chain.define(api_map, closure, locals).first
+          dfn = cursor.chain.define(api_map, closure, expression_types).first
           return ComplexType.try_parse('::BasicObject') if dfn && dfn.path == 'Class#new'
         end
         # should receive result with selfs resolved from infer()
@@ -81,9 +81,14 @@ module Solargraph
       # position. Locals can be local variables, method parameters, or block
       # parameters. The array starts with the nearest local pin.
       #
-      # @return [::Array<Solargraph::Pin::Narrowing>] variables and expression narrowings visible at this point
+      # @return [::Array<Solargraph::Pin::BaseVariable>]
       def locals
-        @locals ||= source_map.locals_at(location)
+        @locals ||= Pin::ExpressionType.variables(expression_types)
+      end
+
+      # @return [::Array<Solargraph::Pin::ExpressionType>] variables and expression narrowings visible at this point
+      def expression_types
+        @expression_types ||= source_map.expression_types_at(location)
       end
 
       # @return [::Array<String>]
@@ -95,7 +100,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def translate phrase
         chain = Parser.chain(Parser.parse(phrase, cursor.filename, cursor.position.line))
-        chain.define(api_map, closure, locals)
+        chain.define(api_map, closure, expression_types)
       end
 
       private
@@ -196,7 +201,7 @@ module Solargraph
         if cursor.chain.constant? || cursor.start_of_constant?
           full = cursor.chain.links.first.word
           type = if cursor.chain.undefined?
-                   cursor.chain.base.infer(api_map, context_pin, locals)
+                   cursor.chain.base.infer(api_map, context_pin, expression_types)
                  elsif full.include?('::') && cursor.chain.links.length == 1
                    # @sg-ignore Need to add nil check here
                    ComplexType.try_parse(full.split('::')[0..-2].join('::'))
@@ -217,7 +222,7 @@ module Solargraph
                                                 cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
           end
         else
-          type = cursor.chain.base.infer(api_map, closure, locals)
+          type = cursor.chain.base.infer(api_map, closure, expression_types)
           result.concat api_map.get_complex_type_methods(type, closure.binder.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
@@ -228,7 +233,7 @@ module Solargraph
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
             end
-            result.concat(Pin::Narrowing.variables(locals))
+            result.concat locals
             result.concat file_global_methods unless closure.binder.namespace.empty?
             result.concat api_map.get_constants(context_pin.context.namespace, *gates)
             result.concat api_map.get_methods(closure.binder.namespace, scope: closure.binder.scope,

@@ -60,9 +60,9 @@ module Solargraph
         chain = Parser.chain(receiver, filename, node)
         # @sg-ignore Need to add nil check here
         clip = api_map.clip_at(location.filename, location.range.start)
-        locals = clip.locals - [self]
+        expression_types = clip.expression_types - [self]
         # @sg-ignore Need to add nil check here
-        meths = chain.define(api_map, closure, locals)
+        meths = chain.define(api_map, closure, expression_types)
         # @todo Convert logic to use signatures
         # @param meth [Pin::Method]
         meths.each do |meth|
@@ -75,14 +75,14 @@ module Solargraph
           argument_types = destructure_yield_types(yield_types, parameters)
           param_types = argument_types.each_with_index.map do |arg_type, idx|
             param = parameters[idx]
-            param_type = chain.base.infer(api_map, param, locals)
+            param_type = chain.base.infer(api_map, param, expression_types)
             unless arg_type.nil?
               if arg_type.generic? && param_type.defined?
                 # @sg-ignore Need to add nil check here
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                 arg_type.resolve_generics(namespace_pin, param_type)
               else
-                arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, *meth.gates)
+                arg_type.self_to_type(chain.base.infer(api_map, self, expression_types)).qualify(api_map, *meth.gates)
               end
             end
           end
@@ -101,9 +101,9 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         chain = Parser.chain(receiver, location.filename, node)
         # @sg-ignore Need to add nil check here
-        locals = api_map.source_map(location.filename).locals_at(location)
+        expression_types = api_map.source_map(location.filename).expression_types_at(location)
         # @sg-ignore Need to add nil check here
-        receiver_pin = chain.define(api_map, closure, locals).first
+        receiver_pin = chain.define(api_map, closure, expression_types).first
         return ComplexType::UNDEFINED unless receiver_pin
 
         types = receiver_pin.docstring.tag(:yieldreceiver)&.types
@@ -113,7 +113,7 @@ module Solargraph
         # if we have Foo.bar { |x| ... }, and the bar method references self...
         target = if chain.base.defined?
                    # figure out Foo
-                   chain.base.infer(api_map, name_pin, locals)
+                   chain.base.infer(api_map, name_pin, expression_types)
                  else
                    # if not, any self there must be the context of our closure
                    # @sg-ignore Need to add nil check here

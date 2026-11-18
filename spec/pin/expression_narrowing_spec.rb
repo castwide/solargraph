@@ -68,9 +68,9 @@ describe Solargraph::Pin::ExpressionNarrowing do
     end
   end
 
-  it 'is a Narrowing whose narrowing_subject is its steps' do
-    expect(narrowing).to be_a(Solargraph::Pin::Narrowing)
-    expect(narrowing.narrowing_subject).to eq(narrowing.steps)
+  it 'is an ExpressionType whose expression is its steps' do
+    expect(narrowing).to be_a(Solargraph::Pin::ExpressionType)
+    expect(narrowing.expression).to eq(narrowing.steps)
   end
 
   describe '#visible_at?' do

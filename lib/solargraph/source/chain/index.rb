@@ -25,7 +25,7 @@ module Solargraph
           @steps = Pin::ExpressionNarrowing.steps_from_node(node)
         end
 
-        # The Pin::ExpressionNarrowing in `locals` that proves this lookup
+        # The Pin::ExpressionNarrowing in `expression_types` that proves this lookup
         # present, if any. Applies only when 'h' is a Hash whose values
         # can't be nil, and 'h' and 'k' read variables or attr_readers,
         # which return the same value every time.
@@ -33,23 +33,23 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param receiver_type [ComplexType, ComplexType::UniqueType] the type of 'h'
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
-        # @sg-ignore Declared return type ::Solargraph::Pin::ExpressionNarrowing, nil does not match inferred type ::Solargraph::Pin::Narrowing, nil for Solargraph::Source::Chain::Index#narrowing
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
+        # @sg-ignore Declared return type ::Solargraph::Pin::ExpressionNarrowing, nil does not match inferred type ::Solargraph::Pin::ExpressionType, nil for Solargraph::Source::Chain::Index#narrowing
         # @return [Pin::ExpressionNarrowing, nil]
-        def narrowing api_map, name_pin, receiver_type, locals
+        def narrowing api_map, name_pin, receiver_type, expression_types
           location = self.location
           return if with_block? || arguments.length != 1 || location.nil? || steps.nil?
 
-          facts = locals.grep(Pin::ExpressionNarrowing).select do |fact|
-            fact.visible_at?(name_pin, location) && fact.narrowing_subject == steps
+          facts = expression_types.grep(Pin::ExpressionNarrowing).select do |fact|
+            fact.visible_at?(name_pin, location) && fact.expression == steps
           end
           return if facts.empty? || !non_nil_hash?(receiver_type, api_map)
 
           # the local variables 'h' and 'k' read here
           bindings = []
-          return unless [@receiver, @key].all? { |node| stable?(node, api_map, name_pin, locals, bindings) }
+          return unless [@receiver, @key].all? { |node| stable?(node, api_map, name_pin, expression_types, bindings) }
 
-          # @sg-ignore Unresolved call to proves? on Solargraph::Pin::Narrowing
+          # @sg-ignore Unresolved call to proves? on Solargraph::Pin::ExpressionType
           facts.find { |fact| fact.proves?(api_map, bindings) }
         end
 
@@ -58,12 +58,12 @@ module Solargraph
         # @param node [::Parser::AST::Node, nil] a node #steps_from_node accepts
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
         # @param bindings [::Array<Pin::BaseVariable>] gets the local
         #   variables `node` reads
         # @return [Boolean] true unless `node` calls a method other than
         #   an attr_reader, or reads a local variable that isn't in sight
-        def stable? node, api_map, name_pin, locals, bindings
+        def stable? node, api_map, name_pin, expression_types, bindings
           return false if node.nil?
 
           case node.type
@@ -73,7 +73,7 @@ module Solargraph
 
             # every same-named variable in sight, as #define merges a block
             # parameter with the outer variable it shadows
-            found = Pin::Narrowing.variables(locals).select do |pin|
+            found = Pin::ExpressionType.variables(expression_types).select do |pin|
               pin.name == node.children[0].to_s && pin.visible_at?(name_pin, location)
             end
             bindings.concat(found)
@@ -81,9 +81,9 @@ module Solargraph
           when :send
             receiver = node.children[0]
             return false unless receiver.nil? ||
-                                (receiver.is_a?(::Parser::AST::Node) && stable?(receiver, api_map, name_pin, locals, bindings))
+                                (receiver.is_a?(::Parser::AST::Node) && stable?(receiver, api_map, name_pin, expression_types, bindings))
 
-            pins = Parser.chain(node).define(api_map, name_pin, locals)
+            pins = Parser.chain(node).define(api_map, name_pin, expression_types)
             !pins.empty? && pins.all? { |pin| pin.is_a?(Pin::Method) && pin.attribute? }
           else
             true

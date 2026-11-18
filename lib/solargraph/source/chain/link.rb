@@ -27,9 +27,9 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Narrowing>] variables and expression narrowings visible at this point
+        # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
         # @return [::Array<Pin::Base>]
-        def resolve api_map, name_pin, locals
+        def resolve api_map, name_pin, expression_types
           []
         end
 

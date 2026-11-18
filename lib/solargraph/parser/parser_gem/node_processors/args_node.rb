@@ -13,7 +13,7 @@ module Solargraph
               else
                 node.children.each do |u|
                   loc = get_node_location(u)
-                  locals.push Solargraph::Pin::Parameter.new(
+                  expression_types.push Solargraph::Pin::Parameter.new(
                     location: loc,
                     closure: callable,
                     comments: comments_for(node),
@@ -25,7 +25,7 @@ module Solargraph
                     decl: get_decl(u),
                     source: :parser
                   )
-                  callable.parameters.push locals.last
+                  callable.parameters.push expression_types.last
                 end
               end
             end
@@ -38,7 +38,7 @@ module Solargraph
           # @return [void]
           def forward callable
             loc = get_node_location(node)
-            locals.push Solargraph::Pin::Parameter.new(
+            expression_types.push Solargraph::Pin::Parameter.new(
               location: loc,
               closure: callable,
               # @sg-ignore Need to add nil check here
@@ -46,7 +46,7 @@ module Solargraph
               decl: get_decl(node),
               source: :parser
             )
-            callable.parameters.push locals.last
+            callable.parameters.push expression_types.last
           end
 
           # @param node [AST::Node]

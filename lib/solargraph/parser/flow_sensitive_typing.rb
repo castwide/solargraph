@@ -19,12 +19,12 @@ module Solargraph
       # so that it may no longer match the entry stored under it
       KEY_MUTATORS = %i[<< []= concat prepend insert replace clear push append unshift setbyte force_encoding].freeze
 
-      # @param locals [Array<Solargraph::Pin::Narrowing>] the file's variables and expression narrowings
+      # @param expression_types [Array<Solargraph::Pin::ExpressionType>] the file's variables and expression narrowings
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
-        @locals = locals
+      def initialize expression_types, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
+        @expression_types = expression_types
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
@@ -253,7 +253,7 @@ module Solargraph
                                source: :flow_sensitive_typing,
                                presence: presence)
         if pin.is_a?(Pin::LocalVariable)
-          locals.push(new_pin)
+          expression_types.push(new_pin)
         elsif pin.is_a?(Pin::InstanceVariable)
           ivars.push(new_pin)
         else
@@ -432,7 +432,7 @@ module Solargraph
           ivars.find { |ivar| ivar.name == variable_name && (!ivar.presence || ivar.presence.include?(position)) }
         else
           # @sg-ignore flow sensitive typing needs to handle attrs
-          locals.find { |pin| pin.name == variable_name && (!pin.presence || pin.presence.include?(position)) }
+          expression_types.find { |pin| pin.name == variable_name && (!pin.presence || pin.presence.include?(position)) }
         end
       end
 
@@ -619,7 +619,7 @@ module Solargraph
         location = Location.from_node(location_node)
         check = value && non_nil_check(value, location, closure)
         clip_at_key_writes(presences, receiver, key).each do |presence|
-          locals.push Pin::ExpressionNarrowing.new(
+          expression_types.push Pin::ExpressionNarrowing.new(
             location: location,
             closure: closure,
             steps: steps,
@@ -650,8 +650,8 @@ module Solargraph
         range = Range.from_node(value)
         return false unless filename && range
 
-        clip_locals = api_map.clip_at(filename, range.ending).locals
-        type = Parser.chain(value, nil, nil).infer(api_map, closure, clip_locals)
+        clip_expression_types = api_map.clip_at(filename, range.ending).expression_types
+        type = Parser.chain(value, nil, nil).infer(api_map, closure, clip_expression_types)
         type.defined? && type.to_a.none? { |t| t.namespace == 'NilClass' }
       end
 
@@ -738,7 +738,7 @@ module Solargraph
         %i[return raise next redo retry].include?(clause_node&.type)
       end
 
-      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
+      attr_reader :expression_types, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
     end
   end
 end
