@@ -13,7 +13,7 @@ module Solargraph
         # @return [Array<Pin::Base>]
         attr_reader :pins
 
-        # @return [Array<Pin::LocalVariable>]
+        # @return [Array<Pin::Narrowing>]
         attr_reader :locals
 
         # @return [Array<Pin::InstanceVariable>]
@@ -22,7 +22,7 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @param region [Region]
         # @param pins [Array<Pin::Base>]
-        # @param locals [Array<Pin::LocalVariable>]
+        # @param locals [Array<Pin::Narrowing>]
         # @param ivars [Array<Pin::InstanceVariable>]
         def initialize node, region, pins, locals, ivars
           @node = node

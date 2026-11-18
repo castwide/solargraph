@@ -21,7 +21,6 @@ module Solargraph
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
       def define
         return [] if cursor.comment? || cursor.chain.literal? || cursor.chain.require_parameter?
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1384
         result = cursor.chain.define(api_map, closure, locals)
         result.concat file_global_methods
         if result.empty?
@@ -67,11 +66,9 @@ module Solargraph
 
       # @return [ComplexType]
       def infer
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1384
         result = cursor.chain.infer(api_map, closure, locals)
         if result.tag == 'Class'
           # HACK: Exception to return BasicObject from Class#new
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1384
           dfn = cursor.chain.define(api_map, closure, locals).first
           return ComplexType.try_parse('::BasicObject') if dfn && dfn.path == 'Class#new'
         end
@@ -84,7 +81,7 @@ module Solargraph
       # position. Locals can be local variables, method parameters, or block
       # parameters. The array starts with the nearest local pin.
       #
-      # @return [::Array<Solargraph::Pin::LocalVariable>]
+      # @return [::Array<Solargraph::Pin::Narrowing>]
       def locals
         @locals ||= source_map.locals_at(location)
       end
@@ -98,7 +95,6 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def translate phrase
         chain = Parser.chain(Parser.parse(phrase, cursor.filename, cursor.position.line))
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1384
         chain.define(api_map, closure, locals)
       end
 
@@ -200,7 +196,6 @@ module Solargraph
         if cursor.chain.constant? || cursor.start_of_constant?
           full = cursor.chain.links.first.word
           type = if cursor.chain.undefined?
-                   # @sg-ignore https://github.com/castwide/solargraph/pull/1384
                    cursor.chain.base.infer(api_map, context_pin, locals)
                  elsif full.include?('::') && cursor.chain.links.length == 1
                    # @sg-ignore Need to add nil check here
@@ -222,7 +217,6 @@ module Solargraph
                                                 cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
           end
         else
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1384
           type = cursor.chain.base.infer(api_map, closure, locals)
           result.concat api_map.get_complex_type_methods(type, closure.binder.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
