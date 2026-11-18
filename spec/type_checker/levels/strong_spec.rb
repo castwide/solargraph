@@ -1425,6 +1425,50 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to map on Array<Integer>, nil'])
     end
 
+    it 'keeps a guarded attribute narrowed on the right-hand side of its write' do
+      checker = type_checker(%(
+        class Signature
+          # @return [Signature]
+          def resolve; self; end
+        end
+
+        class Callable
+          # @return [Signature, nil]
+          attr_accessor :block
+        end
+
+        # @param callable [Callable]
+        # @return [void]
+        def resolve_block callable
+          callable.block = callable.block.resolve if callable.block
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'reports an unguarded attribute on the right-hand side of its write' do
+      checker = type_checker(%(
+        class Signature
+          # @return [Signature]
+          def resolve; self; end
+        end
+
+        class Callable
+          # @return [Signature, nil]
+          attr_accessor :block
+        end
+
+        # @param callable [Callable]
+        # @return [void]
+        def resolve_block callable
+          callable.block = callable.block.resolve
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to resolve on Signature, nil'])
+    end
+
     it 'resolves the operators TrueClass and FalseClass share on Boolean' do
       checker = type_checker(%(
         class Foo

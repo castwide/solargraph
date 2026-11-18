@@ -1340,6 +1340,55 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Location, nil')
   end
 
+  it 'keeps attr_reader narrowing on the right-hand side of the attribute write' do
+    source = Solargraph::Source.load_string(%(
+      class Signature
+        # @return [Signature]
+        def resolve; self; end
+      end
+
+      class Callable
+        # @return [Signature, nil]
+        attr_accessor :block
+      end
+
+      # @param callable [Callable]
+      # @return [void]
+      def resolve_block callable
+        callable.block = callable.block.resolve if callable.block
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [14, 34])
+    expect(clip.infer.rooted_tags).to eq('::Signature')
+  end
+
+  it 'drops attr_reader narrowing after the attribute write' do
+    source = Solargraph::Source.load_string(%(
+      class Signature
+        # @return [Signature]
+        def resolve; self; end
+      end
+
+      class Callable
+        # @return [Signature, nil]
+        attr_accessor :block
+      end
+
+      # @param callable [Callable]
+      # @return [void]
+      def resolve_block callable
+        if callable.block
+          callable.block = callable.block.resolve
+          callable.block
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [16, 20])
+    expect(clip.infer.rooted_tags).to eq('::Signature, nil')
+  end
+
   it 'drops bare attr_reader narrowing once the attribute is written through self' do
     source = Solargraph::Source.load_string(%(
       class Location; end

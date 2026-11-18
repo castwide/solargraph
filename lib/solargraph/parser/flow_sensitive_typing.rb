@@ -348,13 +348,14 @@ module Solargraph
       #       ::Array(:cvar, ::Symbol)>)>] e.g. [[:lvar, :pin], [:call, :location]]
       # @param writes [::Array<::Array<Position>>] for each write found so
       #   far, the starts of its enclosing REPEATING nodes, outermost first,
-      #   then the start of the write
+      #   then the end of the write
       # @param repeats [::Array<Position>] starts of the REPEATING nodes
       #   enclosing `node`, outermost first
       # @return [void]
       def collect_writes node, steps, writes, repeats
         range = Range.from_node(node)
-        writes << [*repeats, range.start] if range && write_to?(node, steps)
+        # the right-hand side still reads the value from before the write
+        writes << [*repeats, range.ending] if range && write_to?(node, steps)
         repeats += [range.start] if range && REPEATING.include?(node.type)
         node.children.each do |child|
           collect_writes(child, steps, writes, repeats) if child.is_a?(::Parser::AST::Node)
