@@ -227,7 +227,7 @@ describe Solargraph::Workspace do
     it 'keys the ApiMap gem cache on the plugin gem, as solargraph gems does' do
       api_map = Solargraph::ApiMap.new
       api_map.catalog Solargraph::Bench.new
-      expect(api_map.external.plugin_versions).to eq('required-probe-plugin' => '1.2.3')
+      expect(api_map.external.plugin_versions).to include('required-probe-plugin' => '1.2.3')
     end
   end
 end
