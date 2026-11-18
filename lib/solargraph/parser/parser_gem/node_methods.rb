@@ -191,7 +191,10 @@ module Solargraph
           return false if clause_node.nil?
 
           # A multi-statement clause parses as :begin; only its last child leaves.
-          return always_leaves_compound_statement?(clause_node.children.last) if clause_node.type == :begin
+          if clause_node.type == :begin
+            last_statement = clause_node.children.last
+            return last_statement.is_a?(::Parser::AST::Node) && always_leaves_compound_statement?(last_statement)
+          end
 
           return false unless clause_node.type == :send
 

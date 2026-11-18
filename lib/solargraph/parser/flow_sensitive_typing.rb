@@ -208,7 +208,7 @@ module Solargraph
         #     s(:send, nil, :c)), nil)
         # [4] pry(main)>
         subject_node = case_node.children[0]
-        return if subject_node.nil?
+        return unless subject_node.is_a?(::Parser::AST::Node)
         return unless %i[lvar ivar].include?(subject_node.type)
 
         variable_name = parse_variable(subject_node)
@@ -220,16 +220,16 @@ module Solargraph
         pin = find_var(variable_name, subject_range.start)
         return unless pin
 
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
-        when_nodes = case_node.children[1..].compact.select { |child| child.type == :when }
-        # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-        when_nodes.each do |when_node|
+        case_node.children.drop(1).each do |when_node|
+          next unless when_node.is_a?(::Parser::AST::Node)
+          next unless when_node.type == :when
+
           # The last child is the body; the rest are the 'when' values
           value_nodes = when_node.children.dup
           body_node = value_nodes.pop
-          next if body_node.nil?
+          next unless body_node.is_a?(::Parser::AST::Node)
 
-          type_names = value_nodes.map { |value_node| type_name(value_node) }
+          type_names = value_nodes.map { |value_node| type_name(value_node) if value_node.is_a?(::Parser::AST::Node) }
           # Only narrow if every value in this 'when' clause is a
           # simple constant reference - a splat, range, regexp, etc.
           # isn't a type we can express as a downcast.
@@ -263,12 +263,10 @@ module Solargraph
         #   s(:int, 1))
         # [4] pry(main)>
         lhs = or_asgn_node.children[0]
-        # @sg-ignore Parser::AST::Node#children is declared to return a bare Array, losing its element type here
+        return unless lhs.is_a?(::Parser::AST::Node)
         return unless %i[lvasgn ivasgn].include?(lhs.type)
 
-        # @sg-ignore Parser::AST::Node#children is declared to return a bare Array, losing its element type here
         variable_name = lhs.children[0].to_s
-        # @sg-ignore Parser::AST::Node#children is declared to return a bare Array, losing its element type here
         return if variable_name.empty?
 
         range = Range.from_node(or_asgn_node)
