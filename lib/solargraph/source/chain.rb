@@ -284,7 +284,7 @@ module Solargraph
               # @todo even at strong, no typechecking complaint
               #   happens when a [Pin::Base,nil] is passed into a method
               #   that accepts only [Pin::Namespace] as an argument
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1393
+              # @sg-ignore Wrong argument type for Solargraph::ComplexType#resolve_generics: context_type expected Solargraph::ComplexType, received Solargraph::ComplexType, Solargraph::ComplexType::UniqueType
               type = type.resolve_generics(pin.closure, name_pin.binder)
             end
             types << type

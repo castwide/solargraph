@@ -113,7 +113,7 @@ module Solargraph
         # @return [Pin::Closure, nil]
         def block_pin position
           # @todo determine if this can return a Pin::Block
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1392
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1399
           pins.select { |pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position) }.last
         end
 
@@ -121,7 +121,7 @@ module Solargraph
         # @param position [Solargraph::Position]
         # @return [Pin::Closure, nil]
         def closure_pin position
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1392
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1399
           pins.select { |pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position) }.last
         end
       end

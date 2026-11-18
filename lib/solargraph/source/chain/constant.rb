@@ -19,7 +19,7 @@ module Solargraph
             base = word
             gates = name_pin.gates
           end
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1395
+          # @sg-ignore Wrong argument type for Solargraph::ApiMap#resolve: name expected String, received String, nil
           fqns = api_map.resolve(base, gates)
           api_map.get_path_pins(fqns)
         end

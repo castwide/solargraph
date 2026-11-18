@@ -150,9 +150,9 @@ module Solargraph
           return true if inner.type == :str
           # @sg-ignore https://github.com/castwide/solargraph/pull/1394
           inner_code = at(Solargraph::Range.new(inner_range.start, position))
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1394
+          # @sg-ignore Unresolved call to end_with?; Unresolved call to ending
           return true if (inner.type == :dstr && inner_range.ending.character <= position.character && !inner_code.end_with?('}')) ||
-                         # @sg-ignore https://github.com/castwide/solargraph/pull/1394
+                         # @sg-ignore Unresolved call to ending; Unresolved call to end_with?
                          (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
         end
         # @sg-ignore https://github.com/castwide/solargraph/pull/1394
@@ -309,7 +309,7 @@ module Solargraph
       # @sg-ignore https://github.com/castwide/solargraph/pull/1396
       if FOLDING_NODE_TYPES.include?(top.type)
         range = Range.from_node(top)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
+        # @sg-ignore Unresolved call to start; Unresolved call to ending
         if (result.empty? || range.start.line > result.last.start.line) && range.ending.line - range.start.line >= 2
           result.push range
         end
@@ -410,7 +410,7 @@ module Solargraph
     def inner_tree_at node, position, stack
       return if node.nil?
       here = Range.from_node(node)
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1394
+      # @sg-ignore Unresolved call to contain?
       return unless here.contain?(position)
       stack.unshift node
       # @param c [Parser::AST::Node]

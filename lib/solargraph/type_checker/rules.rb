@@ -69,7 +69,7 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (394):
+      # pending code fixes (408):
       #
       # @todo 141: Need to add nil check here
       # @todo 33: pin.closure relies on closure always resolved
@@ -106,6 +106,19 @@ module Solargraph
       # @todo 1: Solargraph::Source::Chain::Parameter#current_index return type could not be inferred
       # @todo 1: Wrong argument type for Solargraph::LanguageServer::Host#receive: request expected Hash{String => undefined}, received Hash, nil
       # @todo 1: Unresolved call to []
+      # @todo 1: Wrong argument type for Solargraph::Location.new: range expected Solargraph::Range, received Solargraph::Range, nil
+      # @todo 1: Wrong argument type for Solargraph::ComplexType#resolve_generics: context_type expected Solargraph::ComplexType, received Solargraph::ComplexType, Solargraph::ComplexType::UniqueType
+      # @todo 1: Wrong argument type for Solargraph::ApiMap#resolve: name expected String, received String, nil
+      # @todo 1: Wrong argument type for Solargraph::ApiMap#get_method_stack: name expected String, received String, nil
+      # @todo 1: Unresolved call to start; Unresolved call to ending
+      # @todo 1: Unresolved call to start on Solargraph::Range, nil
+      # @todo 2: Unresolved call to qualify on Solargraph::ComplexType, nil
+      # @todo 1: Unresolved call to nil?
+      # @todo 1: Unresolved call to ending; Unresolved call to end_with?
+      # @todo 1: Unresolved call to ending on Solargraph::Range, nil
+      # @todo 1: Unresolved call to end_with?; Unresolved call to ending
+      # @todo 1: Unresolved call to each_with_index on Array<Array<Solargraph::Pin::Base>>, nil
+      # @todo 1: Unresolved call to contain?
       # @todo 1: Wrong argument type for Solargraph::Range.from_to: c1 expected Integer, received BigDecimal; Unresolved call to []
       # @todo 1: Unresolved call to value on Solargraph::Source::Chain::Link, nil
       # @todo 1: Unresolved call to sub on String, nil

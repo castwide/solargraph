@@ -78,9 +78,9 @@ module Solargraph
       # @param insert [String]
       # @return [String]
       def commit text, insert
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
+        # @sg-ignore Unresolved call to start on Solargraph::Range, nil
         start_offset = Position.to_offset(text, range.start)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
+        # @sg-ignore Unresolved call to ending on Solargraph::Range, nil
         end_offset = Position.to_offset(text, range.ending)
         (start_offset.zero? ? '' : text[0..(start_offset - 1)].to_s) + normalize(insert) + text[end_offset..].to_s
       end
