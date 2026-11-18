@@ -6,7 +6,13 @@ module Solargraph
       # A one-argument 'h[k]' lookup, which a Pin::ExpressionNarrowing
       # can prove present, e.g. after 'return unless h.key?(k)'.
       class Index < Call
-        # @return [::Array<::Array>, nil] see Pin::ExpressionNarrowing#steps
+        # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+        #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+        #     ::Array(:call, ::Symbol),
+        #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+        #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+        #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+        #       ::Array(:cvar, ::Symbol)>)>, nil] see Pin::ExpressionNarrowing#steps
         attr_reader :steps
 
         # @param node [::Parser::AST::Node] the 'h[k]'
