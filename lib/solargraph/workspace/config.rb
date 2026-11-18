@@ -111,6 +111,40 @@ module Solargraph
         raw_data['plugins']
       end
 
+      # Require the configured plugins.
+      #
+      # @return [Hash{String => String, nil}] Solargraph plugin gem name =>
+      #   version, nil when the plugin was not loaded from a gem; selects the
+      #   gem cache directory (see {Workspace#plugin_versions})
+      def require_plugins!
+        Config.require_plugins! plugins
+      end
+
+      # Require plugins.
+      #
+      # @param plugins [Array<String>] entries as the `plugins` key of
+      #   .solargraph.yml lists them. Each is passed to `require`, so it is
+      #   strictly a require path, though usually the same as the plugin
+      #   gem's name (e.g. solargraph-rails). The loaded gem that provides it
+      #   supplies the gem name and version recorded for it.
+      # @param strict [Boolean] raise LoadError for a plugin that fails to
+      #   load instead of leaving it out
+      # @return [Hash{String => String, nil}] Solargraph plugin gem name =>
+      #   version, nil when the plugin was not loaded from a gem; selects the
+      #   gem cache directory (see {Workspace#plugin_versions})
+      def self.require_plugins! plugins, strict: false
+        plugins.each_with_object({}) do |plugin, loaded|
+          require plugin
+          # @sg-ignore Unresolved call to name on Gem::BasicSpecification, Hash{String => Gem::BasicSpecification}
+          spec = Gem.loaded_specs.each_value.find { |s| s.name == plugin || s.contains_requirable_file?(plugin) }
+          # @sg-ignore each_with_object does not type its memo block param as the Hash passed in
+          loaded[spec&.name || plugin] = spec&.version&.to_s
+        rescue LoadError
+          raise if strict
+          Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
+        end
+      end
+
       # The maximum number of files to parse from the workspace.
       #
       # @sg-ignore Need to validate config

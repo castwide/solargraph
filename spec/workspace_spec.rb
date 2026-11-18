@@ -145,4 +145,89 @@ describe Solargraph::Workspace do
       described_class.new('./path', config)
     end.not_to raise_error
   end
+
+  context 'with two workspaces, one with a plugin configured' do
+    # Holds the plugin's load path, the workspace without plugins and a gem
+    let(:scratch_dir) { File.realpath(Dir.mktmpdir) }
+    let(:metagem) do
+      Solargraph::Metagem.new(name: 'workspace_probe_gem', full_path: File.join(scratch_dir, 'workspace_probe_gem-1.0.0'),
+                              spec_file: '', source: 'rubygems repository', version: '1.0.0',
+                              require_paths: ['lib'], dependencies: [])
+    end
+
+    before do
+      FileUtils.mkdir_p [File.join(scratch_dir, 'plugins'), File.join(scratch_dir, 'plain'), File.join(metagem.full_path, 'lib')]
+      File.write(File.join(scratch_dir, 'plugins', 'workspace_probe_plugin.rb'), '')
+      File.write(File.join(dir_path, '.solargraph.yml'), "plugins:\n  - workspace_probe_plugin\n")
+      File.write(File.join(metagem.full_path, 'lib', 'workspace_probe_gem.rb'), 'module WorkspaceProbeGem; end')
+      $LOAD_PATH.unshift File.join(scratch_dir, 'plugins')
+    end
+
+    after do
+      $LOAD_PATH.delete File.join(scratch_dir, 'plugins')
+      $LOADED_FEATURES.delete_if { |path| path.end_with?('workspace_probe_plugin.rb') }
+      FileUtils.rm_rf scratch_dir
+    end
+
+    it 'keeps the plain gem directory after loading the plugin workspace' do
+      described_class.new(dir_path)
+      expect(Solargraph::CacheDir.gem_dir).to eq(File.join(Solargraph::CacheDir.work_dir, 'gems'))
+    end
+
+    it 'caches and reads gems in each workspace\'s own directory' do
+      with_plugin = described_class.new(dir_path)
+      without_plugin = described_class.new(File.join(scratch_dir, 'plain'))
+      Solargraph::Collection::Gem.load metagem, with_plugin.plugin_versions
+      expect(Solargraph::Collection::Gem.cached?(metagem, without_plugin.plugin_versions)).to be(false)
+
+      Solargraph::Collection::Gem.load metagem, without_plugin.plugin_versions
+      cache_dirs = [with_plugin, without_plugin].map do |workspace|
+        File.dirname(Solargraph::Collection::Gem.new(metagem, workspace.plugin_versions).cache_file)
+      end
+      expect(cache_dirs).to eq([Solargraph::CacheDir.gem_dir('workspace_probe_plugin' => nil),
+                                File.join(Solargraph::CacheDir.work_dir, 'gems')])
+    ensure
+      [with_plugin, without_plugin].compact.each { |workspace| Solargraph::Collection::Gem.uncache metagem, workspace.plugin_versions }
+    end
+
+    it 'passes its plugins to the ApiMap that catalogs it' do
+      api_map = Solargraph::ApiMap.new
+      api_map.catalog Solargraph::Bench.new(workspace: described_class.new(dir_path))
+      expect(api_map.external.plugin_versions.keys).to eq(['workspace_probe_plugin'])
+    end
+  end
+
+  context 'without a directory, with a plugin gem loaded by require' do
+    let(:plugin_root) { File.realpath(Dir.mktmpdir) }
+
+    before do
+      plugin_file = File.join(plugin_root, 'lib', 'required_probe_plugin.rb')
+      plugin_spec = Gem::Specification.new do |s|
+        s.name = 'required-probe-plugin'
+        s.version = '1.2.3'
+      end
+      FileUtils.mkdir_p File.dirname(plugin_file)
+      File.write(plugin_file, <<~RUBY)
+        module RequiredProbePlugin
+          class Convention < Solargraph::Convention::Base; end
+        end
+        Solargraph::Convention.register RequiredProbePlugin::Convention
+      RUBY
+      loaded_specs = Gem.loaded_specs.merge('required-probe-plugin' => plugin_spec)
+      allow(plugin_spec).to receive(:full_gem_path).and_return(plugin_root)
+      allow(Gem).to receive(:loaded_specs).and_return(loaded_specs)
+      load plugin_file
+    end
+
+    after do
+      Solargraph::Convention.unregister RequiredProbePlugin::Convention
+      FileUtils.rm_rf plugin_root
+    end
+
+    it 'keys the ApiMap gem cache on the plugin gem, as solargraph gems does' do
+      api_map = Solargraph::ApiMap.new
+      api_map.catalog Solargraph::Bench.new
+      expect(api_map.external.plugin_versions).to include('required-probe-plugin' => '1.2.3')
+    end
+  end
 end

@@ -23,11 +23,17 @@ module Solargraph
       File.join(base_dir, "ruby-#{RUBY_VERSION}", "rbs-#{RBS::VERSION}", "solargraph-#{Solargraph::VERSION}")
     end
 
-    # The current gem directory.
+    # The gem directory for a set of plugins. Plugins can change the pins
+    # mapped from gem source, so each set of plugin versions gets its own.
     #
+    # @param plugin_versions [Hash{String => String, nil}] Solargraph plugin
+    #   gem name => version, nil when the plugin was not loaded from a gem
+    #   (see {Workspace#plugin_versions})
     # @return [String]
-    def gem_dir
-      File.join(work_dir, 'gems')
+    def gem_dir plugin_versions = {}
+      return File.join(work_dir, 'gems') if plugin_versions.empty?
+      key = plugin_versions.sort.map { |name, version| [name, version].compact.join('-') }.join('+')
+      File.join(work_dir, "gems-#{key.tr(File::SEPARATOR, '_')}")
     end
 
     # The current stdlib directory.

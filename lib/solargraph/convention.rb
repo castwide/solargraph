@@ -25,6 +25,25 @@ module Solargraph
       @@conventions.delete_if { |c| c.is_a?(convention) }
     end
 
+    # The gems other than Solargraph that define the registered conventions,
+    # keyed like {Workspace#plugin_versions}. A Workspace with no directory
+    # has no config naming its plugins, so it uses these to pick its gem
+    # cache directory. A convention's gem is the loaded gem whose directory
+    # holds the file that defines the convention's class.
+    #
+    # @return [Hash{String => String}] gem name => version
+    def self.plugin_versions
+      @@conventions.to_a.filter_map do |conv|
+        name = conv.class.name
+        next if name.nil?
+        file = Object.const_source_location(name)&.first
+        next if file.nil?
+        spec = Gem.loaded_specs.values.find { |s| file.start_with?(File.join(s.full_gem_path, '')) }
+        next if spec.nil? || spec.name == 'solargraph'
+        [spec.name, spec.version.to_s]
+      end.to_h
+    end
+
     # @param source_map [SourceMap]
     # @return [Environ]
     def self.for_local source_map
