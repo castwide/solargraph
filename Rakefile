@@ -68,7 +68,7 @@ def undercover
   status
 rescue StandardError => e
   warn "hit error: #{e.message}"
-  # @sg-ignore Should better support meaning of '&' in RBS
+  # @sg-ignore Need intersection type support
   warn "Backtrace:\n#{e.backtrace.join("\n")}"
   warn "output: #{output}"
   puts 'Flushing'

@@ -32,7 +32,7 @@ module Solargraph
             )
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
-            # @sg-ignore Should better support meaning of '&' in RBS
+            # @sg-ignore Need intersection type support
             Logging.logger.warn e.backtrace.join("\n")
             # @sg-ignore https://github.com/castwide/solargraph/pull/1451
             set_result nil

@@ -284,7 +284,7 @@ module Solargraph
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && (match = cursor.word.match(/^[^a-z0-9_]+/i))
           found.map! do |loc|
-            # @sg-ignore Wrong argument type for Solargraph::Range.from_to: c1 expected Integer, received BigDecimal; Unresolved call to []
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1338
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end

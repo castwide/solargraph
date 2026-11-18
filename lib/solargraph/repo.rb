@@ -105,7 +105,7 @@ module Solargraph
         if s.success?
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
-          # @sg-ignore Hash#[] relies on key always being present
+          # @sg-ignore Need record type support
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
           # @sg-ignore https://github.com/castwide/solargraph/pull/1479
           @bundled_group_map = json[:groups].transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }

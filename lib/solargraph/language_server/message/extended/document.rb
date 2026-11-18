@@ -14,7 +14,7 @@ module Solargraph
             )
           rescue StandardError => e
             Solargraph.logger.warn "Error processing document: [#{e.class}] #{e.message}"
-            # @sg-ignore Should better support meaning of '&' in RBS
+            # @sg-ignore Need intersection type support
             Solargraph.logger.debug e.backtrace.join("\n")
           end
         end
