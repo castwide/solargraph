@@ -12,7 +12,13 @@ module Solargraph
     class ExpressionNarrowing < Base
       include Narrowing
 
-      # @return [::Array<::Array>]
+      # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>]
       attr_reader :steps
 
       # @return [Range]
@@ -28,7 +34,13 @@ module Solargraph
       #   holds, for conditions that need type inference to decide
       attr_reader :check
 
-      # @param steps [::Array<::Array>]
+      # @param steps [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>]
       # @param presence [Range]
       # @param exclude_return_type [ComplexType, nil]
       # @param intersection_return_type [ComplexType, nil]
@@ -44,7 +56,13 @@ module Solargraph
         @check = check
       end
 
-      # @return [::Array<::Array>]
+      # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>]
       def narrowing_subject
         steps
       end
@@ -76,7 +94,13 @@ module Solargraph
       end
 
       # @param node [::Parser::AST::Node, nil]
-      # @return [::Array<::Array>, nil] the steps `node` reads, or nil
+      # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>, nil] the steps `node` reads, or nil
       #   unless it is a variable root followed by narrowable steps
       def self.steps_from_node node
         return if node.nil?
@@ -101,13 +125,15 @@ module Solargraph
       end
 
       # @param node [::Parser::AST::Node]
-      # @return [::Array, nil]
+      # @return [::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol), ::Array(:cvar, ::Symbol), nil]
       def self.root_step node
         [node.type, node.children[0]] if %i[lvar ivar cvar].include?(node.type)
       end
 
       # @param node [::Parser::AST::Node]
-      # @return [::Array, nil]
+      # @return [::Array(:literal, :str, ::String), ::Array(:literal, :sym, ::Symbol),
+      #   ::Array(:literal, :int, ::Integer), ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #   ::Array(:cvar, ::Symbol), nil]
       def self.key_step node
         return [:literal, node.type, node.children[0]] if %i[str sym int].include?(node.type)
 
