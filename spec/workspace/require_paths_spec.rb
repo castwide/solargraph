@@ -34,12 +34,12 @@ describe Solargraph::Workspace::RequirePaths do
       expect(paths).to include(File.join(dir_path, 'lib'))
     end
 
-    it 'queried via Open3.capture3' do
-      allow(Open3).to receive(:capture3).and_call_original
+    it 'does not evaluate gemspecs in a subprocess' do
+      allow(Open3).to receive(:capture3)
 
       paths
 
-      expect(Open3).to have_received(:capture3)
+      expect(Open3).not_to have_received(:capture3)
     end
   end
 
@@ -74,6 +74,42 @@ describe Solargraph::Workspace::RequirePaths do
 
     it 'does not raise an error' do
       expect { paths }.not_to raise_error
+    end
+  end
+
+  context 'with a gemspec that must not be evaluated' do
+    let(:dir_path) { File.realpath(Dir.mktmpdir) }
+    let(:gemspec_file) { File.join(dir_path, 'guarded.gemspec') }
+
+    before do
+      File.write gemspec_file, <<~GEMSPEC
+        raise 'This gemspec must not be evaluated'
+
+        Gem::Specification.new do |s|
+          s.require_paths = ['other_lib']
+        end
+      GEMSPEC
+    end
+
+    it 'parses require paths without executing the gemspec' do
+      expect(paths).to include(File.join(dir_path, 'other_lib'))
+    end
+  end
+
+  context 'with a gemspec that sets require_paths dynamically' do
+    let(:dir_path) { File.realpath(Dir.mktmpdir) }
+    let(:gemspec_file) { File.join(dir_path, 'dynamic.gemspec') }
+
+    before do
+      File.write gemspec_file, <<~GEMSPEC
+        Gem::Specification.new do |s|
+          s.require_paths = Dir['*']
+        end
+      GEMSPEC
+    end
+
+    it 'defaults to the lib directory' do
+      expect(paths).to include(File.join(dir_path, 'lib'))
     end
   end
 
