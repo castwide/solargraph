@@ -145,7 +145,7 @@ module Solargraph
           return 'Object' if duck_type?
           return 'NilClass' if nil_type?
           # @sg-ignore https://github.com/castwide/solargraph/pull/1258
-          #   empty? guards need https://github.com/apiology/solargraph/pull/175 on top
+          #   https://github.com/apiology/solargraph/pull/175
           %w[Class Module].include?(name) && !subtypes.empty? ? subtypes.first.name : name
         end.call
       end

@@ -250,7 +250,7 @@ module Solargraph
         argcount = arguments.length
         parcount = mandatory_positional_param_count
         # @sg-ignore https://github.com/castwide/solargraph/pull/1258
-        #   empty? guards need https://github.com/apiology/solargraph/pull/175 on top
+        #   https://github.com/apiology/solargraph/pull/175
         parcount -= 1 if !parameters.empty? && parameters.last.block?
         return false if block? && block_required? && !with_block
         # @todo this and its caller should be changed so that this can

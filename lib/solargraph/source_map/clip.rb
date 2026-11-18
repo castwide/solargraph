@@ -142,7 +142,7 @@ module Solargraph
             result.push Pin::KeywordParam.new(pin.location, "#{param.name}:")
           end
           # @sg-ignore https://github.com/castwide/solargraph/pull/1258
-          #   empty? guards need https://github.com/apiology/solargraph/pull/175 on top
+          #   https://github.com/apiology/solargraph/pull/175
           next unless !pin.parameters.empty? && pin.parameters.last.kwrestarg?
           pin.docstring.tags(:param).each do |tag|
             next if done.include?(tag.name)

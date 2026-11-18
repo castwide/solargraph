@@ -794,7 +794,7 @@ module Solargraph
         # @sg-ignore Unresolved call to length on Array<Diff::LCS::Change>, nil
         return change if diffs.empty? || diffs.length > 1 || diffs.first.length > 1
         # @sg-ignore https://github.com/castwide/solargraph/pull/1258
-        #   empty? guards need https://github.com/apiology/solargraph/pull/175 on top
+        #   https://github.com/apiology/solargraph/pull/175
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)

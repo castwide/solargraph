@@ -123,7 +123,7 @@ module Solargraph
                        {
                          line: original.lines.length - 1,
                          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
-                         #   empty? guards need https://github.com/apiology/solargraph/pull/175 on top
+                         #   https://github.com/apiology/solargraph/pull/175
                          character: original.lines.last.length
                        }
                      end
