@@ -113,6 +113,7 @@ module Solargraph
         # if we have Foo.bar { |x| ... }, and the bar method references self...
         target = if chain.base.defined?
                    # figure out Foo
+                   # @sg-ignore https://github.com/castwide/solargraph/pull/1384
                    chain.base.infer(api_map, name_pin, locals)
                  else
                    # if not, any self there must be the context of our closure

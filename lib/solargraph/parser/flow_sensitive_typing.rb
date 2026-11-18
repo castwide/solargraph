@@ -651,6 +651,7 @@ module Solargraph
         return false unless filename && range
 
         clip_locals = api_map.clip_at(filename, range.ending).locals
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1384
         type = Parser.chain(value, nil, nil).infer(api_map, closure, clip_locals)
         type.defined? && type.to_a.none? { |t| t.namespace == 'NilClass' }
       end

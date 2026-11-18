@@ -310,6 +310,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1384
         pins = chain.define(api_map, closure_pin, locals)
         if pins.empty?
           result.push Problem.new(location, "Unresolved constant #{Solargraph::Parser::NodeMethods.unpack_name(const)}")
@@ -392,6 +393,7 @@ module Solargraph
       arguments = last_base_link.arguments
       return [] if any_forwarded_args?(arguments.map(&:node))
 
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1384
       pins = base.define(api_map, closure_pin, locals)
 
       first_pin = pins.first
@@ -406,6 +408,7 @@ module Solargraph
                fqns = if base.links.one?
                         closure_pin.namespace
                       else
+                        # @sg-ignore https://github.com/castwide/solargraph/pull/1384
                         base.base.infer(api_map, closure_pin, locals).namespace
                       end
                init = api_map.get_method_stack(fqns, 'initialize').first
@@ -492,6 +495,7 @@ module Solargraph
             if ptype.nil?
               # @todo Some level (strong, I guess) should require the param here
             else
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1384
               argtype = argchain.infer(api_map, closure_pin, locals)
               argtype = argtype.self_to_type(closure_pin.context)
               if argtype.defined? && ptype.defined? && !arg_conforms_to?(argtype, ptype)
@@ -540,6 +544,7 @@ module Solargraph
           ptype = data[:qualified]
           ptype = ptype.self_to_type(pin.context)
           unless ptype.undefined?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1384
             # @type [ComplexType]
             argtype = argchain.infer(api_map, closure_pin, locals).self_to_type(closure_pin.context)
             # @todo Unresolved call to defined?
@@ -703,6 +708,7 @@ module Solargraph
       # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       location = Location.new(filename, Range.from_node(pin.assignment))
       locals = source_map.locals_at(location)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1384
       type = chain.infer(api_map, closure_pin, locals)
       if type.undefined? && !rules.ignore_all_undefined?
         base = chain
@@ -711,6 +717,7 @@ module Solargraph
         # @type [Array<Solargraph::Pin::Base>]
         all_found = []
         until base.links.first.undefined?
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1384
           all_found = base.define(api_map, closure_pin, locals)
           found = all_found.first
           break if found

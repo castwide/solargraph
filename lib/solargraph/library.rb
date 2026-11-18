@@ -266,6 +266,7 @@ module Solargraph
           referenced&.path == pin.path
         end
         if pin.path == 'Class#new'
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1384
           caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
           if caller.defined?
             found.select! do |loc|

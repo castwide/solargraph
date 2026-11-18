@@ -27,7 +27,7 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param receiver_type [ComplexType, ComplexType::UniqueType] the type of 'h'
-        # @param locals [::Array<Pin::LocalVariable, Pin::ExpressionNarrowing>]
+        # @param locals [::Array<Pin::Narrowing>]
         # @sg-ignore https://github.com/apiology/solargraph/pull/358
         # @return [Pin::ExpressionNarrowing, nil]
         def narrowing api_map, name_pin, receiver_type, locals
@@ -53,7 +53,7 @@ module Solargraph
         # @param node [::Parser::AST::Node, nil] a node #steps_from_node accepts
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::LocalVariable, Pin::ExpressionNarrowing>]
+        # @param locals [::Array<Pin::Narrowing>]
         # @param bindings [::Array<Pin::LocalVariable>] gets the local
         #   variables `node` reads
         # @return [Boolean] true unless `node` calls a method other than
@@ -69,6 +69,7 @@ module Solargraph
             # every same-named variable in sight, as #define merges a block
             # parameter with the outer variable it shadows
             found = locals.grep(Pin::LocalVariable).select do |pin|
+              # @sg-ignore https://github.com/apiology/solargraph/pull/358
               pin.name == node.children[0].to_s && pin.visible_at?(name_pin, location)
             end
             bindings.concat(found)
