@@ -134,7 +134,15 @@ describe Solargraph::Pin::ExpressionNarrowing do
     it 'excludes and intersects types' do
       type = Solargraph::ComplexType.parse('Integer', 'String', 'nil')
       result = narrowing(exclude_return_type: Solargraph::ComplexType::NIL,
-                         intersection_return_type: Solargraph::ComplexType.parse('String'))
+                         intersection_return_types: [Solargraph::ComplexType.parse('String')])
+               .narrow(type, api_map)
+      expect(result.to_s).to eq('String')
+    end
+
+    it 'applies every intersection' do
+      type = Solargraph::ComplexType.parse('Integer', 'String', 'Symbol')
+      result = narrowing(intersection_return_types: [Solargraph::ComplexType.parse('Integer', 'String'),
+                                                     Solargraph::ComplexType.parse('String', 'Symbol')])
                .narrow(type, api_map)
       expect(result.to_s).to eq('String')
     end
