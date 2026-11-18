@@ -334,7 +334,10 @@ module Solargraph
       def find_capture var
         name = var.children.fetch(0).to_s
         start = get_node_start_position(var)
-        locals.find { |pin| pin.name == name && pin.location&.range&.start == start }
+        locals.each do |pin|
+          return pin if pin.is_a?(Pin::LocalVariable) && pin.name == name && pin.location&.range&.start == start
+        end
+        nil
       end
 
       # @param pattern [Parser::AST::Node]
