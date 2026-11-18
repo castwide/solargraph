@@ -95,7 +95,7 @@ module Solargraph
       # @todo 1: super is typed void though it returns a value
       # @todo 1: parser gem's Builders::Default#value has no return type
       # @todo 1: @@inference_cache has no declared value type
-      # @todo 2: Unresolved call to name
+      # @todo 2: Need defined? support
       # @todo 1: Solargraph::Plugin::ActiveSupport#classmethod_pins return type could not be inferred
       # @todo 1: Solargraph::Plugin::ActiveSupport#attribute_pins return type could not be inferred
       # @todo 1: Unresolved call to type; Unresolved call to children
