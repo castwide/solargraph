@@ -250,8 +250,7 @@ module Solargraph
         return nil if signatures.empty?
 
         rbs = "def #{name}: #{signatures.first.to_rbs}"
-        # @sg-ignore Need to add nil check here
-        signatures[1..].each do |sig|
+        signatures.drop(1).each do |sig|
           rbs += "\n"
           rbs += (' ' * (4 + name.length))
           rbs += "| #{name}: #{sig.to_rbs}"
