@@ -405,20 +405,20 @@ module Solargraph
         @rbs_annotations ||= Set.new
       end
 
-      # True when the method is declared to return the same value for the
-      # same receiver and arguments, with no side effects (RBS %a{pure})
-      #
-      # @return [Boolean]
-      def pure?
-        rbs_annotations.include?('pure')
-      end
-
       # True when this pin's signatures add to, rather than replace,
       # those of an earlier declaration of the same method.
       #
       # @return [Boolean]
       def overloading?
         !!@overloading
+      end
+
+      # True when the method is declared to return the same value for the
+      # same receiver and arguments, with no side effects (RBS %a{pure})
+      #
+      # @return [Boolean]
+      def pure?
+        rbs_annotations.include?('pure')
       end
 
       # @param signatures [::Array<Signature>]

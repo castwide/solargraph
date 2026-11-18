@@ -94,60 +94,6 @@ describe Solargraph::RbsMap::Conversions do
       end
     end
 
-    context 'with %a{pure} methods' do
-      let(:rbs) do
-        <<~RBS
-          class Foo
-            %a{pure}
-            def bar: () -> String?
-
-            def baz: () -> String?
-
-            %a{pure}
-            def self.qux: () -> String?
-
-            alias quux bar
-          end
-        RBS
-      end
-
-      it 'marks an annotated instance method pure' do
-        expect(api_map.get_method_stack('Foo', 'bar').first).to be_pure
-      end
-
-      it 'leaves an unannotated method impure' do
-        expect(api_map.get_method_stack('Foo', 'baz').first).not_to be_pure
-      end
-
-      it 'marks an annotated singleton method pure' do
-        expect(api_map.get_method_stack('Foo', 'qux', scope: :class).first).to be_pure
-      end
-
-      it 'carries purity to an alias of a pure method' do
-        expect(api_map.get_method_stack('Foo', 'quux').first).to be_pure
-      end
-    end
-
-    context 'with annotations on overloads' do
-      let(:rbs) do
-        <<~RBS
-          class Foo
-            def bar: %a{pure} () -> String | %a{pure} (Integer) -> String
-
-            def baz: %a{pure} () -> String | (Integer) -> String
-          end
-        RBS
-      end
-
-      it 'keeps an annotation that every overload has' do
-        expect(api_map.get_method_stack('Foo', 'bar').first).to be_pure
-      end
-
-      it 'drops an annotation that only some overloads have' do
-        expect(api_map.get_method_stack('Foo', 'baz').first).not_to be_pure
-      end
-    end
-
     context 'with a reopen that only adds annotations' do
       let(:rbs) do
         <<~RBS
@@ -471,6 +417,60 @@ describe Solargraph::RbsMap::Conversions do
 
       it 'generates a prepend reference naming the module' do
         expect(prepend_pin.name).to eq('Bar')
+      end
+    end
+
+    context 'with %a{pure} methods' do
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            %a{pure}
+            def bar: () -> String?
+
+            def baz: () -> String?
+
+            %a{pure}
+            def self.qux: () -> String?
+
+            alias quux bar
+          end
+        RBS
+      end
+
+      it 'marks an annotated instance method pure' do
+        expect(api_map.get_method_stack('Foo', 'bar').first).to be_pure
+      end
+
+      it 'leaves an unannotated method impure' do
+        expect(api_map.get_method_stack('Foo', 'baz').first).not_to be_pure
+      end
+
+      it 'marks an annotated singleton method pure' do
+        expect(api_map.get_method_stack('Foo', 'qux', scope: :class).first).to be_pure
+      end
+
+      it 'carries purity to an alias of a pure method' do
+        expect(api_map.get_method_stack('Foo', 'quux').first).to be_pure
+      end
+    end
+
+    context 'with annotations on overloads' do
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            def bar: %a{pure} () -> String | %a{pure} (Integer) -> String
+
+            def baz: %a{pure} () -> String | (Integer) -> String
+          end
+        RBS
+      end
+
+      it 'keeps an annotation that every overload has' do
+        expect(api_map.get_method_stack('Foo', 'bar').first).to be_pure
+      end
+
+      it 'drops an annotation that only some overloads have' do
+        expect(api_map.get_method_stack('Foo', 'baz').first).not_to be_pure
       end
     end
   end
