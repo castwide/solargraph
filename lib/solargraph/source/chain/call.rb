@@ -46,7 +46,7 @@ module Solargraph
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
-          # @sg-ignore https://github.com/apiology/solargraph/pull/358
+          # @sg-ignore Wrong argument type for Solargraph::ApiMap#var_at_location: candidates expected Array<Solargraph::Pin::BaseVariable>, received Array<Solargraph::Pin::Narrowing>
           found = api_map.var_at_location(locals.grep(Pin::BaseVariable), word, name_pin, location) if head?
 
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?

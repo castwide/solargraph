@@ -28,14 +28,14 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @param receiver_type [ComplexType, ComplexType::UniqueType] the type of 'h'
         # @param locals [::Array<Pin::Narrowing>]
-        # @sg-ignore https://github.com/apiology/solargraph/pull/358
+        # @sg-ignore Declared return type ::Solargraph::Pin::ExpressionNarrowing, nil does not match inferred type ::Solargraph::Pin::Narrowing, nil for Solargraph::Source::Chain::Index#narrowing
         # @return [Pin::ExpressionNarrowing, nil]
         def narrowing api_map, name_pin, receiver_type, locals
           location = self.location
           return if with_block? || arguments.length != 1 || location.nil? || steps.nil?
 
           facts = locals.grep(Pin::ExpressionNarrowing).select do |fact|
-            # @sg-ignore https://github.com/apiology/solargraph/pull/358
+            # @sg-ignore Unresolved call to steps on Solargraph::Pin::Narrowing
             fact.visible_at?(name_pin, location) && fact.steps == steps
           end
           return if facts.empty? || !non_nil_hash?(receiver_type, api_map)
@@ -44,7 +44,7 @@ module Solargraph
           bindings = []
           return unless [@receiver, @key].all? { |node| stable?(node, api_map, name_pin, locals, bindings) }
 
-          # @sg-ignore https://github.com/apiology/solargraph/pull/358
+          # @sg-ignore Unresolved call to proves? on Solargraph::Pin::Narrowing
           facts.find { |fact| fact.proves?(api_map, bindings) }
         end
 
@@ -69,7 +69,7 @@ module Solargraph
             # every same-named variable in sight, as #define merges a block
             # parameter with the outer variable it shadows
             found = locals.grep(Pin::LocalVariable).select do |pin|
-              # @sg-ignore https://github.com/apiology/solargraph/pull/358
+              # @sg-ignore Unresolved call to name on Solargraph::Pin::Narrowing
               pin.name == node.children[0].to_s && pin.visible_at?(name_pin, location)
             end
             bindings.concat(found)
