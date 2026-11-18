@@ -228,7 +228,7 @@ module Solargraph
 
           bindings = name_pin.is_a?(Pin::ProxyType) ? name_pin.receiver_bindings : []
           viewing = name_pin
-          # @sg-ignore Unresolved call to closure on Solargraph::Pin::Closure, nil
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1338
           viewing = viewing.closure until viewing.nil? || viewing.is_a?(Pin::Closure)
           narrowings = locals.grep(Pin::ExpressionNarrowing).select do |narrowing|
             narrowing.subject == steps && narrowing.visible_at?(viewing, location) &&
@@ -277,7 +277,7 @@ module Solargraph
           until here.nil? || here == narrowing.closure
             return true if here.is_a?(Pin::Block) && here.rebound?
 
-            # @sg-ignore Unresolved call to closure
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1322
             here = here.closure
           end
           false

@@ -230,8 +230,7 @@ module Solargraph
           return
         end
 
-        # @sg-ignore Unresolved call to downcast on Solargraph::Pin::BaseVariable,
-        #   Solargraph::Pin::ExpressionNarrowing
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         new_pin = pin.downcast(exclude_return_type: downcast_not_type,
                                intersection_return_type: downcast_type,
                                source: :flow_sensitive_typing,
@@ -299,7 +298,7 @@ module Solargraph
         presences.flat_map do |presence|
           cut = writes.filter_map { |positions| positions.find { |pos| presence.include?(pos) } }.min
           range = cut ? Range.new(presence.start, cut) : presence
-          # @sg-ignore Unresolved call to flat_map
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1326
           shadows.reduce([range]) { |pieces, shadow| pieces.flat_map { |piece| outside(piece, shadow) } }
         end
       end
@@ -497,9 +496,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         isa_position = Range.from_node(isa_node).start
 
-        # @sg-ignore Wrong argument type for
-        #   Solargraph::Parser::FlowSensitiveTyping#subject_pin: node expected
-        #   Parser::AST::Node, received String
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1461
         pin = subject_pin(receiver, isa_position)
         return unless pin
 
@@ -537,9 +534,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         nilp_position = Range.from_node(nilp_node).start
 
-        # @sg-ignore Wrong argument type for
-        #   Solargraph::Parser::FlowSensitiveTyping#subject_pin: node expected
-        #   Parser::AST::Node, received String
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1461
         pin = subject_pin(receiver, nilp_position)
         return unless pin
 
