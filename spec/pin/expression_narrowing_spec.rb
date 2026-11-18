@@ -109,6 +109,27 @@ describe Solargraph::Pin::ExpressionNarrowing do
     end
   end
 
+  it 'treats module_function copies of a method as one closure' do
+    source = Solargraph::Source.load_string(%(
+      module Mod
+        module_function
+
+        def bar h
+          h
+        end
+      end
+    ), 'mod.rb')
+    source_map = Solargraph::SourceMap.map(source)
+    copies = source_map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Method) && pin.name == 'bar' }
+    h = source_map.locals.find { |pin| pin.name == 'h' }
+    narrowing = described_class.new(steps: [%i[lvar h], %i[call size]], presence: Solargraph::Range.from_to(4, 0, 6, 0),
+                                    closure: copies.first,
+                                    location: Solargraph::Location.new('mod.rb', Solargraph::Range.from_to(4, 0, 4, 0)))
+    expect(copies.map(&:scope)).to contain_exactly(:class, :instance)
+    expect(copies.map { |copy| narrowing.visible_at?(copy, loc(5, 'mod.rb')) }).to eq([true, true])
+    expect(narrowing.proves?(api_map, [h])).to be true
+  end
+
   describe '#narrow' do
     it 'excludes and intersects types' do
       type = Solargraph::ComplexType.parse('Integer', 'String', 'nil')
