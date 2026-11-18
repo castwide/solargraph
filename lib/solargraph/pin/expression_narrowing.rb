@@ -169,7 +169,7 @@ module Solargraph
       def nested_in? scope, outer
         return false if scope.nil? || outer.nil?
 
-        scope == outer || nested_in?(scope.closure, outer)
+        same_closure?(scope, outer) || nested_in?(scope.closure, outer)
       end
 
       # @param viewing [Pin::Closure, nil]
@@ -178,7 +178,19 @@ module Solargraph
       def within? viewing
         return false if viewing.nil?
 
-        viewing == closure || within?(viewing.closure)
+        same_closure?(viewing, closure) || within?(viewing.closure)
+      end
+
+      # module_function makes class and instance copies of one def; they
+      # share its node, and so its body
+      #
+      # @param pin [Pin::Closure]
+      # @param other [Pin::Closure, nil]
+      # @return [Boolean]
+      def same_closure? pin, other
+        return true if pin == other
+
+        pin.is_a?(Pin::Method) && other.is_a?(Pin::Method) && !pin.node.nil? && pin.node.equal?(other.node)
       end
     end
   end
