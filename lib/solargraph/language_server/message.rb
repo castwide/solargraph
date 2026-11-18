@@ -37,6 +37,10 @@ module Solargraph
 
         # @param path [String]
         # @return [Class<Solargraph::LanguageServer::Message::Base>]
+        # @sg-ignore Declared return type ::Class<::Solargraph::LanguageServer::Message::Base> does not match
+        #   inferred type ::Class<::Solargraph::LanguageServer::Message::Base>, nil,
+        #   ::Class<::Solargraph::LanguageServer::Message::MethodNotImplemented>,
+        #   ::Class<::Solargraph::LanguageServer::Message::MethodNotFound> for Solargraph::LanguageServer::Message.select
         def select path
           if method_map.key?(path)
             method_map[path]

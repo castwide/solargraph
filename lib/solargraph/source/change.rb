@@ -31,11 +31,11 @@ module Solargraph
         if nullable && !range.nil? && new_text.match(/[.\[{(@$:]$/)
           [':', '@'].each do |dupable|
             next unless new_text == dupable
-            # @sg-ignore flow sensitive typing needs to handle attrs
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
             offset = Position.to_offset(text, range.start)
             if text[offset - 1] == dupable
               p = Position.from_offset(text, offset - 1)
-              # @sg-ignore flow sensitive typing needs to handle attrs
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1258
               r = Change.new(Range.new(p, range.start), ' ')
               text = r.write(text)
             end
@@ -60,12 +60,12 @@ module Solargraph
           fixed
         else
           result = commit text, fixed
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           off = Position.to_offset(text, range.start)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Unresolved call to match on String, nil
           match = result[0, off].match(/[.:]+\z/)
           if match
-            # @sg-ignore flow sensitive typing should be able to handle redefinition
+            # @sg-ignore Unresolved call to sub on String, nil
             result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..]
           end
           result
@@ -78,9 +78,9 @@ module Solargraph
       # @param insert [String]
       # @return [String]
       def commit text, insert
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Unresolved call to start on Solargraph::Range, nil
         start_offset = Position.to_offset(text, range.start)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Unresolved call to ending on Solargraph::Range, nil
         end_offset = Position.to_offset(text, range.ending)
         (start_offset.zero? ? '' : text[0..(start_offset - 1)].to_s) + normalize(insert) + text[end_offset..].to_s
       end

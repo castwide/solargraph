@@ -10,7 +10,7 @@ module Solargraph
     # @return [String]
     attr_reader :full_path
 
-    # @return [String]
+    # @return [String, nil]
     attr_reader :spec_file
 
     # @return [String]
@@ -28,6 +28,13 @@ module Solargraph
     # @return [String]
     attr_reader :cache_name
 
+    # @param name [String]
+    # @param full_path [String]
+    # @param spec_file [String, nil]
+    # @param source [String]
+    # @param version [String]
+    # @param require_paths [Array<String>]
+    # @param dependencies [Array<String>]
     def initialize name:, full_path:, spec_file:, source:, version:, require_paths:, dependencies:
       @name = name
       @full_path = full_path
@@ -46,12 +53,14 @@ module Solargraph
       !!@cache_name
     end
 
+    # @param path [String]
     def require? path
       require_paths.any? do |req|
         File.file?(File.join(full_path, req, "#{path}.rb"))
       end
     end
 
+    # @return [Gem::Specification, nil]
     def to_specification
       Gem::Specification.load(spec_file)
     end

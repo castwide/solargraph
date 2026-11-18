@@ -23,6 +23,7 @@ module Solargraph
     #
     # @param path [String]
     # @return [Metagem, nil]
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1451
     def find_by_path path
       return system_find_by_path(path) unless bundled?
 
@@ -345,18 +346,21 @@ module Solargraph
              .map { |spec| Metagem.from_specification(spec) }
     end
 
+    # @return [Hash{String => Metagem}]
     def bundled_metagem_name_map
       @bundled_metagem_name_map ||= bundled.to_set
                                            .classify(&:name)
                                            .transform_values(&:first)
     end
 
+    # @return [Hash{String => Metagem, nil}]
     def bundled_metagem_path_map
       @bundled_metagem_path_map ||= Hash.new do |hash, path|
         hash[path] = bundled.find { |mg| mg.require?(path) }
       end
     end
 
+    # @return [Hash{Symbol => Array<Metagem>}]
     def bundled_group_map
       @bundled_group_map ||= {}
     end

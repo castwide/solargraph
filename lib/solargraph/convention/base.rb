@@ -23,7 +23,7 @@ module Solargraph
       # The Environ for a DocMap.
       # Subclasses can override this method.
       #
-      # @param doc_map [DocMap]
+      # @param doc_map [Object]
       # @return [Environ]
       def global doc_map
         EMPTY_ENVIRON

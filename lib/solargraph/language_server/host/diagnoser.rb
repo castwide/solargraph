@@ -78,10 +78,10 @@ module Solargraph
         # @return [Host]
         attr_reader :host
 
-        # @return [Mutex]
+        # @return [Thread::Mutex]
         attr_reader :mutex
 
-        # @return [::Array]
+        # @return [::Array<String>]
         attr_reader :queue
       end
     end

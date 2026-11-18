@@ -28,8 +28,12 @@ module Solargraph
             docs = pins
                    .reject { |pin| pin.documentation.empty? && pin.return_type.undefined? }
             result = original
+                     # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+                     #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
                      .merge(pins.first.resolve_completion_item)
                      .merge(documentation: markup_content(join_docs(docs)))
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+            #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
             result[:detail] = pins.first.detail
             IMMUTABLE_FIELDS.each { |field| result[field] = original[field] }
             result
