@@ -26,7 +26,10 @@ module Solargraph
     end
 
     # The gems other than Solargraph that define the registered conventions,
-    # keyed like {Workspace#plugin_versions}.
+    # keyed like {Workspace#plugin_versions}. A Workspace with no directory
+    # has no config naming its plugins, so it uses these to pick its gem
+    # cache directory. A convention's gem is the loaded gem whose directory
+    # holds the file that defines the convention's class.
     #
     # @return [Hash{String => String}] gem name => version
     def self.plugin_versions
