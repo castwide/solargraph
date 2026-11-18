@@ -214,9 +214,11 @@ module Solargraph
         variable_name = parse_variable(subject_node)
         return if variable_name.nil?
 
-        # @sg-ignore Range.from_node result assumed always present
-        subject_position = Range.from_node(subject_node).start
-        pin = find_var(variable_name, subject_position)
+        # @sg-ignore Wrong argument type for Solargraph::Range.from_node: node expected Parser::AST::Node, received Array
+        subject_range = Range.from_node(subject_node)
+        return if subject_range.nil?
+
+        pin = find_var(variable_name, subject_range.start)
         return unless pin
 
         # @sg-ignore node.children[] relies on grammar-guaranteed arity
