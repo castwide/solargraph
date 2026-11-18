@@ -214,7 +214,6 @@ module Solargraph
         variable_name = parse_variable(subject_node)
         return if variable_name.nil?
 
-        # @sg-ignore Wrong argument type for Solargraph::Range.from_node: node expected Parser::AST::Node, received Array
         subject_range = Range.from_node(subject_node)
         return if subject_range.nil?
 
