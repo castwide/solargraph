@@ -15,7 +15,13 @@ module Solargraph
       #   @return [Boolean]
       # @!method narrowing_subject
       #   @abstract
-      #   @return [String, ::Array<::Array>] what the refinement is about:
+      #   @return [String, ::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #       ::Array(:call, ::Symbol),
+      #       ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #         ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #         ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #         ::Array(:cvar, ::Symbol)>)>] what the refinement is about:
       #     a variable name, or ExpressionNarrowing steps
     end
   end
