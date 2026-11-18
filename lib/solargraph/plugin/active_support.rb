@@ -14,16 +14,16 @@ module Solargraph
       private
 
       # @return [Array<Pin::Reference::Extend>]
-      # @sg-ignore https://github.com/apiology/solargraph/pull/437
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1476
       def classmethod_pins
         pins_by_class(Pin::Reference::Include).map do |inc|
-          # @sg-ignore https://github.com/apiology/solargraph/pull/437
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1476
           Pin::Reference::Extend.new(name: "#{inc.name}::ClassMethods", closure: inc.closure)
         end
       end
 
       # @return [Array<Pin::Method>]
-      # @sg-ignore https://github.com/apiology/solargraph/pull/437
+      # @sg-ignore Solargraph::Plugin::ActiveSupport#attribute_pins return type could not be inferred
       def attribute_pins
         source_maps.flat_map { |map| map.calls(:class_attribute, :mattr_accessor, :cattr_accessor, :mattr_reader, :cattr_reader, :mattr_writer, :cattr_writer, :config_accessor) }
                    .select { |call| call.closure.is_a?(Pin::Namespace) }

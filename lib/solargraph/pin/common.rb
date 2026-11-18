@@ -57,7 +57,7 @@ module Solargraph
       end
 
       # @return [ComplexType, ComplexType::UniqueType]
-      # @sg-ignore https://github.com/apiology/solargraph/pull/190
+      # @sg-ignore Solargraph::Pin::Common#binder return type could not be inferred
       def binder
         @binder || context
       end

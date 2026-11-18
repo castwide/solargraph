@@ -84,9 +84,9 @@ module Solargraph
     end
 
     # @return [Array<String>]
-    # @sg-ignore https://github.com/apiology/solargraph/pull/349
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1477
     def rbs_collection_paths
-      # @sg-ignore https://github.com/apiology/solargraph/pull/349
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1477
       @rbs_collection_paths ||= read_rbs_collection_paths
     end
 

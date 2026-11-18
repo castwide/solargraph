@@ -68,7 +68,7 @@ def undercover
   status
 rescue StandardError => e
   warn "hit error: #{e.message}"
-  # @sg-ignore https://github.com/apiology/solargraph/pull/176
+  # @sg-ignore Unresolved call to join on Array<String>, nil
   warn "Backtrace:\n#{e.backtrace.join("\n")}"
   warn "output: #{output}"
   puts 'Flushing'

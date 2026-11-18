@@ -494,7 +494,7 @@ module Solargraph
 
       protected
 
-      # @sg-ignore https://github.com/apiology/solargraph/pull/178
+      # @sg-ignore Declared return type ::Solargraph::ComplexType, ::Solargraph::ComplexType::UniqueType, nil does not match inferred type ::Solargraph::ComplexType, nil, ::Boolean for Solargraph::Pin::Method#return_type=
       attr_writer :block, :signature_help, :documentation, :return_type
 
       # @return [Boolean]

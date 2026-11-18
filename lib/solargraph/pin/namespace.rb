@@ -15,7 +15,7 @@ module Solargraph
       # may be the root level namespace, or it may not yet be
       # qualified
       # @return [Solargraph::Pin::Closure, nil]
-      # @sg-ignore https://github.com/apiology/solargraph/pull/178
+      # @sg-ignore Declared return type ::Solargraph::Pin::Closure, nil does not match inferred type ::Solargraph::Pin::Namespace, ::Solargraph::Pin::Closure, nil, ::Boolean for Solargraph::Pin::Namespace#closure
       attr_reader :closure
 
       # @param type [::Symbol] :class or :module

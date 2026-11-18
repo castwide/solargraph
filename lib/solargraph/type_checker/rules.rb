@@ -69,7 +69,7 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (369):
+      # pending code fixes (385):
       #
       # @todo 141: Need to add nil check here
       # @todo 33: pin.closure relies on closure always resolved
@@ -96,7 +96,7 @@ module Solargraph
       # @todo 1: parser gem's Builders::Default#value has no return type
       # @todo 1: @@inference_cache has no declared value type
       # @todo 1: Use fetch to suppress false alarm
-      # @todo 1: Unresolved call to name
+      # @todo 3: Unresolved call to name
       # @todo 1: Solargraph::Plugin::ActiveSupport#classmethod_pins return type could not be inferred
       # @todo 1: Solargraph::Plugin::ActiveSupport#attribute_pins return type could not be inferred
       # @todo 1: Hash#[] relies on key always being present
@@ -109,6 +109,14 @@ module Solargraph
       # @todo 1: Wrong argument type for Solargraph::Library#contain?: filename expected String, received String, nil
       # @todo 1: Wrong argument type for Solargraph::Parser::ParserGem::NodeChainer.chain: node expected Parser::AST::Node, received Parser::AST::Node, nil
       # @todo 1: Unresolved call to []
+      # @todo 6: Unresolved call to join on Array<String>, nil
+      # @todo 2: Unrecognized keyword argument kwargs to Solargraph::Pin::Base#initialize
+      # @todo 1: Declared return type ::Array<::Solargraph::ComplexType::UniqueType> does not match inferred type ::Array<::Proc> for Solargraph::ComplexType#map
+      # @todo 1: Unresolved call to length on Array<Diff::LCS::Change>, nil
+      # @todo 1: Solargraph::Pin::Common#binder return type could not be inferred
+      # @todo 1: Declared return type ::Solargraph::ComplexType, ::Solargraph::ComplexType::UniqueType, nil does not match inferred type ::Solargraph::ComplexType, nil, ::Boolean for Solargraph::Pin::Method#return_type=
+      # @todo 1: Declared return type ::Solargraph::Pin::Closure, nil does not match inferred type ::Solargraph::Pin::Namespace, ::Solargraph::Pin::Closure, nil, ::Boolean for Solargraph::Pin::Namespace#closure
+      # @todo 1: Variable type could not be inferred for raw_ptype; Unresolved call to [] on Hash{Symbol => undefined}, nil
       # @todo 1: Unresolved call to + on String, nil
       # @todo 1: Wrong argument type for Solargraph::Position.from_offset: offset expected Integer, received BigDecimal; Unresolved call to []
       # @todo 1: Wrong argument type for Solargraph::RbsMap::Conversions#convert_decl_to_pin: decl expected RBS::AST::Declarations::Base,

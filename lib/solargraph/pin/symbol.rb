@@ -7,8 +7,7 @@ module Solargraph
       # @param name [String]
       # @param [Hash{Symbol => Object}] kwargs
       def initialize(location, name, **kwargs)
-        # @sg-ignore https://github.com/apiology/solargraph/pull/429
-        #   double-splat checks need https://github.com/apiology/solargraph/tree/kwsplat-record-types on top
+        # @sg-ignore Unrecognized keyword argument kwargs to Solargraph::Pin::Base#initialize
         super(location: location, name: name, **kwargs)
         # @name = name
         # @location = location
