@@ -32,7 +32,7 @@ require 'solargraph'
 %w[external_bundled_gem external_gemspec].each do |dir|
   Solargraph.with_clean_env do
     fixture = File.join('spec', 'fixtures', dir)
-    Dir.chdir(fixture) { `bundle install --prefer-local` }
+    Dir.chdir(fixture) { `bundle install` }
   end
 end
 

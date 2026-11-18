@@ -61,9 +61,6 @@ jobs:
       run: |
         bundle update rbs # use latest available for this Ruby version
     - name: Install spec fixture bundles
-      run: |
-        cd spec/fixtures/external_bundled_gem && bundle install
-        cd ../external_gemspec && bundle install
     - name: Update types
       run: bundle exec rbs collection update
     - name: Run tests
