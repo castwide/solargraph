@@ -15,7 +15,7 @@ module Solargraph
         # https://github.com/ruby/rbs/blob/master/docs/syntax.md#annotations
         #
         # @return [::Set<::String>]
-        attr_reader :annotations
+        attr_reader :rbs_annotations
 
         def closure
           nil
@@ -25,14 +25,14 @@ module Solargraph
         # @param name [String]
         # @param tags [::Array<YARD::Tags::Tag>]
         # @param delete [::Array<Symbol>]
-        # @param annotations [::Enumerable<::String>] RBS method annotations
+        # @param rbs_annotations [::Enumerable<::String>] RBS method annotations
         #   (not YARD tags) to add, e.g. 'pure' for %a{pure}
         # @param splat [Hash]
-        def initialize location, name, tags, delete = [], annotations: [], **splat
+        def initialize location, name, tags, delete = [], rbs_annotations: [], **splat
           super(location: location, name: name, **splat)
           @tags = tags
           @delete = delete
-          @annotations = annotations.to_set
+          @rbs_annotations = rbs_annotations.to_set
         end
 
         # @param name [String]

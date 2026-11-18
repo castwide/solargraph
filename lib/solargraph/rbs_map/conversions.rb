@@ -572,7 +572,7 @@ module Solargraph
             signatures: [],
             generics: generics,
             visibility: visibility,
-            annotations: annotations,
+            rbs_annotations: annotations,
             overloading: decl.overloading?,
             source: :rbs
           )
@@ -596,7 +596,7 @@ module Solargraph
           scope: final_scope,
           signatures: [],
           generics: generics,
-          annotations: annotations,
+          rbs_annotations: annotations,
           overloading: decl.overloading?,
           source: :rbs
         )
@@ -626,7 +626,7 @@ module Solargraph
         paths.push "#{closure.path}##{decl.name}" if decl.instance?
         paths.push "#{closure.path}.#{decl.name}" if decl.singleton?
         paths.each do |path|
-          pins.push Pin::Reference::Override.new(location, path, [], annotations: annotations, source: :rbs)
+          pins.push Pin::Reference::Override.new(location, path, [], rbs_annotations: annotations, source: :rbs)
         end
       end
 
