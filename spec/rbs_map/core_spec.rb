@@ -111,16 +111,6 @@ describe Solargraph::RbsMap::Core do
     expect(clip.infer.to_rbs).to eq('::String')
   end
 
-  it 'treats literal nil as NilClass for method resolution' do
-    source = Solargraph::Source.load_string(%(
-      foo = nil.to_s # => "''" in rbs
-      foo
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [2, 6])
-    expect(clip.infer.to_s).to eq('String')
-  end
-
   it 'copies %a{solargraph:removes-nil} onto core compact methods' do
     store = Solargraph::ApiMap::Store.new(core.pins)
     flags = %w[Array#compact Enumerable#compact Hash#compact Array#compact!].to_h do |path|
@@ -132,5 +122,15 @@ describe Solargraph::RbsMap::Core do
   it 'keeps the core signatures of annotated methods' do
     store = Solargraph::ApiMap::Store.new(core.pins)
     expect(store.get_path_pins('Array#compact').first.signatures).not_to be_empty
+  end
+
+  it 'treats literal nil as NilClass for method resolution' do
+    source = Solargraph::Source.load_string(%(
+      foo = nil.to_s # => "''" in rbs
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    expect(clip.infer.to_s).to eq('String')
   end
 end

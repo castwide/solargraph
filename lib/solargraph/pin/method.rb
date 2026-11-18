@@ -405,14 +405,6 @@ module Solargraph
         @rbs_annotations ||= Set.new
       end
 
-      # True when the method returns a collection with its receiver's nil
-      # elements (Hash: nil values) removed (RBS %a{solargraph:removes-nil})
-      #
-      # @return [Boolean]
-      def removes_nil?
-        rbs_annotations.include?('solargraph:removes-nil')
-      end
-
       # True when this pin's signatures add to, rather than replace,
       # those of an earlier declaration of the same method.
       #
@@ -428,6 +420,14 @@ module Solargraph
         m.reset_generated!
         m.signatures = signatures
         m
+      end
+
+      # True when the method returns a collection with its receiver's nil
+      # elements (Hash: nil values) removed (RBS %a{solargraph:removes-nil})
+      #
+      # @return [Boolean]
+      def removes_nil?
+        rbs_annotations.include?('solargraph:removes-nil')
       end
 
       # @parm other [self]
