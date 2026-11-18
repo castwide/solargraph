@@ -108,16 +108,7 @@ module Solargraph
           arg = arguments[0]
           return false if arg.nil?
 
-          node = arg.node
-          return false if node.nil?
-          return false unless %i[irange erange].include?(node.type)
-
-          start_node = node.children[0]
-          return true if start_node.nil?
-          return false unless start_node.type == :int
-
-          # @sg-ignore Parser::AST::Node#children is declared Array<Node>, but an :int node's child is a literal Integer
-          start_node.children[0].zero?
+          arg.node in [:irange | :erange, nil | [:int, 0], *]
         end
 
         # An RBS `def m: (A) -> B | ...` adds overloads to the
