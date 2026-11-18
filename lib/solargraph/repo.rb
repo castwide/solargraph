@@ -57,9 +57,7 @@ module Solargraph
     # @note If Solargraph itself is running in this directory's bundled
     #   environment, `bundled?` is false.
     #
-    # @sg-ignore https://github.com/castwide/solargraph/pull/1479
     def bundled?
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1479
       !!@metagems
     end
     alias bundle? bundled?
@@ -68,7 +66,6 @@ module Solargraph
     # bundle definition does not exist.
     #
     # @return [Array<Solargraph::Metagem>]
-    # @sg-ignore https://github.com/castwide/solargraph/pull/1479
     def bundled
       @metagems || []
     end
@@ -181,6 +178,7 @@ module Solargraph
       spec_file = File.join(root, "#{spec.name}.gemspec")
       spec_file = Dir[File.join(root, '*.gemspec')].first unless File.file?(spec_file)
       gemspec = spec_file && File.file?(spec_file) ? Gem::Specification.load(spec_file) : nil
+      # @sg-ignore Need to add nil check here
       Metagem.new(name: spec.name,
                   full_path: root,
                   spec_file: spec_file,
