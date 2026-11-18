@@ -906,7 +906,6 @@ module Solargraph
             # user opens a file that wasn't included in the original scan. The
             # progress should never report more than 100%.
             total = mapped if mapped > total
-            # @sg-ignore Wrong argument type for Integer#/: arg_0 expected BigDecimal, received Integer
             pct = total.zero? ? 100 : ((mapped * 100) / total).clamp(0, 100)
             progress.report "#{mapped}/#{total} files", pct
             progress.send self
