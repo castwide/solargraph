@@ -13,7 +13,7 @@ module Solargraph
       #   @param other_closure [Pin::Closure]
       #   @param other_loc [Location]
       #   @return [Boolean]
-      # @!method subject
+      # @!method narrowing_subject
       #   @abstract
       #   @return [String, ::Array<::Array>] what the refinement is about:
       #     a variable name, or ExpressionNarrowing steps

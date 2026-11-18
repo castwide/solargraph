@@ -223,7 +223,7 @@ module Solargraph
       end
 
       # @return [String]
-      def subject
+      def narrowing_subject
         name
       end
 
