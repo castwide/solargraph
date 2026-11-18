@@ -1216,6 +1216,27 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       expect(infer_at(code, [12, 12])).to eq('Integer, nil')
     end
 
+    it 'stops narrowing once an attr_accessor receiver is reassigned through self' do
+      code = %(
+        class Foo
+          # @return [Hash{String => Integer}]
+          attr_accessor :table
+
+          # @param k [String]
+          def foo k
+            return 0 unless table.key?(k)
+            a = table[k]
+            self.table = {}
+            b = table[k]
+            a
+            b
+          end
+        end
+      )
+      expect(infer_at(code, [11, 12])).to eq('Integer')
+      expect(infer_at(code, [12, 12])).to eq('Integer, nil')
+    end
+
     it 'stops narrowing once a key may have been removed' do
       code = %(
         # @param h [Hash{String => Integer}]

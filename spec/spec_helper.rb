@@ -34,6 +34,11 @@ Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
 if Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
   Solargraph::Logging.logger.reopen(File::NULL)
 end
+RSpec.configure do |c|
+  # LanguageServer::Host#configure lowers the shared logger's level;
+  # restore it so later examples still run the logging blocks
+  c.before { Solargraph::Logging.logger.sev_threshold = Logger::DEBUG }
+end
 
 # @param name [String]
 # @param value [String]

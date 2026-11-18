@@ -111,6 +111,27 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  it 'infers types from a named macro that a directive names' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @!macro [new] stringy
+        #   @return [String]
+        def a; end
+
+        # @!method stringy
+        def b
+          unknown_call
+        end
+      end
+      Foo.new.b
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 14))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.tag).to eq('String')
+  end
+
   it 'infers generic types from Array#reverse' do
     source = Solargraph::Source.load_string(%(
       # @type [Array<String>]
