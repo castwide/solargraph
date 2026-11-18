@@ -1564,4 +1564,13 @@ end
     api_map = Solargraph::ApiMap.new.map(source)
     expect(api_map.clip_at('test.rb', [9, 8]).infer.to_s).to eq('Array<Symbol>')
   end
+
+  it 'skips in-clause captures with no local variable pin' do
+    case_node = Solargraph::Parser.parse("case x\nin Foo => f\n  f\nend", 'test.rb', 0)
+    in_pattern = case_node.children.fetch(1)
+    var = in_pattern.children.fetch(0).children.fetch(1)
+    locals = []
+    described_class.new(locals, [], nil, nil).process_in_captures(in_pattern, [var])
+    expect(locals).to be_empty
+  end
 end
