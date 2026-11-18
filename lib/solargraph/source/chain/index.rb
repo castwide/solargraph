@@ -41,8 +41,7 @@ module Solargraph
           return if with_block? || arguments.length != 1 || location.nil? || steps.nil?
 
           facts = locals.grep(Pin::ExpressionNarrowing).select do |fact|
-            # @sg-ignore Unresolved call to steps on Solargraph::Pin::Narrowing
-            fact.visible_at?(name_pin, location) && fact.steps == steps
+            fact.visible_at?(name_pin, location) && fact.narrowing_subject == steps
           end
           return if facts.empty? || !non_nil_hash?(receiver_type, api_map)
 
