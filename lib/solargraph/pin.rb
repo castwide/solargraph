@@ -10,6 +10,8 @@ module Solargraph
   module Pin
     autoload :Common,           'solargraph/pin/common'
     autoload :Conversions,      'solargraph/pin/conversions'
+    autoload :Abstractable,     'solargraph/pin/abstractable'
+    autoload :CombinePriority,  'solargraph/pin/combine_priority'
     autoload :Base,             'solargraph/pin/base'
     autoload :Method,           'solargraph/pin/method'
     autoload :Signature,        'solargraph/pin/signature'

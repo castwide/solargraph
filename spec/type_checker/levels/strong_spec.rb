@@ -1155,6 +1155,40 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'infers an ivar from assignments in a shorter and a longer file' do
+      base = Solargraph::Source.load_string(%(
+        class WidgetBase
+          # Clears the name.
+          def reset
+            @name = nil
+          end
+        end
+      ), 'a.rb')
+      sub = Solargraph::Source.load_string(%(
+        class Widget < WidgetBase
+          #{"\n" * 20}
+          # @return [String]
+          def name
+            @name = 'x' if @name.nil?
+            @name.to_s
+          end
+
+          # @return [void]
+          def append
+            @name += 'y'
+          end
+        end
+      ), 'widget.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.catalog(Solargraph::Bench.new(source_maps: [
+                                              Solargraph::SourceMap.map(base),
+                                              Solargraph::SourceMap.map(sub)
+                                            ]))
+      checker = described_class.new('widget.rb', api_map: api_map, level: :strong)
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'supports !@x.nil && @x.y' do
       checker = type_checker(%(
         class Bar
@@ -1602,6 +1636,32 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'accepts a subclass for an rbs singleton keyword parameter' do
+      checker = type_checker(%(
+        class Resource; end
+        class Task < Resource; end
+        class Collection
+          #: (type: singleton(Resource)) -> void
+          def initialize(type:); end
+        end
+        Collection.new(type: Task)
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'complains on an instance passed to an rbs singleton parameter' do
+      checker = type_checker(%(
+        class Resource; end
+        class Collection
+          #: (type: singleton(Resource)) -> void
+          def initialize(type:); end
+        end
+        Collection.new(type: Resource.new)
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq ['Wrong argument type for Collection.new: type expected Class<Resource>, received Resource']
     end
 
     it 'complains on an inline rbs assertion that does not match' do

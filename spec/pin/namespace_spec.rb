@@ -34,4 +34,11 @@ describe Solargraph::Pin::Namespace do
     expect(pin.generics).to eq(['GenericType'])
     expect(pin.to_rbs).to eq('class ::Foo[GenericType]')
   end
+
+  it 'shows in documentation that an RBS interface is abstract' do
+    pin = described_class.new(name: 'Fooable', type: :module, closure: Solargraph::Pin::ROOT_PIN, source: :rbs,
+                              comments: 'A fooable thing.', visibility: :hidden)
+    pin.docstring.add_tag(YARD::Tags::Tag.new(:abstract, '(RBS interface)'))
+    expect(pin.documentation).to include('RBS interface')
+  end
 end

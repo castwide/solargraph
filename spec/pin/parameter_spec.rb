@@ -243,6 +243,17 @@ describe Solargraph::Pin::Parameter do
     expect(map.locals.first.return_type.tag).to eq('String')
   end
 
+  it 'keeps a proxied return type over its @param tag type' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [generic<A>, nil]
+      def foo bar
+      end
+    ), 'file.rb')
+    map = Solargraph::SourceMap.map(source)
+    proxied = map.locals.first.proxy(Solargraph::ComplexType.parse('String, nil'))
+    expect(proxied.return_type.to_s).to eq('String, nil')
+  end
+
   it 'tracks its index' do
     smap = Solargraph::SourceMap.load_string(%(
       def foo bar
