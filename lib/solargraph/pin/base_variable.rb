@@ -21,7 +21,7 @@ module Solargraph
       attr_reader :type_assertion
 
       # @return [String]
-      def subject
+      def narrowing_subject
         name
       end
 

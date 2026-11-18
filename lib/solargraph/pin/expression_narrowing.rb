@@ -45,7 +45,7 @@ module Solargraph
       end
 
       # @return [::Array<::Array>]
-      def subject
+      def narrowing_subject
         steps
       end
 
