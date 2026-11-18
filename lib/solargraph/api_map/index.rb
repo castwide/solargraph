@@ -162,6 +162,7 @@ module Solargraph
         @macro_method_names = macro_pins.to_set(&:name)
         @macro_method_name_pins = macro_pins.to_set.classify(&:name)
         map_factory_parameters
+        map_rbs_annotation_overrides
         map_overrides
         pins_by_class(Pin::Reference::TypeAlias).each { |pin| alias_hash[pin.name] = pin.return_type }
         self
@@ -179,6 +180,18 @@ module Solargraph
         end
       end
 
+      # Adds each override's RBS annotations, e.g. 'pure' from
+      # '%a{pure} def name: ...', to the methods it names
+      #
+      # @return [void]
+      def map_rbs_annotation_overrides
+        pins_by_class(Pin::Reference::Override).each do |ovr|
+          (path_pin_hash[ovr.name] || []).each do |pin|
+            pin.rbs_annotations = pin.rbs_annotations | ovr.rbs_annotations if pin.is_a?(Pin::Method)
+          end
+        end
+      end
+
       # @return [void]
       def map_overrides
         # @todo should complain when type for 'ovr' is not provided
@@ -189,7 +202,6 @@ module Solargraph
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
           pins.each do |pin|
             new_pin = (path_pin_hash[pin.path.sub('#initialize', '.new')].first if pin.path.end_with?('#initialize'))
-            pin.rbs_annotations = pin.rbs_annotations | ovr.rbs_annotations if pin.is_a?(Pin::Method)
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
               # @sg-ignore Wrong argument type for
               #   YARD::Docstring#delete_tags: name expected String,
