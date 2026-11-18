@@ -123,11 +123,7 @@ describe Solargraph::RbsMap::Core do
 
   it 'marks known read-only core methods pure without changing their signatures' do
     store = Solargraph::ApiMap::Store.new(core.pins)
-    {
-      'Array#[]' => 3, 'Array#first' => 2, 'Array#last' => 2,
-      'Hash#[]' => 1, 'Hash#fetch' => 3,
-      'RBS::Unnamed::ENVClass#[]' => 1, 'RBS::Unnamed::ENVClass#fetch' => 3
-    }.each do |path, overloads|
+    { 'Array#first' => 2, 'Array#last' => 2 }.each do |path, overloads|
       pins = store.get_path_pins(path)
       expect(pins.length).to eq(1), path
       expect(pins.first).to be_pure, path

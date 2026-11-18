@@ -1379,74 +1379,44 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it 'narrows a repeated index with a local variable argument, also through an assignment' do
+    it 'drops narrowing only inside a block whose parameter shadows the receiver' do
       checker = type_checker(%(
         class Repro
-          # @param cp [Array<Array<Integer>>, nil]
-          # @param i [Integer]
-          # @return [void]
-          def direct cp, i
-            cp[i].map { |n| n } if cp && cp[i]
-          end
+          # @return [Array<Integer>, nil]
+          attr_reader :items
 
-          # @param cp [Array<Array<Integer>>, nil]
-          # @param i [Integer]
+          # @param repro [Repro]
+          # @param repros [Array<Repro>]
           # @return [void]
-          def assigned cp, i
-            return unless cp && cp[i]
+          def receiver repro, repros
+            return unless repro.items
 
-            type_arg = cp[i]
-            type_arg.map { |n| n }
+            repros.each do |repro|
+              repro.items.map { |n| n }
+            end
+            repro.items.map { |n| n }
           end
         end
       ))
 
-      expect(checker.problems.map(&:message)).to eq([])
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to map on Array<Integer>, nil'])
     end
 
-    it 'drops index narrowing only inside a block whose parameter shadows the argument or receiver' do
+    it 'ends narrowing at a loop that changes the receiver after the read' do
       checker = type_checker(%(
         class Repro
-          # @param cp [Array<Array<Integer>>]
-          # @param i [Integer]
+          # @return [Array<Integer>, nil]
+          attr_reader :items
+
+          # @param repro [Repro]
+          # @param other [Repro]
           # @return [void]
-          def argument cp, i
-            return unless cp[i]
+          def advance repro, other
+            return unless repro.items
 
-            [1].each do |i|
-              cp[i].map { |n| n + i }
-            end
-            cp[i].map { |n| n }
-          end
-
-          # @param cp [Array<Array<Integer>>]
-          # @param cps [Array<Array<Array<Integer>>>]
-          # @return [void]
-          def receiver cp, cps
-            return unless cp[0]
-
-            cps.each do |cp|
-              cp[0].map { |n| n }
-            end
-          end
-        end
-      ))
-
-      expect(checker.problems.map(&:message)).to eq(['Unresolved call to map on Array<Integer>, nil'] * 2)
-    end
-
-    it 'ends index narrowing at a loop that changes the argument after the read' do
-      checker = type_checker(%(
-        class Repro
-          # @param cp [Array<Array<Integer>>]
-          # @param i [Integer]
-          # @return [void]
-          def advance cp, i
-            return unless cp[i]
-
-            while i < 3
-              cp[i].map { |n| n }
-              i += 1
+            3.times do
+              repro.items.map { |n| n }
+              repro = other
             end
           end
         end

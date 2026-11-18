@@ -110,9 +110,10 @@ module Solargraph
         #
         # @todo ProxyType uses 'type' for the binder, but '
         working_pin = name_pin
-        # Lets Chain::Call find downcast vars of repeated attr_reader
-        # calls; see Pin::ProxyType#receiver_path
-        receiver_path = []
+        # Lets Chain::Call find narrowings of repeated attr_reader and
+        # pure calls; see Pin::ProxyType#receiver_steps
+        receiver_steps = []
+        receiver_bindings = []
         # @sg-ignore Need to add nil check here
         links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
@@ -128,9 +129,11 @@ module Solargraph
           # evaluation.  However, we use the last link's return type
           # for the binder, as this is chaining off of it, and the
           # binder is now the lhs of the rhs we are evaluating.
-          receiver_path = next_receiver_path(receiver_path, link, pins)
-          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin,
-                                                                   source: :chain, receiver_path: receiver_path)
+          receiver_bindings = pins.grep(Pin::LocalVariable) if receiver_steps&.empty? && link.is_a?(Chain::Call)
+          receiver_steps = next_receiver_steps(receiver_steps, link, pins)
+          working_pin = Pin::ProxyType.anonymous(name_pin.context,
+                                                 binder: type, closure: name_pin, source: :chain,
+                                                 receiver_steps: receiver_steps, receiver_bindings: receiver_bindings)
           logger.debug do
             "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
           end
@@ -331,36 +334,28 @@ module Solargraph
         type.self_to_type(name_pin.context)
       end
 
-      # Extends a receiver-chain path (see #define) with the word from
-      # `link`, or breaks the chain (returns nil) once `link` is anything
-      # other than a variable, an argument-less attr_reader call, or a pure
-      # call whose arguments are literals or local variables.
-      # Only those are known to return the same value on a repeat call.
+      # Extends receiver steps (see #define) with the step `link` reads, or
+      # breaks the chain (returns nil) once `link` is anything other than a
+      # variable or an argument-less attr_reader or pure (RBS %a{pure})
+      # call, the only ones known to return the same value on a repeat call.
       #
-      # @param path [::Array<String>, nil]
+      # @param steps [::Array<::Array>, nil] see Pin::ProxyType#receiver_steps
       # @param link [Chain::Link]
       # @param pins [::Array<Pin::Base>] what `link` resolved to
-      # @return [::Array<String>, nil]
-      def next_receiver_path path, link, pins
-        return nil if path.nil?
-        return path + [link.word] if link.is_a?(Chain::InstanceVariable)
-        # explicit self, e.g. 'self' in 'self.location'
-        return ['self'] if path.empty? && link.is_a?(Chain::Head) && link.word == 'self'
+      # @return [::Array<::Array>, nil]
+      def next_receiver_steps steps, link, pins
+        return nil if steps.nil?
+        return nil unless steps.empty? || link.is_a?(Chain::Call)
+        # explicit self, e.g. 'self' in 'self.location', reads like a bare call
+        return steps if link.is_a?(Chain::Head) && link.word == 'self'
+        return [[:ivar, link.word.to_sym]] if link.is_a?(Chain::InstanceVariable)
+        return nil unless link.is_a?(Chain::Call) && !link.is_a?(Chain::ZSuper)
+        return nil if link.with_block? || !link.arguments.empty? || pins.empty?
+        return [[:lvar, link.word.to_sym]] if steps.empty? && pins.all?(Pin::LocalVariable)
+        return nil unless pins.all? { |pin| pin.is_a?(Pin::Method) && (pin.attribute? || pin.pure?) }
 
-        return nil unless link.is_a?(Chain::Call) && !link.is_a?(Chain::ZSuper) && !link.with_block?
-
-        word = Parser::FlowSensitiveTyping.call_word(link.word, link.arguments.map(&:node))
-        return nil unless word
-        # variables include Call#narrowed_call_pin results, already readers
-        stable = !pins.empty? && pins.all? do |pin|
-          pin.is_a?(Pin::BaseVariable) || (pin.is_a?(Pin::Method) && (pin.attribute? || pin.pure?))
-        end
-        return nil unless stable
-        # a head call that isn't a local is an implicit-self call, e.g.
-        # 'location' in 'location.filename'; see Call#resolve
-        return ['self', word] if path.empty? && pins.none? { |pin| pin.is_a?(Pin::BaseVariable) && pin.name == link.word }
-
-        path + [word]
+        # a call with no receiver but self, e.g. 'location' in 'location.filename'
+        steps + [[steps.empty? ? :self_call : :call, link.word.to_sym]]
       end
 
       # @param type [ComplexType, ComplexType::UniqueType]

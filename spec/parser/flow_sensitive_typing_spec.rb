@@ -1726,7 +1726,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
   end
 
-  it 'keeps call chain downcast vars out of completions' do
+  it 'keeps expression narrowings out of completions' do
     source = Solargraph::Source.load_string(%(
       class Foo
         # @return [Foo, nil]
@@ -1741,25 +1741,8 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    names = api_map.clip_at('test.rb', [9, 10]).complete.pins.map(&:name)
-    expect(names).not_to include('self.location', 'pin.location')
-  end
-
-  it 'leaves call chain downcast vars out of a marshaled closure' do
-    source = Solargraph::Source.load_string(%(
-      class Foo
-        # @return [Foo, nil]
-        attr_reader :location
-
-        def bar
-          return unless location
-          location
-        end
-      end
-    ), 'test.rb')
-    method = Solargraph::SourceMap.map(source).pins.find { |pin| pin.path == 'Foo#bar' }
-    expect(method.downcast_vars).not_to be_empty
-    expect(Marshal.load(Marshal.dump(method)).downcast_vars).to be_empty
+    pins = api_map.clip_at('test.rb', [9, 10]).complete.pins
+    expect(pins.grep(Solargraph::Pin::ExpressionNarrowing)).to be_empty
   end
 
   it 'uses is_a? with a fully-qualified type name to refine types' do
@@ -1781,93 +1764,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Object')
   end
 
-  context 'with %a{pure} methods that take arguments' do
-    around do |example|
-      require 'tmpdir'
-      Dir.mktmpdir('rspec-solargraph-') do |dir|
-        @workspace = dir
-        example.run
-      end
-    end
-
-    # A workspace whose rbs_collection.yaml loads sig/table.rbs
-    #
-    # @param code [String]
-    # @param position [Array(Integer, Integer)]
-    # @return [String]
-    def infer_at code, position
-      File.write(File.join(@workspace, 'rbs_collection.yaml'), <<~YAML)
-        sources:
-          - type: local
-            name: sig
-            path: sig
-        path: .gem_rbs_collection
-      YAML
-      FileUtils.mkdir_p(File.join(@workspace, 'sig'))
-      File.write(File.join(@workspace, 'sig', 'table.rbs'), <<~RBS)
-        class Table
-          %a{pure}
-          def []: (Integer | Symbol | String) -> String?
-
-          def []=: (Integer | Symbol | String, String?) -> String?
-        end
-      RBS
-      filename = File.join(@workspace, 'test.rb')
-      File.write(filename, code)
-      Solargraph::ApiMap.load(@workspace).clip_at(filename, position).infer.rooted_tags
-    end
-
-    it 'narrows a repeated pure call with the same literal argument' do
-      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
-      code = %(
-        # @param table [Table]
-        def cell(table)
-          return nil unless table[0]
-          table[0]
-        end
-      )
-      expect(infer_at(code, [4, 18])).to eq('::String')
-    end
-
-    it 'does not narrow a pure call with a different literal argument' do
-      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
-      code = %(
-        # @param table [Table]
-        def cell(table)
-          return nil unless table[0]
-          table[1]
-        end
-      )
-      expect(infer_at(code, [4, 18])).to eq('::String, nil')
-    end
-
-    it 'narrows a repeated pure call with the same local variable argument' do
-      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
-      code = %(
-        # @param table [Table]
-        # @param index [Integer]
-        def cell(table, index)
-          return nil unless table[index]
-          table[index]
-        end
-      )
-      expect(infer_at(code, [5, 22])).to eq('::String')
-    end
-
-    it 'ends the narrowing at an index assignment to the receiver' do
-      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
-      code = %(
-        # @param table [Table]
-        def cell(table)
-          return nil unless table[:a]
-          table[:a] = nil
-          table[:a]
-        end
-      )
-      expect(infer_at(code, [5, 19])).to eq('::String, nil')
-    end
-  end
-
   context 'with read-only core methods' do
     # @param body [String] statements using 'list', 'table' and 'key'
     # @param line [Integer] zero-based line of the expression to infer
@@ -1887,83 +1783,16 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       api_map.clip_at('test.rb', [line, column]).infer.rooted_tags
     end
 
-    it 'narrows a repeated Array#[] with the same literal index' do
-      expect(infer_core("        return unless list[0]\n        list[0]\n", 6)).to eq('::String')
-    end
-
-    it 'narrows a repeated Hash#[] with the same literal key' do
-      expect(infer_core("        return unless table[:k]\n        table[:k]\n", 6)).to eq('::String')
-    end
-
     it 'narrows a repeated Array#last' do
       expect(infer_core("        return if list.last.nil?\n        list.last\n", 6)).to eq('::String')
     end
 
-    it 'does not narrow Array#[] with a different literal index' do
-      expect(infer_core("        return unless list[0]\n        list[1]\n", 6)).to eq('::String, nil')
+    it 'does not narrow a pure call with arguments' do
+      expect(infer_core("        return unless list.first(1)\n        list.first(1)\n", 6)).to eq('::Array<::String>')
     end
 
-    it 'narrows a repeated Hash#[] with the same local variable key' do
-      expect(infer_core("        return unless table[key]\n        table[key]\n", 6)).to eq('::String')
-    end
-
-    it 'does not narrow a call with arguments that is not pure' do
-      expect(infer_core("        return unless list.at(0)\n        list.at(0)\n", 6)).to eq('::String, nil')
-    end
-
-    it 'ends the narrowing at an index write' do
-      expect(infer_core("        return unless table[:k]\n        table[:k] = nil\n        table[:k]\n", 7))
-        .to eq('::String, nil')
-    end
-
-    it 'ends the narrowing at a call that removes keys' do
-      expect(infer_core("        return unless table[:k]\n        table.delete(:k)\n        table[:k]\n", 7))
-        .to eq('::String, nil')
-    end
-
-    it 'ends the narrowing at a call that overwrites a key' do
-      expect(infer_core("        return unless table[:k]\n        table.store(:k, nil)\n        table[:k]\n", 7))
-        .to eq('::String, nil')
-    end
-
-    it 'ends the narrowing at a merge into the receiver' do
-      expect(infer_core("        return unless table[:k]\n        table.merge!(k: nil)\n        table[:k]\n", 7))
-        .to eq('::String, nil')
-    end
-
-    it 'ends the narrowing at any other call on the receiver' do
-      expect(infer_core("        return unless list[0]\n        list.pop\n        list[0]\n", 7))
-        .to eq('::String, nil')
-    end
-
-    it 'keeps the narrowing across another read of the same method' do
-      expect(infer_core("        return unless list[0]\n        list[1]\n        list[0]\n", 7))
-        .to eq('::String')
-    end
-
-    it 'narrows Hash#[] assigned into a fresh local variable' do
-      expect(infer_core("        return unless table[key]\n        value = table[key]\n        value\n", 7))
-        .to eq('::String')
-    end
-
-    it 'does not narrow Hash#[] with a different local variable key' do
-      expect(infer_core("        other = key\n        return unless table[key]\n        table[other]\n", 7))
-        .to eq('::String, nil')
-    end
-
-    it 'ends the narrowing when the local variable key is reassigned' do
-      expect(infer_core("        return unless table[key]\n        key = :other\n        table[key]\n", 7))
-        .to eq('::String, nil')
-    end
-
-    it 'ends the narrowing when the local variable index is updated' do
-      expect(infer_core("        n = 0\n        return unless list[n]\n        n += 1\n        list[n]\n", 8))
-        .to eq('::String, nil')
-    end
-
-    it 'ends the narrowing at an index write with a local variable key' do
-      expect(infer_core("        return unless table[key]\n        table[key] = nil\n        table[key]\n", 7))
-        .to eq('::String, nil')
+    it 'does not narrow Array#[], which takes arguments' do
+      expect(infer_core("        return unless list[0]\n        list[0]\n", 6)).to eq('::String, nil')
     end
   end
 end
