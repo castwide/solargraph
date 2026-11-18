@@ -656,10 +656,10 @@ module Solargraph
         # Not reset_generated!, whose overrides cascade into the parameters
         # and signatures dup still shares with this pin, rereading their tag
         # types over any already resolved
-        result.send(:reset_own_generated)
+        result.reset_own_generated
         # dup shares this pin's docstring, whose tags hold the old return type
         result.docstring = copied_docstring
-        result.send(:sync_return_type_tag) if result.return_type.defined?
+        result.sync_return_type_tag if result.return_type.defined?
         # Macros should have been processed already
         result.macro_names.clear
         result
@@ -752,8 +752,6 @@ module Solargraph
 
       attr_writer :docstring, :directives
 
-      private
-
       # The state this class memoizes itself, without what subclasses add
       #
       # @return [void]
@@ -765,6 +763,30 @@ module Solargraph
         @documentation = nil
         reset_conversions
       end
+
+      # Reads the return type instance variable, not the reader method:
+      # BaseVariable derives its reader from this tag, so it would sync
+      # the tag to itself. Callers force the reader first.
+      #
+      # @return [void]
+      def sync_return_type_tag
+        type = @return_type
+        return if type.nil?
+
+        rooted_tags = type.items.map(&:rooted_tag)
+        # Replace rather than assign #types on the tag in place: a proxy holds
+        # a duplicated docstring whose tag objects the original still shares.
+        # Carry the first description over, so replacing the tag does not drop
+        # the prose written beside the type.
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        text = @docstring.tags(return_type_tag_name).map(&:text).find { |t| !t.to_s.empty? }
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        @docstring.delete_tags(return_type_tag_name)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        @docstring.add_tag(YARD::Tags::Tag.new(return_type_tag_name, text.to_s, rooted_tags))
+      end
+
+      private
 
       # Declarations of a reopened generic may spell its parameters
       # differently, so bind by position against this pin's own one.
@@ -799,28 +821,6 @@ module Solargraph
 
         @docstring ||= Solargraph::Source.parse_docstring("\n").to_docstring
         sync_return_type_tag
-      end
-
-      # Reads the return type instance variable, not the reader method:
-      # BaseVariable derives its reader from this tag, so it would sync
-      # the tag to itself. Callers force the reader first.
-      #
-      # @return [void]
-      def sync_return_type_tag
-        type = @return_type
-        return if type.nil?
-
-        rooted_tags = type.items.map(&:rooted_tag)
-        # Replace rather than assign #types on the tag in place: a proxy holds
-        # a duplicated docstring whose tag objects the original still shares.
-        # Carry the first description over, so replacing the tag does not drop
-        # the prose written beside the type.
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
-        text = @docstring.tags(return_type_tag_name).map(&:text).find { |t| !t.to_s.empty? }
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
-        @docstring.delete_tags(return_type_tag_name)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
-        @docstring.add_tag(YARD::Tags::Tag.new(return_type_tag_name, text.to_s, rooted_tags))
       end
 
       # The docstring tag name that holds this pin's return type. Method
