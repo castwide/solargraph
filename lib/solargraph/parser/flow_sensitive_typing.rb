@@ -345,11 +345,9 @@ module Solargraph
       #   its class, e.g. "other" in "other.class", or nil unless
       #   node is exactly a 0-arg .class call
       def parse_class_call node
-        return if node.nil?
-        return unless node.type == :send && node.children[1] == :class
-        return unless (node.children[2..] || []).empty?
+        return unless node in [:send, ::Parser::AST::Node | nil => receiver, :class]
 
-        node.children[0]
+        receiver
       end
 
       # @param node [Parser::AST::Node, nil]
@@ -382,20 +380,24 @@ module Solargraph
       #
       # @return [void]
       def process_class_eq node, true_presences, _false_presences
-        return unless node.type == :send && %i[== eql? instance_of?].include?(node.children[1])
+        return unless node in [:send,
+                               ::Parser::AST::Node | nil => receiver,
+                               :== | :eql? | :instance_of?,
+                               ::Parser::AST::Node => argument,
+                               *]
 
         enclosing = closure
         return unless enclosing && enclosing.scope == :instance
 
         lhs = if node.children[1] == :instance_of?
                 # x.instance_of?(y.class) compares x itself; no receiver means self
-                node.children[0] || ::Parser::AST::Node.new(:self)
+                receiver || ::Parser::AST::Node.new(:self)
               else
-                parse_class_call(node.children[0])
+                parse_class_call(receiver)
               end
         return unless lhs
 
-        rhs = parse_class_call(node.children[2])
+        rhs = parse_class_call(argument)
         return unless rhs
 
         other_side = if lhs.type == :self
