@@ -7,7 +7,13 @@ module Solargraph
       # @param gates [Array<String>, nil] Namespaces to try while resolving non-rooted types
       # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @param gates [Array<String>, nil]
-      # @param receiver_steps [::Array<::Array>, nil] see #receiver_steps
+      # @param receiver_steps [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>, nil] see #receiver_steps
       # @param receiver_bindings [::Array<Pin::LocalVariable>] see #receiver_bindings
       # @param [Hash{Symbol => Object}] splat
       def initialize return_type: ComplexType::UNDEFINED, binder: nil, gates: nil, receiver_steps: nil,
@@ -25,7 +31,13 @@ module Solargraph
       # 'pin.location.filename', [] for self, or nil if not all variables,
       # attr_readers and pure calls; see Chain#define
       #
-      # @return [::Array<::Array>, nil]
+      # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>, nil]
       attr_reader :receiver_steps
 
       # The local variable #receiver_steps starts at, if any

@@ -251,7 +251,13 @@ module Solargraph
         end
 
         # @param name_pin [Pin::Base]
-        # @return [::Array<::Array>, nil] the Pin::ExpressionNarrowing steps
+        # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+        #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+        #     ::Array(:call, ::Symbol),
+        #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+        #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+        #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+        #       ::Array(:cvar, ::Symbol)>)>, nil] the Pin::ExpressionNarrowing steps
         #   this call reads, or nil if its receiver is not narrowable
         def call_steps name_pin
           # a head call with no local of its name is an implicit-self call

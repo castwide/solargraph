@@ -339,7 +339,13 @@ module Solargraph
       end
 
       # @param node [Parser::AST::Node]
-      # @param steps [::Array<::Array>] e.g. [[:lvar, :pin], [:call, :location]]
+      # @param steps [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>] e.g. [[:lvar, :pin], [:call, :location]]
       # @param writes [::Array<::Array<Position>>] for each write found so
       #   far, the starts of its enclosing REPEATING nodes, outermost first,
       #   then the start of the write
@@ -356,7 +362,13 @@ module Solargraph
       end
 
       # @param node [Parser::AST::Node]
-      # @param steps [::Array<::Array>]
+      # @param steps [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>]
       # @return [Boolean]
       def write_to? node, steps
         # e.g. 'pin.location ||= x' wraps a reader call in an or_asgn
@@ -390,8 +402,15 @@ module Solargraph
 
       # @param node [Parser::AST::Node, Object, nil] a setter's receiver,
       #   e.g. 'location' in 'location.filename = x'
-      # @param root [::Array] the first of the steps #write_to? checks
-      # @return [::Array<::Array>, nil] the steps `node` reads, [] for
+      # @param root [::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol), ::Array(:cvar, ::Symbol),
+      #   ::Array(:self_call, ::Symbol)] the first of the steps #write_to? checks
+      # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>, nil] the steps `node` reads, [] for
       #   self, or [[:self_call, :location]] for '@location' when `root` is
       #   a call on self
       def write_receiver node, root

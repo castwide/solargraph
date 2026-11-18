@@ -339,10 +339,22 @@ module Solargraph
       # variable or an argument-less attr_reader or pure (RBS %a{pure})
       # call, the only ones known to return the same value on a repeat call.
       #
-      # @param steps [::Array<::Array>, nil] see Pin::ProxyType#receiver_steps
+      # @param steps [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>, nil] see Pin::ProxyType#receiver_steps
       # @param link [Chain::Link]
       # @param pins [::Array<Pin::Base>] what `link` resolved to
-      # @return [::Array<::Array>, nil]
+      # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>, nil]
       def next_receiver_steps steps, link, pins
         return nil if steps.nil?
         return nil unless steps.empty? || link.is_a?(Chain::Call)
