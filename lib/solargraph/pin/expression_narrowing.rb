@@ -10,7 +10,7 @@ module Solargraph
     # or [:call, :[], key] for an index whose key is [[:literal, :sym, :k]]
     # or a variable root.
     class ExpressionNarrowing < Base
-      include Narrowing
+      include ExpressionType
 
       # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
       #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
@@ -64,7 +64,7 @@ module Solargraph
       #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
       #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
       #       ::Array(:cvar, ::Symbol)>)>]
-      def narrowing_subject
+      def expression
         steps
       end
 

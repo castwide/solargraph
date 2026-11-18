@@ -7,7 +7,7 @@ module Solargraph
     class BaseVariable < Base
       # include Solargraph::Source::NodeMethods
       include Solargraph::Parser::NodeMethods
-      include Narrowing
+      include ExpressionType
 
       # @return [Array<Parser::AST::Node>]
       attr_reader :assignments
@@ -223,7 +223,7 @@ module Solargraph
       end
 
       # @return [String]
-      def narrowing_subject
+      def expression
         name
       end
 

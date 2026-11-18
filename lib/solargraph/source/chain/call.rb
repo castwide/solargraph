@@ -231,7 +231,7 @@ module Solargraph
           # @sg-ignore https://github.com/castwide/solargraph/pull/1338
           viewing = viewing.closure until viewing.nil? || viewing.is_a?(Pin::Closure)
           narrowings = locals.grep(Pin::ExpressionNarrowing).select do |narrowing|
-            narrowing.narrowing_subject == steps && narrowing.visible_at?(viewing, location) &&
+            narrowing.expression == steps && narrowing.visible_at?(viewing, location) &&
               # @sg-ignore Unresolved call to proves? on Solargraph::Pin::LocalVariable,
               #   Solargraph::Pin::ExpressionNarrowing
               narrowing.proves?(api_map, bindings) && !rebound_between?(viewing, narrowing)
