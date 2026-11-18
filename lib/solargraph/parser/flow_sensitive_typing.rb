@@ -207,8 +207,8 @@ module Solargraph
         #     s(:const, nil, :B),
         #     s(:send, nil, :c)), nil)
         # [4] pry(main)>
-        subject_node = case_node.children[0]
-        return unless subject_node.is_a?(::Parser::AST::Node)
+        return unless case_node in [:case, ::Parser::AST::Node => subject_node, *clause_nodes]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         return unless %i[lvar ivar].include?(subject_node.type)
 
         variable_name = parse_variable(subject_node)
@@ -220,16 +220,12 @@ module Solargraph
         pin = find_var(variable_name, subject_range.start)
         return unless pin
 
-        case_node.children.drop(1).each do |when_node|
-          next unless when_node.is_a?(::Parser::AST::Node)
-          next unless when_node.type == :when
-
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+        clause_nodes.each do |clause_node|
           # The last child is the body; the rest are the 'when' values
-          value_nodes = when_node.children.dup
-          body_node = value_nodes.pop
-          next unless body_node.is_a?(::Parser::AST::Node)
+          next unless clause_node in [:when, *value_nodes, ::Parser::AST::Node => body_node]
 
-          type_names = value_nodes.map { |value_node| type_name(value_node) if value_node.is_a?(::Parser::AST::Node) }
+          type_names = value_nodes.map { |value_node| type_name(value_node) }
           # Only narrow if every value in this 'when' clause is a
           # simple constant reference - a splat, range, regexp, etc.
           # isn't a type we can express as a downcast.
@@ -262,12 +258,10 @@ module Solargraph
         #   s(:lvasgn, :x),
         #   s(:int, 1))
         # [4] pry(main)>
-        lhs = or_asgn_node.children[0]
-        return unless lhs.is_a?(::Parser::AST::Node)
-        return unless %i[lvasgn ivasgn].include?(lhs.type)
+        return unless or_asgn_node in [:or_asgn, [:lvasgn | :ivasgn, Symbol => variable_symbol], *]
 
-        variable_name = lhs.children[0].to_s
-        return if variable_name.empty?
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+        variable_name = variable_symbol.to_s
 
         range = Range.from_node(or_asgn_node)
         return if range.nil?
