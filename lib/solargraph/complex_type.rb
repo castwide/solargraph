@@ -82,9 +82,6 @@ module Solargraph
     # @yieldparam [UniqueType]
     # @yieldreturn [UniqueType]
     # @return [Array<UniqueType>]
-    # @sg-ignore Declared return type
-    #   ::Array<::Solargraph::ComplexType::UniqueType> does not match
-    #   inferred type ::Array<::Proc> for Solargraph::ComplexType#map
     def map &block
       @items.map(&block)
     end
