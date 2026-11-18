@@ -258,7 +258,7 @@ module Solargraph
         return nil if signatures.empty?
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1258
-        #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
+        #   empty? guards need https://github.com/apiology/solargraph/pull/175 on top
         rbs = "def #{name}: #{signatures.first.to_rbs}"
         # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
