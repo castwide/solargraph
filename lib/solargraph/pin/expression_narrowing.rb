@@ -27,8 +27,9 @@ module Solargraph
       # @return [ComplexType, nil] types the expression can't have here
       attr_reader :exclude_return_type
 
-      # @return [ComplexType, nil] types the expression must match here
-      attr_reader :intersection_return_type
+      # @return [::Array<ComplexType>] types the expression must match
+      #   here; all of them apply
+      attr_reader :intersection_return_types
 
       # @return [Proc, nil] given an ApiMap, returns whether the refinement
       #   holds, for conditions that need type inference to decide
@@ -43,16 +44,16 @@ module Solargraph
       #       ::Array(:cvar, ::Symbol)>)>]
       # @param presence [Range]
       # @param exclude_return_type [ComplexType, nil]
-      # @param intersection_return_type [ComplexType, nil]
+      # @param intersection_return_types [::Array<ComplexType>]
       # @param check [Proc, nil]
       # @param splat [Hash{Symbol => Object}]
-      def initialize steps:, presence:, exclude_return_type: nil, intersection_return_type: nil, check: nil,
+      def initialize steps:, presence:, exclude_return_type: nil, intersection_return_types: [], check: nil,
                      **splat
         super(**splat)
         @steps = steps
         @presence = presence
         @exclude_return_type = exclude_return_type
-        @intersection_return_type = intersection_return_type
+        @intersection_return_types = intersection_return_types
         @check = check
       end
 
@@ -89,8 +90,11 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType]
       def narrow type, api_map
         gates = closure&.gates || ['']
-        excluded = type.exclude(exclude_return_type&.qualify(api_map, *gates), api_map)
-        excluded.intersect_with(intersection_return_type&.qualify(api_map, *gates), api_map)
+        narrowed = type.exclude(exclude_return_type&.qualify(api_map, *gates), api_map)
+        intersection_return_types.each do |intersection|
+          narrowed = narrowed.intersect_with(intersection.qualify(api_map, *gates), api_map)
+        end
+        narrowed
       end
 
       # @param node [::Parser::AST::Node, nil]
