@@ -20,7 +20,6 @@ module Solargraph
     autoload :InstanceVariable, 'solargraph/pin/instance_variable'
     autoload :ClassVariable,    'solargraph/pin/class_variable'
     autoload :LocalVariable,    'solargraph/pin/local_variable'
-    autoload :KeyLookup,        'solargraph/pin/key_lookup'
     autoload :GlobalVariable,   'solargraph/pin/global_variable'
     autoload :ExpressionNarrowing, 'solargraph/pin/expression_narrowing'
     autoload :Constant,         'solargraph/pin/constant'

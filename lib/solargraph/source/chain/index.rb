@@ -3,56 +3,49 @@
 module Solargraph
   class Source
     class Chain
-      # A one-argument 'h[k]' lookup, which a Pin::KeyLookup can prove
-      # present, e.g. after 'return unless h.key?(k)'.
+      # A one-argument 'h[k]' lookup, which a Pin::ExpressionNarrowing
+      # can prove present, e.g. after 'return unless h.key?(k)'.
       class Index < Call
-        # @return [::Array<::Array>, nil] see Pin::KeyLookup#receiver
-        attr_reader :receiver_steps
+        # @return [::Array<::Array>, nil] see Pin::ExpressionNarrowing#steps
+        attr_reader :steps
 
-        # @return [::Array<::Array>, nil] see Pin::KeyLookup#key
-        attr_reader :key_steps
-
-        # @param receiver [::Parser::AST::Node, nil] the 'h'
-        # @param key [::Parser::AST::Node, nil] the 'k'
+        # @param node [::Parser::AST::Node] the 'h[k]'
         # @param location [Location, nil]
         # @param arguments [::Array<Chain>]
         # @param block [Chain, nil]
-        def initialize receiver, key, location = nil, arguments = [], block = nil
+        def initialize node, location = nil, arguments = [], block = nil
           super('[]', location, arguments, block)
-          @receiver = receiver
-          @key = key
-          @receiver_steps = Pin::KeyLookup.steps_from_node(receiver)
-          @key_steps = Pin::KeyLookup.key_steps_from_node(key)
+          @receiver, _, @key = node.children
+          @steps = Pin::ExpressionNarrowing.steps_from_node(node)
         end
 
-        # True if a Pin::KeyLookup in `locals` proves this lookup present.
-        # Applies only when 'h' is a Hash whose values can't be nil, and 'h'
-        # and 'k' read variables or attr_readers, which return the same value
-        # every time.
+        # The Pin::ExpressionNarrowing in `locals` that proves this lookup
+        # present, if any. Applies only when 'h' is a Hash whose values
+        # can't be nil, and 'h' and 'k' read variables or attr_readers,
+        # which return the same value every time.
         #
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param receiver_type [ComplexType, ComplexType::UniqueType] the type of 'h'
-        # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
-        # @return [Boolean]
-        def present? api_map, name_pin, receiver_type, locals
+        # @param locals [::Array<Pin::LocalVariable, Pin::ExpressionNarrowing>]
+        # @sg-ignore https://github.com/apiology/solargraph/pull/358
+        # @return [Pin::ExpressionNarrowing, nil]
+        def narrowing api_map, name_pin, receiver_type, locals
           location = self.location
-          return false if with_block? || arguments.length != 1 || location.nil?
-          return false unless receiver_steps && key_steps
+          return if with_block? || arguments.length != 1 || location.nil? || steps.nil?
 
-          facts = locals.grep(Pin::KeyLookup).select do |fact|
+          facts = locals.grep(Pin::ExpressionNarrowing).select do |fact|
             # @sg-ignore https://github.com/apiology/solargraph/pull/358
-            #   also covers: Unresolved call to key on Solargraph::Pin::LocalVariable, Solargraph::Pin::KeyLookup
-            fact.visible_at?(name_pin, location) && fact.receiver == receiver_steps && fact.key == key_steps
+            fact.visible_at?(name_pin, location) && fact.steps == steps
           end
-          return false if facts.empty? || !non_nil_hash?(receiver_type, api_map)
+          return if facts.empty? || !non_nil_hash?(receiver_type, api_map)
 
           # the local variables 'h' and 'k' read here
           bindings = []
-          return false unless [@receiver, @key].all? { |node| stable?(node, api_map, name_pin, locals, bindings) }
+          return unless [@receiver, @key].all? { |node| stable?(node, api_map, name_pin, locals, bindings) }
 
           # @sg-ignore https://github.com/apiology/solargraph/pull/358
-          facts.any? { |fact| fact.proves?(api_map, bindings) }
+          facts.find { |fact| fact.proves?(api_map, bindings) }
         end
 
         private
@@ -60,7 +53,7 @@ module Solargraph
         # @param node [::Parser::AST::Node, nil] a node #steps_from_node accepts
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
+        # @param locals [::Array<Pin::LocalVariable, Pin::ExpressionNarrowing>]
         # @param bindings [::Array<Pin::LocalVariable>] gets the local
         #   variables `node` reads
         # @return [Boolean] true unless `node` calls a method other than

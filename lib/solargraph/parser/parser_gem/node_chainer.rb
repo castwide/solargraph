@@ -200,9 +200,9 @@ module Solargraph
         # @return [Chain::Call]
         def receiver_call node
           location = Location.from_node(node)
-          # 'h[k]', which a Pin::KeyLookup can prove present
-          if node.children in [::Parser::AST::Node | nil => receiver, :[], ::Parser::AST::Node => key]
-            return Chain::Index.new(receiver, key, location, node_args(node), passed_block(node))
+          # 'h[k]', which a Pin::ExpressionNarrowing can prove present
+          if node.children in [::Parser::AST::Node | nil, :[], ::Parser::AST::Node]
+            return Chain::Index.new(node, location, node_args(node), passed_block(node))
           end
 
           Chain::Call.new(node.children[1].to_s, location, node_args(node), passed_block(node))

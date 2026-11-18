@@ -115,7 +115,8 @@ module Solargraph
         links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
           type = infer_from_definitions(pins, working_pin, api_map, locals)
-          type = type.without_nil if key_present?(link, api_map, name_pin, working_pin, locals)
+          narrowing = index_narrowing(link, api_map, name_pin, working_pin, locals)
+          type = narrowing.narrow(type, api_map) if narrowing
           if type.undefined?
             logger.debug do
               "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) => [] - undefined type from #{link.desc}"
@@ -174,9 +175,9 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         last_context = links.last.last_context
         type = infer_from_definitions(pins, last_context, api_map, locals)
-        # @sg-ignore https://github.com/apiology/solargraph/pull/286
-        #   also covers: Unresolved call to without_nil on Solargraph::ComplexType, Solargraph::ComplexType::UniqueType
-        type = type.without_nil if key_present?(links.last, api_map, name_pin, last_context, locals)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
+        narrowing = index_narrowing(links.last, api_map, name_pin, last_context, locals)
+        type = narrowing.narrow(type, api_map) if narrowing
         out = maybe_nil(type, api_map)
         logger.debug do
           "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}, " \
@@ -335,11 +336,11 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param working_pin [Pin::Base] its binder is the receiver's type
-      # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
-      # @return [Boolean] true if `link` is an 'h[k]' lookup that a
-      #   Pin::KeyLookup in `locals` proves present
-      def key_present? link, api_map, name_pin, working_pin, locals
-        link.is_a?(Chain::Index) && link.present?(api_map, name_pin, working_pin.binder, locals)
+      # @param locals [::Array<Pin::LocalVariable, Pin::ExpressionNarrowing>]
+      # @return [Pin::ExpressionNarrowing, nil] the narrowing in `locals`
+      #   that proves `link` present, if it is an 'h[k]' lookup
+      def index_narrowing link, api_map, name_pin, working_pin, locals
+        link.narrowing(api_map, name_pin, working_pin.binder, locals) if link.is_a?(Chain::Index)
       end
 
       # @param type [ComplexType, ComplexType::UniqueType]

@@ -19,7 +19,7 @@ module Solargraph
       # so that it may no longer match the entry stored under it
       KEY_MUTATORS = %i[<< []= concat prepend insert replace clear push append unshift setbyte force_encoding].freeze
 
-      # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::KeyLookup>]
+      # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::ExpressionNarrowing>]
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
@@ -610,24 +610,49 @@ module Solargraph
       # @return [void]
       def add_key_fact location_node, lookup, presences, value: nil
         receiver, _, key = lookup.children
-        receiver_steps = Pin::KeyLookup.steps_from_node(receiver)
-        key_steps = Pin::KeyLookup.key_steps_from_node(key)
+        steps = Pin::ExpressionNarrowing.steps_from_node(lookup)
         statement = enclosing_compound_statement_pin
         # a method or block body is its own closure
         closure = statement.is_a?(Pin::Closure) ? statement : statement&.closure
-        return unless receiver_steps && key_steps && closure
+        return unless steps && closure
 
+        location = Location.from_node(location_node)
+        check = value && non_nil_check(value, location, closure)
         clip_at_key_writes(presences, receiver, key).each do |presence|
-          locals.push Pin::KeyLookup.new(
-            location: Location.from_node(location_node),
+          locals.push Pin::ExpressionNarrowing.new(
+            location: location,
             closure: closure,
-            receiver: receiver_steps,
-            key: key_steps,
+            steps: steps,
             presence: presence,
-            value: value,
+            exclude_return_type: ComplexType::NIL,
+            check: check,
             source: :flow_sensitive_typing
           )
         end
+      end
+
+      # @param value [Parser::AST::Node] the 'v' in 'h[k] ||= v'
+      # @param location [Location, nil]
+      # @param closure [Pin::Closure]
+      # @return [Proc] given an ApiMap, whether #non_nil_value? holds
+      def non_nil_check value, location, closure
+        ->(api_map) { non_nil_value?(api_map, value, location, closure) }
+      end
+
+      # @param api_map [ApiMap]
+      # @param value [Parser::AST::Node]
+      # @param location [Location, nil]
+      # @param closure [Pin::Closure]
+      # @return [Boolean] false if the type of `value` is unknown or
+      #   includes nil
+      def non_nil_value? api_map, value, location, closure
+        filename = location&.filename
+        range = Range.from_node(value)
+        return false unless filename && range
+
+        clip_locals = api_map.clip_at(filename, range.ending).locals
+        type = Parser.chain(value, nil, nil).infer(api_map, closure, clip_locals)
+        type.defined? && type.to_a.none? { |t| t.namespace == 'NilClass' }
       end
 
       # @param node [Parser::AST::Node]
