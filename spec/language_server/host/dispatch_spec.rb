@@ -39,4 +39,12 @@ describe Solargraph::LanguageServer::Host::Dispatch do
     lib = @dispatch.library_for(uri)
     expect(lib).to be(@dispatch.generic_library)
   end
+
+  it 'requires the including class to handle library progress' do
+    progress = Solargraph::LanguageServer::Progress.new('Testing')
+    expect do
+      @dispatch.generic_library.changed
+      @dispatch.generic_library.notify_observers progress
+    end.to raise_error(NotImplementedError)
+  end
 end

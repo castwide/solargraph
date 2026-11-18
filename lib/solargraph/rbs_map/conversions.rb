@@ -565,6 +565,7 @@ module Solargraph
             signatures: [],
             generics: generics,
             visibility: visibility,
+            overloading: decl.overloading?,
             source: :rbs
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
@@ -587,6 +588,7 @@ module Solargraph
           scope: final_scope,
           signatures: [],
           generics: generics,
+          overloading: decl.overloading?,
           source: :rbs
         )
         pin.signatures.concat method_def_to_sigs(decl, pin)
@@ -610,7 +612,8 @@ module Solargraph
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs,
                                        type_location: type_location, closure: pin)
                   end
-          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block, source: :rbs,
+          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block,
+                             block_required: overload.method_type.block&.required || false, source: :rbs,
                              type_location: type_location, closure: pin)
         end
       end

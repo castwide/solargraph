@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Solargraph::Convention::ClassDefinition do
+describe Solargraph::Parser::ParserGem::NodeProcessors::ClassDefinition do
   it 'indexes a Class.new assignment as a namespace' do
     source = Solargraph::SourceMap.load_string(%(
       module Vendor
