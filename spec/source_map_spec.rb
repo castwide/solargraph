@@ -65,7 +65,7 @@ describe Solargraph::SourceMap do
     ), 'test.rb')
 
     expect(map.document_symbols.map(&:path)).to include('FooBar#baz_convention')
-
+  ensure
     Solargraph::Convention.unregister dummy_convention
   end
 

@@ -58,8 +58,6 @@ module Solargraph
       line = -1
       last_line_index = 0
 
-      # @sg-ignore Typechecker thinks `newline_index` inside of the assignment
-      #   can be nil
       while (newline_index = text.index("\n", newline_index + 1)) && line <= position.line
         line += 1
         break if line == position.line
