@@ -2221,7 +2221,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'resolves block parameter types from Hash#each' do
-    pending 'Maybe feasible'
     source = Solargraph::Source.load_string(%(
       # @type [Hash{String => Integer}]
       h = { 'foo' => 1 }
@@ -2242,7 +2241,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'resolves block parameter types from Array(A, B)#each' do
-    pending 's and i are undefined'
     source = Solargraph::Source.load_string(%(
       # @type [Array<Array(String, Integer)>]
       h = [['foo', 1], ['bar', 2]]
@@ -2625,7 +2623,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'handles mass assignment into instance variables' do
-    pending 'Should be feasible'
     source = Solargraph::Source.load_string(%(
       class Blah
         def initialize
@@ -2648,6 +2645,75 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [5, 10])
     expect(clip.infer.to_s).to eq('String')
+  end
+
+  it 'types mass assignment from a declared tuple by position' do
+    source = Solargraph::Source.load_string(%(
+      class Foo; end
+      class Bar; end
+
+      # @return [Array(Foo, Bar)]
+      def pair; end
+
+      a, b = pair
+      a
+      b
+      c, d, e = pair
+      e
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    expect(api_map.clip_at('test.rb', [8, 6]).infer.to_s).to eq('Foo')
+    expect(api_map.clip_at('test.rb', [9, 6]).infer.to_s).to eq('Bar')
+    expect(api_map.clip_at('test.rb', [11, 6]).infer.to_s).not_to include('Foo')
+  end
+
+  it 'types a declared tuple element after a splat as any element' do
+    source = Solargraph::Source.load_string(%(
+      class Foo; end
+      class Bar; end
+      class Baz; end
+
+      # @return [Array(Foo, Bar, Baz)]
+      def triple; end
+
+      *rest, last = triple
+      last
+      rest
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    expect(api_map.clip_at('test.rb', [9, 6]).infer.to_s).to eq('Foo, Bar, Baz')
+    expect(api_map.clip_at('test.rb', [10, 6]).infer.to_s).not_to eq('Foo')
+  end
+
+  it 'types mass assignment from a declared list by its element type' do
+    source = Solargraph::Source.load_string(%(
+      class Foo; end
+
+      # @return [Array<Foo>]
+      def list; end
+
+      a, b = list
+      a
+      b
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    expect(api_map.clip_at('test.rb', [7, 6]).infer.to_s).to eq('Foo')
+    expect(api_map.clip_at('test.rb', [8, 6]).infer.to_s).to eq('Foo')
+  end
+
+  it 'does not infer a tuple from an array literal in mass assignment' do
+    source = Solargraph::Source.load_string(%(
+      a, b = [1, 'two']
+      a
+      b
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    expect(api_map.clip_at('test.rb', [2, 6]).infer.to_s).not_to eq('Integer')
+    expect(api_map.clip_at('test.rb', [3, 6]).infer.to_s).not_to eq('String')
   end
 
   it 'handles a complex yieldreturn type resolution situation' do

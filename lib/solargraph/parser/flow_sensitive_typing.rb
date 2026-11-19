@@ -231,6 +231,8 @@ module Solargraph
             downcast_type = fact.fetch(:type, nil)
             downcast_not_type = fact.fetch(:not_type, nil)
             presences.each do |presence|
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1266
+              #   https://github.com/castwide/solargraph/pull/1451
               add_downcast_var(pin,
                                presence: presence,
                                downcast_type: downcast_type,
