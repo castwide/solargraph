@@ -172,14 +172,15 @@ module Solargraph
       end
 
       # @param other [self]
-      # @sg-ignore @type should override probed type
       # @return [String]
       def combine_name other
-        if needs_consistent_name? || other.needs_consistent_name?
-          assert_same(other, :name)
-        else
-          choose(other, :name)
-        end
+        result = if needs_consistent_name? || other.needs_consistent_name?
+                   assert_same(other, :name)
+                 else
+                   choose(other, :name)
+                 end
+        raise TypeError, "name must be a String, got #{result.inspect}" unless result.is_a?(String)
+        result
       end
 
       # @return [void]
