@@ -27,9 +27,14 @@ module Solargraph
       pins + convention_pins
     end
 
-    # @return [Array<Pin::LocalVariable>]
+    # @return [Array<Pin::ExpressionType>] the file's variables and expression narrowings
+    def expression_types
+      data.expression_types
+    end
+
+    # @return [Array<Pin::BaseVariable>]
     def locals
-      data.locals
+      @locals ||= Pin::ExpressionType.variables(expression_types)
     end
 
     # @param source [Source]
@@ -65,7 +70,7 @@ module Solargraph
     def api_hash
       @api_hash ||= (pins_by_class(Pin::Constant) + pins_by_class(Pin::Namespace).select do |pin|
         pin.namespace.to_s > ''
-      end + pins_by_class(Pin::Reference) + pins_by_class(Pin::Method).map(&:node) + locals).hash
+      end + pins_by_class(Pin::Reference) + pins_by_class(Pin::Method).map(&:node) + expression_types).hash
     end
 
     # @return [String, nil]
@@ -160,11 +165,17 @@ module Solargraph
     end
 
     # @param location [Location]
-    # @return [Array<Pin::LocalVariable>]
-    def locals_at location
+    # @return [Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
+    def expression_types_at location
       return [] if location.filename != filename
       closure = locate_closure_pin(location.range.start.line, location.range.start.character)
-      locals.select { |pin| pin.visible_at?(closure, location) }
+      expression_types.select { |pin| pin.visible_at?(closure, location) }
+    end
+
+    # @param location [Location]
+    # @return [Array<Pin::BaseVariable>]
+    def locals_at location
+      Pin::ExpressionType.variables(expression_types_at(location))
     end
 
     # @return [Array<Parser::AST::Node>]

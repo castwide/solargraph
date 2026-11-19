@@ -4,7 +4,7 @@ module Solargraph
   class Source
     class Chain
       class GlobalVariable < Link
-        def resolve api_map, name_pin, locals
+        def resolve api_map, name_pin, expression_types
           api_map.get_global_variable_pins.select { |p| p.name == word }
         end
       end

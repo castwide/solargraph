@@ -266,11 +266,11 @@ module Solargraph
           referenced&.path == pin.path
         end
         if pin.path == 'Class#new'
-          caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
+          caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.expression_types).first
           if caller.defined?
             found.select! do |loc|
               clip = api_map.clip_at(loc.filename, loc.range.start)
-              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:closure), clip.locals).first
+              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:closure), clip.expression_types).first
               caller == other
             end
           else
@@ -421,7 +421,6 @@ module Solargraph
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
           # @sg-ignore Hash errors
           repargs[reporter] ||= []
-          # @sg-ignore Hash errors
           repargs[reporter].concat args
         end
       end

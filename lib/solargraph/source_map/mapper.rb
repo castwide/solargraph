@@ -23,12 +23,12 @@ module Solargraph
         @filename = source.filename
         @code = source.code
         @comments = source.comments
-        @pins, @locals = Parser.map(source)
+        @pins, @expression_types = Parser.map(source)
         # @param p [Solargraph::Pin::Base]
         @pins.each { |p| p.source = :code }
-        @locals.each { |l| l.source = :code }
+        @expression_types.each { |l| l.source = :code }
         process_comment_directives
-        [@pins, @locals]
+        [@pins, @expression_types]
         # rescue Exception => e
         #   Solargraph.logger.warn "Error mapping #{source.filename}: [#{e.class}] #{e.message}"
         #   Solargraph.logger.warn e.backtrace.join("\n")

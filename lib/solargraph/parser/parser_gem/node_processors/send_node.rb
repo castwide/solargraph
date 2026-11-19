@@ -81,10 +81,8 @@ module Solargraph
           def symbol_word subject
             return nil unless subject.is_a?(::Parser::AST::Node)
 
-            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             return nil unless %i[sym str].include?(subject.type)
 
-            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             subject.children.first.to_s
           end
 
@@ -437,7 +435,7 @@ module Solargraph
                 end
               end
             elsif node.children[2].type == :def
-              NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals, ivars
+              NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, expression_types, ivars
             end
           end
 

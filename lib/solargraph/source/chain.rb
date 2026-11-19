@@ -20,6 +20,7 @@ module Solargraph
       autoload :Link,             'solargraph/source/chain/link'
       autoload :Call,             'solargraph/source/chain/call'
       autoload :QCall,            'solargraph/source/chain/q_call'
+      autoload :Index,            'solargraph/source/chain/index'
       autoload :Variable,         'solargraph/source/chain/variable'
       autoload :ClassVariable,    'solargraph/source/chain/class_variable'
       autoload :Constant,         'solargraph/source/chain/constant'
@@ -95,12 +96,11 @@ module Solargraph
       #       in the chain, it changes.  (e.g., for 'b' in a.b.c, it
       #       should represent the type of 'a').
       #
-      # @param locals [::Array<Pin::LocalVariable>] Any local
-      #   variables / method parameters etc visible by the statement
+      # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
       #
       # @return [::Array<Pin::Base>] Pins representing possible return
       #   types of this method.
-      def define api_map, name_pin, locals
+      def define api_map, name_pin, expression_types
         return [] if undefined?
 
         # working_pin is the surrounding closure pin for the link
@@ -112,11 +112,13 @@ module Solargraph
         working_pin = name_pin
         # @sg-ignore Need to add nil check here
         links[0..-2].each do |link|
-          pins = link.resolve(api_map, working_pin, locals)
-          type = infer_from_definitions(pins, working_pin, api_map, locals)
+          pins = link.resolve(api_map, working_pin, expression_types)
+          type = infer_from_definitions(pins, working_pin, api_map, expression_types)
+          narrowing = index_narrowing(link, api_map, name_pin, working_pin, expression_types)
+          type = narrowing.narrow(type, api_map) if narrowing
           if type.undefined?
             logger.debug do
-              "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) => [] - undefined type from #{link.desc}"
+              "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, expression_types=#{expression_types}) => [] - undefined type from #{link.desc}"
             end
             return []
           end
@@ -127,21 +129,22 @@ module Solargraph
           # binder is now the lhs of the rhs we are evaluating.
           working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin, source: :chain)
           logger.debug do
-            "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
+            "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, expression_types=#{expression_types}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
           end
         end
         links.last.last_context = working_pin
-        links.last.resolve(api_map, working_pin, locals)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
+        links.last.resolve(api_map, working_pin, expression_types)
       end
 
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base] The pin for the closure in which this code runs
-      # @param locals [::Array<Pin::LocalVariable>]
+      # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
       # @return [ComplexType]
       # @sg-ignore
-      def infer api_map, name_pin, locals
+      def infer api_map, name_pin, expression_types
         # includes binder as it is mutable in Pin::Block
-        cache_key = [node, node&.location, links, name_pin&.return_type, name_pin&.binder, locals]
+        cache_key = [node, node&.location, links, name_pin&.return_type, name_pin&.binder, expression_types]
         if @@inference_invalidation_key == api_map.hash
           cached = @@inference_cache[cache_key]
           return cached if cached
@@ -149,7 +152,7 @@ module Solargraph
           @@inference_invalidation_key = api_map.hash
           @@inference_cache = {}
         end
-        out = infer_uncached(api_map, name_pin, locals).downcast_to_literal_if_possible
+        out = infer_uncached(api_map, name_pin, expression_types).downcast_to_literal_if_possible
         logger.debug do
           "Chain#infer() - caching result - cache_key_hash=#{cache_key.hash}, links.map(&:hash)=#{links.map(&:hash)}, links=#{links}, cache_key.map(&:hash) = #{cache_key.map(&:hash)}, cache_key=#{cache_key}"
         end
@@ -158,20 +161,25 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
-      # @param locals [::Array<Pin::LocalVariable>]
+      # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
       # @return [ComplexType, ComplexType::UniqueType]
-      def infer_uncached api_map, name_pin, locals
-        pins = define(api_map, name_pin, locals)
+      def infer_uncached api_map, name_pin, expression_types
+        pins = define(api_map, name_pin, expression_types)
         if pins.empty?
           logger.debug do
-            "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}) => undefined - no pins"
+            "Chain#infer_uncached(links=#{links.map(&:desc)}, expression_types=#{expression_types.map(&:desc)}) => undefined - no pins"
           end
           return ComplexType::UNDEFINED
         end
-        type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
+        last_context = links.last.last_context
+        type = infer_from_definitions(pins, last_context, api_map, expression_types)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
+        narrowing = index_narrowing(links.last, api_map, name_pin, last_context, expression_types)
+        type = narrowing.narrow(type, api_map) if narrowing
         out = maybe_nil(type, api_map)
         logger.debug do
-          "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}, " \
+          "Chain#infer_uncached(links=#{links.map(&:desc)}, expression_types=#{expression_types.map(&:desc)}, " \
             "name_pin=#{name_pin}, name_pin.closure=#{name_pin&.closure&.inspect}, " \
             "name_pin.binder=#{name_pin&.binder}) => #{out.rooted_tags.inspect}"
         end
@@ -259,9 +267,9 @@ module Solargraph
       # @param pins [::Array<Pin::Base>]
       # @param name_pin [Pin::Base]
       # @param api_map [ApiMap]
-      # @param locals [::Enumerable<Pin::LocalVariable>]
+      # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
       # @return [ComplexType, ComplexType::UniqueType]
-      def infer_from_definitions pins, name_pin, api_map, locals
+      def infer_from_definitions pins, name_pin, api_map, expression_types
         # @type [::Array<ComplexType, ComplexType::UniqueType>]
         types = []
         unresolved_pins = []
@@ -321,6 +329,17 @@ module Solargraph
           return type
         end
         type.self_to_type(name_pin.context)
+      end
+
+      # @param link [Chain::Link]
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base]
+      # @param working_pin [Pin::Base] its binder is the receiver's type
+      # @param expression_types [::Array<Pin::ExpressionType>] variables and expression narrowings visible at this point
+      # @return [Pin::ExpressionNarrowing, nil] the narrowing in `expression_types`
+      #   that proves `link` present, if it is an 'h[k]' lookup
+      def index_narrowing link, api_map, name_pin, working_pin, expression_types
+        link.narrowing(api_map, name_pin, working_pin.binder, expression_types) if link.is_a?(Chain::Index)
       end
 
       # @param type [ComplexType, ComplexType::UniqueType]

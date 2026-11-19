@@ -710,7 +710,7 @@ module Solargraph
           )
           # @sg-ignore Need to add nil check here
           chain = Solargraph::Parser.chain(n, location.filename)
-          type = chain.infer(api_map, self, clip.locals)
+          type = chain.infer(api_map, self, clip.expression_types)
           result.push type unless type.undefined?
         end
         result.push ComplexType::NIL if has_nil

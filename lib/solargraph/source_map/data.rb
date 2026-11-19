@@ -17,10 +17,10 @@ module Solargraph
       end
 
       # @sg-ignore Translate to something flow sensitive typing understands
-      # @return [Array<Solargraph::Pin::LocalVariable>]
-      def locals
+      # @return [Array<Solargraph::Pin::ExpressionType>] the file's variables and expression narrowings
+      def expression_types
         generate
-        @locals || []
+        @expression_types || []
       end
 
       private
@@ -30,7 +30,7 @@ module Solargraph
         return if @generated
 
         @generated = true
-        @pins, @locals = Mapper.map(@source)
+        @pins, @expression_types = Mapper.map(@source)
       end
     end
   end

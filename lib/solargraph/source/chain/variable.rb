@@ -4,7 +4,7 @@ module Solargraph
   class Source
     class Chain
       class Variable < Link
-        def resolve api_map, name_pin, locals
+        def resolve api_map, name_pin, expression_types
           api_map.get_instance_variable_pins(name_pin.context.namespace, name_pin.context.scope).select do |p|
             p.name == word
           end

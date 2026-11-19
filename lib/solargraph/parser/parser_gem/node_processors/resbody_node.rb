@@ -21,7 +21,7 @@ module Solargraph
                           unpack_name(child)
                         end
                       end
-              locals.push Solargraph::Pin::LocalVariable.new(
+              expression_types.push Solargraph::Pin::LocalVariable.new(
                 location: loc,
                 closure: region.closure,
                 name: node.children[1].children[0].to_s,
@@ -30,7 +30,7 @@ module Solargraph
                 source: :parser
               )
             end
-            NodeProcessor.process(node.children[2], region, pins, locals, ivars)
+            NodeProcessor.process(node.children[2], region, pins, expression_types, ivars)
           end
         end
       end

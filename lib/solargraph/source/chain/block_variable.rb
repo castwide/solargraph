@@ -4,7 +4,7 @@ module Solargraph
   class Source
     class Chain
       class BlockVariable < Link
-        def resolve api_map, name_pin, locals
+        def resolve api_map, name_pin, expression_types
           [Pin::ProxyType.anonymous(ComplexType.try_parse('::Proc'), source: :chain)]
         end
       end

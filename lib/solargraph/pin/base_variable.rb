@@ -7,6 +7,7 @@ module Solargraph
     class BaseVariable < Base
       # include Solargraph::Source::NodeMethods
       include Solargraph::Parser::NodeMethods
+      include ExpressionType
 
       # @return [Array<Parser::AST::Node>]
       attr_reader :assignments
@@ -175,7 +176,7 @@ module Solargraph
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
             # @sg-ignore Need to add nil check here
-            result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
+            result = chain.infer(api_map, closure, clip.expression_types).self_to_type(closure.context)
             types.push result unless result.undefined?
           end
         end
@@ -219,6 +220,11 @@ module Solargraph
         return false unless super
         # @sg-ignore Should add type check on other
         assignment == other.assignment
+      end
+
+      # @return [String]
+      def expression
+        name
       end
 
       def type_desc

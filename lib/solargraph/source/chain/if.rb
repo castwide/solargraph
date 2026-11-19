@@ -11,8 +11,8 @@ module Solargraph
           @links = links
         end
 
-        def resolve api_map, name_pin, locals
-          types = @links.map { |link| link.infer(api_map, name_pin, locals) }
+        def resolve api_map, name_pin, expression_types
+          types = @links.map { |link| link.infer(api_map, name_pin, expression_types) }
           [Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.try_parse(types.map(&:tag).uniq.join(', ')),
                                                 source: :chain)]
         end
