@@ -253,6 +253,7 @@ module Solargraph
       return [] unless pin
 
       result = []
+      # @type [Array<Source, SourceMap>]
       files = if only
                 [api_map.source_map(filename)]
               else

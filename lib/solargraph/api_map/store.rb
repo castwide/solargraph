@@ -175,16 +175,6 @@ module Solargraph
         pins_by_class(Solargraph::Pin::Method)
       end
 
-      # @param fqns [String]
-      # @return [Array<String>]
-      def domains fqns
-        result = []
-        fqns_pins(fqns).each do |nspin|
-          result.concat nspin.domains
-        end
-        result
-      end
-
       # @return [Hash{String => YardMap::Macro}]
       def named_macros
         @named_macros ||= begin
@@ -252,15 +242,14 @@ module Solargraph
           end
 
           # Add includes, prepends, and extends
-          [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
+          # @type [Array<Array<Pin::Reference>>]
+          ref_lists = [get_includes(current), get_prepends(current), get_extends(current)]
+          ref_lists.each do |refs|
             next if refs.nil?
             # @param ref [String]
             refs.map(&:type).map(&:to_s).each do |ref|
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
               next if ref.nil? || ref.empty? || visited.include?(ref)
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
               ancestors << ref
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
               queue << ref
             end
           end

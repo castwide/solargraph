@@ -3,17 +3,6 @@
 require 'fileutils'
 
 describe Solargraph::Repo do
-  before(:all) do # rubocop:disable RSpec/BeforeAfterAll
-    FileUtils.rm_f File.join('spec', 'fixtures', 'external_bundled_gem', 'Gemfile.lock')
-    Solargraph.with_clean_env do
-      `cd #{File.join('spec', 'fixtures', 'external_bundled_gem')} && bundle install`
-    end
-  end
-
-  after(:all) do # rubocop:disable RSpec/BeforeAfterAll
-    FileUtils.rm_f File.join('spec', 'fixtures', 'external_bundled_gem', 'Gemfile.lock')
-  end
-
   context 'without a bundle' do
     let(:directory) { File.join('spec', 'fixtures', 'external_required_gem') }
 
@@ -69,6 +58,45 @@ describe Solargraph::Repo do
       # nokogiri is a transitive dependency of reverse_markdown
       meta = repo.find_by_name('nokogiri')
       expect(meta.name).to eq('nokogiri')
+    end
+
+    it 'skips unavailable gems' do
+      expect(repo.find_by_name('not_a_real_gem')).to be_nil
+    end
+
+    it 'builds installed gem metagems from locked specifications' do
+      meta = repo.find_by_name('backport')
+      expect(meta.version).to eq('1.2.0')
+      expect(meta.require_paths).to eq(['lib'])
+      expect(meta.full_path).to include('backport')
+    end
+
+    it 'parses require paths from path gem gemspecs' do
+      meta = repo.find_by_name('gem-with-yard-macros')
+      expect(meta.require_paths).to eq(['lib'])
+    end
+  end
+
+  context 'with a gemspec' do
+    let(:directory) { File.join('spec', 'fixtures', 'external_gemspec') }
+    let(:repo) { described_class.new(directory) }
+
+    it 'includes development dependencies' do
+      expect(repo.bundled.map(&:name)).to include('rspec')
+    end
+
+    it 'builds path gem metagems from lazy specifications' do
+      meta = repo.find_by_name('example')
+      expect(meta.name).to eq('example')
+      expect(meta.version).to eq('1.0.0')
+      expect(meta.dependencies).to eq(['backport'])
+    end
+
+    it 'defaults require paths when the gemspec does not define them' do
+      # The fixture gemspec computes its files dynamically and never sets
+      # require_paths, so the default is used without evaluating the gemspec.
+      meta = repo.find_by_name('example')
+      expect(meta.require_paths).to eq(['lib'])
     end
   end
 end

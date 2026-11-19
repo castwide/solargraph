@@ -101,11 +101,6 @@ module Solargraph
         @return_type ||= ComplexType.try_parse((type == :class ? '::Class' : '::Module') + "<::#{path}>")
       end
 
-      # @return [Array<String>]
-      def domains
-        @domains ||= []
-      end
-
       def typify api_map
         return_type
       end

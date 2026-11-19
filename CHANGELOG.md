@@ -1,3 +1,9 @@
+## 0.62.2 - November 17, 2026
+- Update to prism ~> 2.1 (#1487)
+- Update to rdoc >= 7.2 (#1488)
+- Remove unused require 'date' from gemspec (#1492)
+- Read @RBS method types from method comments (#1495)
+
 ## 0.62.1 - November 4, 2026
 - Always report completion for workspace mapping progress (#1475)
 - Close attribute directives over their namespace (#1432)
