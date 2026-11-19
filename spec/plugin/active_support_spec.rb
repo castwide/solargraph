@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'tmpdir'
+
 describe Solargraph::Plugin::ActiveSupport do
   # @param namespace [String]
   # @param code [String]
@@ -41,12 +43,178 @@ describe Solargraph::Plugin::ActiveSupport do
         pins = api_map.get_methods('Consumer', scope: :class)
         expect(pins.map(&:path)).to include('Example::ClassMethods#foo')
       end
+
+      context 'when the include is in a gem' do
+        let(:gem_pins) do
+          Solargraph::SourceMap.load_string(%(
+            module GemExample
+              module ClassMethods
+                def bar; end
+              end
+            end
+
+            class GemConsumer
+              include GemExample
+            end
+          ), 'gem.rb').pins
+        end
+
+        before do
+          # rubocop:disable-next RSpec/AnyInstance
+          allow_any_instance_of(Solargraph::External).to receive(:pins) { gem_pins.clone }
+        end
+
+        it 'adds extend references' do
+          pins = api_map.get_methods('GemConsumer', scope: :class)
+          expect(pins.map(&:path)).to include('GemExample::ClassMethods#bar')
+        end
+      end
+
+      context 'when an included module includes another' do
+        let(:source) do
+          Solargraph::Source.load_string(%(
+            module Support
+              module Callbacks
+                module ClassMethods
+                  def set_callback; end
+                end
+              end
+            end
+
+            module Job
+              module Callbacks
+                include Support::Callbacks
+
+                module ClassMethods
+                  def before_perform; end
+                end
+              end
+
+              class Base
+                include Callbacks
+              end
+            end
+          ), 'test.rb')
+        end
+
+        it 'adds extend references for the nested include' do
+          pins = api_map.get_methods('Job::Base', scope: :class)
+          expect(pins.map(&:path)).to include('Job::Callbacks::ClassMethods#before_perform',
+                                              'Support::Callbacks::ClassMethods#set_callback')
+        end
+      end
+
+      context 'when a concern has its own class methods and extends' do
+        let(:source) do
+          Solargraph::Source.load_string(%(
+            module Tracker
+              def direct_descendants; end
+            end
+
+            module Tracked
+              extend ActiveSupport::Concern
+              extend Tracker
+
+              def self.configurations; end
+            end
+
+            module Plain
+              def self.plain_class_method; end
+            end
+
+            class Consumer
+              include Tracked
+              include Plain
+            end
+          ), 'test.rb')
+        end
+
+        it 'adds them to the includer' do
+          names = api_map.get_methods('Consumer', scope: :class).map(&:name)
+          expect(names).to include('configurations', 'direct_descendants')
+        end
+
+        it 'skips class methods of a module that is not a concern' do
+          names = api_map.get_methods('Consumer', scope: :class).map(&:name)
+          expect(names).not_to include('plain_class_method')
+        end
+      end
+
+      context 'when the included module is not defined' do
+        let(:source) do
+          Solargraph::Source.load_string(%(
+            module Outer
+              module ClassMethods
+                def leaked; end
+              end
+
+              class Thing
+                include Helper
+              end
+            end
+          ), 'test.rb')
+        end
+
+        it 'skips the ClassMethods of an enclosing namespace' do
+          names = api_map.get_methods('Outer::Thing', scope: :class).map(&:name)
+          expect(names).not_to include('leaked')
+        end
+      end
     end
 
     context 'without the activesupport gem' do
       it 'skips without activesupport gem' do
         pins = api_map.get_methods('Consumer', scope: :class)
         expect(pins.map(&:path)).not_to include('Example::ClassMethods#foo')
+      end
+    end
+
+    context 'when a gem concern declares a class_attribute in its included block' do
+      around do |example|
+        Dir.mktmpdir do |dir|
+          @gem_dir = dir
+          example.run
+        end
+      end
+
+      # @return [Array<Solargraph::Pin::Base>]
+      def gem_pins
+        FileUtils.mkdir_p File.join(@gem_dir, 'lib')
+        File.write File.join(@gem_dir, 'lib', 'jobs.rb'), %(
+          module Jobs
+            module QueueName
+              extend ActiveSupport::Concern
+
+              included do
+                class_attribute :queue_name
+              end
+            end
+
+            class Base
+              include QueueName
+            end
+          end
+        )
+        metagem = Solargraph::Metagem.new(name: 'jobs', full_path: @gem_dir, spec_file: nil,
+                                          source: "source at #{@gem_dir}", version: '1.0.0',
+                                          require_paths: ['lib'], dependencies: ['activesupport'])
+        Solargraph::Collection::Gem.new(metagem).pins
+      end
+
+      before do
+        # Map the gem before stubbing gem names, which would also reach the gem's own catalog
+        pins = gem_pins
+        # rubocop:disable-next RSpec/AnyInstance
+        allow_any_instance_of(Solargraph::External).to receive(:configured_gem_names).and_return(['activesupport'])
+        # rubocop:disable-next RSpec/AnyInstance
+        allow_any_instance_of(Solargraph::External).to receive(:pins) { pins.clone }
+      end
+
+      it 'adds the accessor to the includer' do
+        pending 'needs https://github.com/castwide/solargraph/pull/1446'
+
+        names = api_map.get_methods('Jobs::Base', scope: :class).map(&:name)
+        expect(names).to include('queue_name')
       end
     end
   end
