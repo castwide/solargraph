@@ -392,14 +392,35 @@ module Solargraph
     def var_at_location candidates, name, closure, location
       return unless location
 
-      with_correct_name = candidates.select { |pin| pin.name == name }
-      vars_at_location = with_correct_name.reject do |pin|
-        # visible_at? excludes the starting position, but we want to
-        # include it for this purpose
-        !pin.visible_at?(closure, location) && !pin.starts_at?(location)
-      end
+      visible_vars(candidates, name, closure, location).inject(&:combine_with)
+    end
 
-      vars_at_location.inject(&:combine_with)
+    # Find every definition of a variable visible where it is used.
+    #
+    # Where #var_at_location returns the visible candidates merged into
+    # one pin, this returns that merged pin once per definition location,
+    # so each definition still carries the merged type. A candidate that
+    # stands for several definitions contributes each of its
+    # Pin::Base#definition_locations.
+    #
+    # @param candidates [Array<Pin::BaseVariable>]
+    # @param name [String]
+    # @param closure [Pin::Closure]
+    # @param location [Location, nil]
+    #
+    # @return [Array<Pin::BaseVariable>] One pin per distinct location,
+    #   sorted by file and position
+    def var_definitions_at candidates, name, closure, location
+      return [] unless location
+
+      visible = visible_vars(candidates, name, closure, location)
+      merged = visible.inject(&:combine_with)
+      return [] unless merged
+
+      visible.flat_map(&:definition_locations)
+             .uniq
+             .sort_by { |loc| [loc.filename.to_s, loc.range.start.line, loc.range.start.character] }
+             .map { |loc| merged.at_location(loc) }
     end
 
     # Get an array of class variable pins for a namespace.
@@ -802,6 +823,19 @@ module Solargraph
     end
 
     private
+
+    # @param candidates [Array<Pin::BaseVariable>]
+    # @param name [String]
+    # @param closure [Pin::Closure]
+    # @param location [Location]
+    # @return [Array<Pin::BaseVariable>]
+    def visible_vars candidates, name, closure, location
+      candidates.select do |pin|
+        # visible_at? excludes the starting position, but we want to
+        # include it for this purpose
+        pin.name == name && (pin.visible_at?(closure, location) || pin.starts_at?(location))
+      end
+    end
 
     # A hash of source maps with filename keys.
     #

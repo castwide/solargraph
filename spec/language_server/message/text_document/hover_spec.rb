@@ -49,4 +49,28 @@ describe Solargraph::LanguageServer::Message::TextDocument::Hover do
     message.process
     expect(message.result[:contents][:value]).to eq("x\n\n`=~ String`")
   end
+
+  it 'shows one merged type for a variable assigned in several places' do
+    code = %(
+      def foo
+        if rand
+          x = 1
+        else
+          x = 'one'
+        end
+        x
+      end
+    )
+    host = Solargraph::LanguageServer::Host.new
+    host.open('file:///test.rb', code, 1)
+    host.catalog
+    message = described_class.new(host, {
+                                    'params' => {
+                                      'textDocument' => { 'uri' => 'file:///test.rb' },
+                                      'position' => { 'line' => 7, 'character' => 8 }
+                                    }
+                                  })
+    message.process
+    expect(message.result[:contents][:value]).to eq("x\n\n`=~ Integer, String`")
+  end
 end

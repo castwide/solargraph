@@ -21,7 +21,8 @@ module Solargraph
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
       def define
         return [] if cursor.comment? || cursor.chain.literal? || cursor.chain.require_parameter?
-        result = cursor.chain.define(api_map, closure, locals)
+        result = variable_definitions
+        result = cursor.chain.define(api_map, closure, locals) if result.empty?
         result.concat file_global_methods
         if result.empty?
           result.concat((source_map.pins + source_map.locals).select do |p|
@@ -99,6 +100,23 @@ module Solargraph
       end
 
       private
+
+      # The variable at the cursor, once per visible definition location.
+      #
+      # @return [::Array<Pin::BaseVariable>]
+      def variable_definitions
+        return [] unless cursor.chain.links.length == 1
+
+        link = cursor.chain.links.first
+        if link.is_a?(Source::Chain::InstanceVariable)
+          ivars = api_map.get_instance_variable_pins(closure.context.namespace, closure.context.scope)
+          api_map.var_definitions_at(ivars, link.word, closure, link.location)
+        elsif link.is_a?(Source::Chain::Call)
+          api_map.var_definitions_at(locals, link.word, closure, link.location)
+        else
+          []
+        end
+      end
 
       # @return [ApiMap]
       attr_reader :api_map

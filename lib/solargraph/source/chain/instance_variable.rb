@@ -21,8 +21,6 @@ module Solargraph
           [out].compact
         end
 
-        private
-
         # @return [Location, nil]
         attr_reader :location
       end

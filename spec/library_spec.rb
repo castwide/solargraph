@@ -751,4 +751,133 @@ describe Solargraph::Library do
       expect(library.cache_progress).to be_nil
     end
   end
+
+  describe '#definitions_at on a variable' do
+    let(:library) { described_class.new }
+
+    # @param code [String]
+    # @param line [Integer]
+    # @param column [Integer]
+    # @return [Array<Array(Integer, Integer)>] the start line and column of each definition
+    def definition_starts code, line, column
+      library.attach Solargraph::Source.load_string(code, 'test.rb')
+      library.definitions_at('test.rb', line, column).map { |pin| [pin.location.range.start.line, pin.location.range.start.character] }
+    end
+
+    it 'lists every assignment of an instance variable in the class, by file and line' do
+      starts = definition_starts(<<~RUBY_CODE, 14, 4)
+        class Foo
+          def create
+            @post = 1
+          end
+
+          def set_post
+            @post = 2
+          end
+
+          def new
+            @post = 3
+          end
+
+          def show
+            @post
+          end
+        end
+      RUBY_CODE
+      expect(starts).to eq([[2, 4], [6, 4], [10, 4]])
+    end
+
+    it 'lists a local assigned in both branches of an if' do
+      starts = definition_starts(<<~RUBY_CODE, 6, 2)
+        def foo
+          if rand
+            x = 1
+          else
+            x = 'one'
+          end
+          x
+        end
+      RUBY_CODE
+      expect(starts).to eq([[2, 4], [4, 4]])
+    end
+
+    it 'jumps straight to a single assignment' do
+      starts = definition_starts(<<~RUBY_CODE, 2, 2)
+        def foo
+          x = 1
+          x
+        end
+      RUBY_CODE
+      expect(starts).to eq([[1, 2]])
+    end
+
+    it 'leaves out an assignment not visible at the cursor' do
+      starts = definition_starts(<<~RUBY_CODE, 6, 2)
+        def foo
+          x = 1
+        end
+
+        def bar
+          x = 2
+          x
+        end
+      RUBY_CODE
+      expect(starts).to eq([[5, 2]])
+    end
+
+    context 'with a pin that stands for several definitions' do
+      # The convention adds an `@origin` to Foo#show in test.rb whose definitions
+      # are assignments in other.rb, the way solargraph-rails copies a controller's
+      # ivars into its views:
+      #
+      #   # other.rb
+      #   line 3:   @origin = 'a'   (column 2)
+      #   line 9: @origin = 'b'     (column 0, listed twice to check it is deduplicated)
+      #
+      #   # test.rb
+      #   class Foo
+      #     def show
+      #       @origin   # go to definition lists other.rb:3 and other.rb:9
+      #     end
+      #   end
+      let(:convention) do
+        Class.new(Solargraph::Convention::Base) do
+          def local source_map
+            return Solargraph::Environ.new unless source_map.filename == 'test.rb'
+
+            origin = Class.new(Solargraph::Pin::InstanceVariable) do
+              def definition_locations
+                [[9, 0], [3, 2], [9, 0]].map do |line, column|
+                  Solargraph::Location.new('other.rb', Solargraph::Range.from_to(line, column, line, column + 6))
+                end
+              end
+            end
+            show = Solargraph::Pin::Method.new(name: 'show', closure: Solargraph::Pin::Namespace.new(name: 'Foo'),
+                                               scope: :instance, source: :spec)
+            Solargraph::Environ.new(pins: [
+                                      origin.new(name: '@origin', closure: show, source: :spec,
+                                                 location: Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 0, 0, 3)),
+                                                 return_type: Solargraph::ComplexType.parse('String'))
+                                    ])
+          end
+        end
+      end
+
+      before { Solargraph::Convention.register convention }
+
+      after { Solargraph::Convention.unregister convention }
+
+      it 'lists each of its locations' do
+        library.attach Solargraph::Source.load_string(<<~RUBY_CODE, 'test.rb')
+          class Foo
+            def show
+              @origin
+            end
+          end
+        RUBY_CODE
+        locations = library.definitions_at('test.rb', 2, 4).map(&:location)
+        expect(locations.map { |loc| [loc.filename, loc.range.start.line] }).to eq([['other.rb', 3], ['other.rb', 9]])
+      end
+    end
+  end
 end
