@@ -65,58 +65,56 @@ module Solargraph
       # namespace. It's typically used to identify available DSLs.
       #
       # @return [Array<String>]
-      # @sg-ignore Need to validate config
       def domains
-        raw_data['domains']
+        validated_array('domains')
       end
 
       # An array of required paths to add to the workspace.
       #
       # @return [Array<String>]
-      # @sg-ignore Need to validate config
       def required
-        raw_data['require']
+        validated_array('require')
       end
 
       # An array of load paths for required paths.
       #
-      # @sg-ignore Need to validate config
       # @return [Array<String>]
-      # @sg-ignore Need to validate config
       def require_paths
-        raw_data['require_paths'] || []
+        validated_array('require_paths')
       end
 
       # An array of reporters to use for diagnostics.
       #
-      # @sg-ignore Need to validate config
       # @return [Array<String>]
       def reporters
-        raw_data['reporters']
+        validated_array('reporters')
       end
 
       # A hash of options supported by the formatter
       #
-      # @sg-ignore Need to validate config
       # @return [Hash]
       def formatter
-        raw_data['formatter']
+        value = raw_data['formatter']
+        return {} if value.nil?
+        return value if value.is_a?(Hash)
+        raise InvalidConfigError, invalid_message('formatter', 'a hash', value)
       end
 
       # An array of plugins to require.
       #
-      # @sg-ignore Need to validate config
       # @return [Array<String>]
       def plugins
-        raw_data['plugins']
+        validated_array('plugins')
       end
 
       # The maximum number of files to parse from the workspace.
       #
-      # @sg-ignore Need to validate config
       # @return [Integer]
       def max_files
-        raw_data['max_files']
+        value = raw_data['max_files']
+        return MAX_FILES if value.nil?
+        return value if value.is_a?(Integer)
+        raise InvalidConfigError, invalid_message('max_files', 'an integer', value)
       end
 
       # @return [Hash{Symbol => Symbol}]
@@ -129,6 +127,28 @@ module Solargraph
       end
 
       private
+
+      # Read an array-valued .solargraph.yml key. A key with no value at
+      # all means "none", but a value of the wrong type is a mistake the
+      # user needs to hear about rather than have silently discarded.
+      #
+      # @param key [String]
+      # @raise [InvalidConfigError] if the value is not an array
+      # @return [Array<String>]
+      def validated_array key
+        value = raw_data[key]
+        return [] if value.nil?
+        return value if value.is_a?(Array)
+        raise InvalidConfigError, invalid_message(key, 'an array', value)
+      end
+
+      # @param key [String]
+      # @param expected [String] a description of the type the key requires
+      # @param value [Object]
+      # @return [String]
+      def invalid_message key, expected, value
+        "Invalid .solargraph.yml: #{key} must be #{expected}, but was #{value.inspect}"
+      end
 
       # @return [String]
       def global_config_path
