@@ -24,6 +24,87 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
+  context 'when is_a? receives a variable holding a class' do
+    it 'narrows to the instance type of a Class<X> parameter' do
+      source = Solargraph::Source.load_string(%(
+        class ReproBase; end
+        class Repro < ReproBase; end
+        # @param repr [ReproBase]
+        # @param klass [Class<Repro>]
+        def verify_repro(repr, klass)
+          if repr.is_a?(klass)
+            repr
+          else
+            repr
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new.map(source)
+      expect(api_map.clip_at('test.rb', [7, 12]).infer.to_s).to eq('Repro')
+    end
+
+    it 'does not narrow the false branch' do
+      source = Solargraph::Source.load_string(%(
+        class ReproBase; end
+        class Repro < ReproBase; end
+        # @param repr [ReproBase]
+        # @param klass [Class<ReproBase>]
+        def verify_repro(repr, klass)
+          if repr.is_a?(klass)
+            repr
+          else
+            repr
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new.map(source)
+      expect(api_map.clip_at('test.rb', [9, 12]).infer.to_s).to eq('ReproBase')
+    end
+
+    it 'narrows to the generic parameter of a Class<generic<T>> parameter' do
+      source = Solargraph::Source.load_string(%(
+        class Foo
+          # @generic T
+          # @param obj [Numeric]
+          # @param klass [Class<generic<T>>]
+          # @return [generic<T>, nil]
+          def find(obj, klass)
+            obj if obj.is_a?(klass)
+          end
+
+          def use
+            find(1, Integer)
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new.map(source)
+      expect(api_map.clip_at('test.rb', [7, 12]).infer.to_s).to eq('generic<T>')
+      expect(api_map.clip_at('test.rb', [11, 12]).infer.to_s).to eq('Integer, nil')
+    end
+
+    [
+      ['untyped', nil],
+      ['a bare Class', '@param klass [Class]'],
+      ['a nilable Class<X>', '@param klass [Class<Repro>, nil]']
+    ].each do |description, tag|
+      it "does not narrow with #{description} variable" do
+        source = Solargraph::Source.load_string(%(
+          class ReproBase; end
+          class Repro < ReproBase; end
+          # @param repr [ReproBase]
+          # #{tag}
+          def verify_repro(repr, klass)
+            if repr.is_a?(klass)
+              repr
+            end
+          end
+        ), 'test.rb')
+        api_map = Solargraph::ApiMap.new.map(source)
+        expect(api_map.clip_at('test.rb', [7, 14]).infer.to_s).to eq('ReproBase')
+      end
+    end
+  end
+
   it 'uses is_a? in a simple if() with a union to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
