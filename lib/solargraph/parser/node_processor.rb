@@ -46,7 +46,7 @@ module Solargraph
             source: :parser
           )
         end
-        return [pins, locals, ivars] unless Parser.is_ast_node?(node)
+        return [pins, locals, ivars] unless node.is_a?(::Parser::AST::Node)
         node_processor_classes = @@processors[node.type] || [NodeProcessor::Base]
 
         node_processor_classes.each do |klass|

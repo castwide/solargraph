@@ -19,6 +19,7 @@ module Solargraph
               return process_children
             end
             # :nocov:
+            receiver = node.children[0]
             if node.children[0].nil?
               if %i[private public protected].include?(method_name)
                 process_visibility
@@ -46,7 +47,8 @@ module Solargraph
                 # Processing a private class can potentially handle children on its own
                 return if process_private_class_method
               end
-            elsif %i[include extend prepend].include?(method_name) && Parser.is_ast_node?(node.children[0]) && node.children[0].type == :const
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+            elsif %i[include extend prepend].include?(method_name) && receiver.is_a?(::Parser::AST::Node) && receiver.type == :const
               process_qualified_mixin method_name
             elsif included_hook_parameter?(node.children[0])
               process_included_hook_mixin method_name
@@ -218,20 +220,6 @@ module Solargraph
             end
           end
 
-          # @param options [Hash{String => AST::Node}]
-          # @param name [String]
-          # @param default [Boolean]
-          # @return [Boolean]
-          def boolean_option options, name, default
-            value = options[name]
-            return default unless Parser.is_ast_node?(value)
-            # rubocop:disable Lint/BooleanSymbol -- these are AST node types
-            return true if value.type == :true
-            return false if value.type == :false
-            # rubocop:enable Lint/BooleanSymbol
-            default
-          end
-
           # @return [void]
           def process_include
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
@@ -283,7 +271,7 @@ module Solargraph
             return if target.nil? || target.empty?
             closure = Pin::Namespace.new(location: get_node_location(receiver), name: target, source: :parser)
             node.children[2..].each do |arg|
-              next unless Parser.is_ast_node?(arg)
+              next unless arg.is_a?(::Parser::AST::Node)
               name = if arg.type == :self
                        region.closure&.full_context&.namespace
                      elsif arg.type == :const
@@ -342,14 +330,14 @@ module Solargraph
             args = node.children[2..] || []
             if %i[send public_send].include?(method_name)
               keyword = args.first
-              return unless Parser.is_ast_node?(keyword) && keyword.type == :sym
+              return unless keyword.is_a?(::Parser::AST::Node) && keyword.type == :sym
               method_name = keyword.children[0]
               args = args.drop(1)
             end
             return unless %i[include extend prepend].include?(method_name)
             hook = region.closure
             args.each do |arg|
-              next unless Parser.is_ast_node?(arg)
+              next unless arg.is_a?(::Parser::AST::Node)
               name = if arg.type == :self
                        hook.namespace
                      elsif arg.type == :const

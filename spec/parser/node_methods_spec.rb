@@ -12,6 +12,16 @@ describe Solargraph::Parser::NodeMethods do
     expect(described_class.unpack_name(ast)).to eq 'Foo::Bar'
   end
 
+  it 'detects hashes that start with a double splat' do
+    ast = parse('foo(**opts)')
+    expect(described_class.splatted_hash?(ast.children[2])).to be(true)
+  end
+
+  it 'does not detect hashes that start with a pair' do
+    ast = parse('foo(bar: 1)')
+    expect(described_class.splatted_hash?(ast.children[2])).to be(false)
+  end
+
   it 'infers literal strings' do
     ast = parse("x = 'string'")
     expect(described_class.infer_literal_node_type(ast.children[1])).to eq '::String'
