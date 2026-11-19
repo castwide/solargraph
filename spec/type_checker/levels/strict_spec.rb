@@ -297,6 +297,19 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('named')
     end
 
+    it 'accepts an explicit undefined return tag on an uninferable method' do
+      checker = type_checker(%(
+        class Foo
+          # @return [undefined]
+          def bar
+            unknown_method
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include(a_string_including('could not be inferred for Foo#bar'))
+      expect(checker.problems.map(&:message)).not_to include('Untyped method Foo#bar could not be inferred')
+    end
+
     it 'reports untyped methods without inferred types' do
       checker = type_checker(%(
         class Foo
