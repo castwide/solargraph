@@ -119,7 +119,8 @@ module Solargraph
       # @todo Determine what needs to be sent to global conventions
       conventions_environ.merge Convention.for_global(nil)
       external_changed = external.update(bench.external_requires.to_a + conventions_environ.requires, addon.gem_names)
-      store_changed = store.update(@@core_pins, external.pins.clone, conventions_environ.pins, addon.pins, iced_pins, live_pins) { process_macros }
+      # conventions_environ is cleared and refilled in place, so the store needs a copy to see a change
+      store_changed = store.update(@@core_pins, external.pins.clone, conventions_environ.pins.clone, addon.pins, iced_pins, live_pins) { process_macros }
       @cache.clear if external_changed || store_changed
       Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
