@@ -288,10 +288,8 @@ module Solargraph
           prev = nil
           tree.each do |node|
             if node.type == :send
-              args = node.children[2..]
-              # @sg-ignore Need to add nil check here
+              args = node.children.drop(2)
               if !args.empty?
-                # @sg-ignore Need to add nil check here
                 return node if prev && args.include?(prev)
               elsif source.synchronized?
                 return node if source.code[0..(offset - 1)] =~ /\(\s*\z/ && source.code[offset..] =~ /^\s*\)/
@@ -582,7 +580,7 @@ module Solargraph
                 # from above; now we need to also gather the value
                 # position nodes
                 if idx == nodes.length - 1
-                  result.concat from_value_position_statement(nodes.last,
+                  result.concat from_value_position_statement(nodes.fetch(-1),
                                                               include_explicit_returns: false)
                 end
               end

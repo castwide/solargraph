@@ -42,7 +42,7 @@ module Solargraph
 
         # @return [Boolean] true if this is a parameter of Kernel#require
         def require_parameter?
-          method_call_chain.links.last.word == 'require'
+          method_call_chain.links.fetch(-1).word == 'require'
         end
 
         private
