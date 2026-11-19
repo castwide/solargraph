@@ -28,13 +28,13 @@ module Solargraph
     # @return [String]
     attr_reader :cache_name
 
-    def initialize name:, full_path:, spec_file:, source:, version:, require_paths:, dependencies:
+    def initialize name:, full_path:, spec_file:, source:, version:, dependencies:, require_paths: nil
       @name = name
       @full_path = full_path
       @spec_file = spec_file
       @source = source
       @version = version
-      @require_paths = require_paths
+      @require_paths = require_paths || Metagem.parse_require_paths(spec_file)
       @dependencies = dependencies
       # @todo Possible change to cache names to make them more specific to sources
       # @cache_name = "#{File.basename(full_path)}__#{source.gsub(/[^a-z0-9\-_]/i, '_')}" unless source.end_with?('Path')
@@ -50,10 +50,6 @@ module Solargraph
       require_paths.any? do |req|
         File.file?(File.join(full_path, req, "#{path}.rb"))
       end
-    end
-
-    def to_specification
-      Gem::Specification.load(spec_file)
     end
 
     alias full_gem_path full_path
@@ -75,6 +71,24 @@ module Solargraph
                   version: gem.version,
                   require_paths: gem.require_paths,
                   dependencies: gem.runtime_dependencies.map(&:name))
+    end
+
+    # @parse [String, nil]
+    # @return [Array<String>]
+    def self.parse_require_paths spec_file
+      return ['lib'] unless spec_file && File.file?(spec_file)
+
+      source = Solargraph::Source.load(spec_file)
+      node = Parser::NodeMethods.call_nodes_from(source.node)
+                                .flatten
+                                .find { |node| node.children[1] == :require_paths= }
+      return ['lib'] unless node &&
+                            node.children[2]&.type == :array &&
+                            node.children[2].children.all? { |elem| elem.type == :str }
+
+      node.children[2]
+          .children
+          .map { |elem| elem.children[0] }
     end
   end
 end

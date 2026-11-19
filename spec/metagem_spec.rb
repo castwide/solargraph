@@ -8,7 +8,6 @@ describe Solargraph::Metagem do
       spec_file: '/gems/foo-1.0.0/foo.gemspec',
       source: 'rubygems repository https://rubygems.org/',
       version: '1.0.0',
-      require_paths: ['lib'],
       dependencies: ['bar']
     }
   end
@@ -48,6 +47,21 @@ describe Solargraph::Metagem do
       # A gem cannot expose its development dependencies through its own API,
       # so loading them costs time without resolving any type.
       expect(described_class.from_specification(specification).dependencies).to eq(['runtime_dep'])
+    end
+  end
+
+  describe '#require_paths' do
+    it 'defaults to lib' do
+      metagem = described_class.new(**attributes)
+      expect(metagem.require_paths).to eq(['lib'])
+    end
+
+    it 'uses `require_paths=` from spec file' do
+      gem_path = File.join('spec', 'fixtures', 'gem-with-require-paths')
+      metagem = described_class.new(**attributes,
+                                                         full_path: gem_path,
+                                                         spec_file: File.join(gem_path, 'gem-with-require-paths.gemspec'))
+      expect(metagem.require_paths).to eq(['other'])
     end
   end
 end
