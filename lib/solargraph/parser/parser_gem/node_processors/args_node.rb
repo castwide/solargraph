@@ -19,7 +19,7 @@ module Solargraph
                     comments: comments_for(node),
                     name: u.children[0].to_s,
                     assignment: u.children[1],
-                    asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
+                    asgn_code: u.children[1] ? region.code_for(u.children.fetch(1)) : nil,
                     # @sg-ignore Need to add nil check here
                     presence: callable.location.range,
                     decl: get_decl(u),

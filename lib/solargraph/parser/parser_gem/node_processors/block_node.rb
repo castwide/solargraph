@@ -11,7 +11,7 @@ module Solargraph
             location = get_node_location(node)
             scope = region.scope || region.closure.context.scope
             if other_class_eval?
-              clazz_name = unpack_name(node.children[0].children[0])
+              clazz_name = unpack_name(node.children.fetch(0).children.fetch(0))
               # instance variables should come from the Class<T> type
               # - i.e., treated as class instance variables
               context = ComplexType.try_parse("Class<#{clazz_name}>")
@@ -34,9 +34,9 @@ module Solargraph
           private
 
           def other_class_eval?
-            node.children[0].type == :send &&
-              node.children[0].children[1] == :class_eval &&
-              %i[cbase const].include?(node.children[0].children[0]&.type)
+            node.children.fetch(0).type == :send &&
+              node.children.fetch(0).children.fetch(1) == :class_eval &&
+              %i[cbase const].include?(node.children.fetch(0).children.fetch(0)&.type)
           end
         end
       end

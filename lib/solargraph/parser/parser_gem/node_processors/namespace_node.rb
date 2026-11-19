@@ -8,7 +8,7 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            name = unpack_name(node.children[0])
+            name = unpack_name(node.children.fetch(0))
             comments = comments_for(node)
 
             superclass_name = if node.type == :class && node.children[1]&.type == :const
@@ -64,7 +64,7 @@ module Solargraph
           end
 
           def type_from_node
-            unpack_name(node.children[1]) if node.children[1]&.type == :const
+            unpack_name(node.children.fetch(1)) if node.children[1]&.type == :const
           end
         end
       end
