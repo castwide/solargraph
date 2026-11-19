@@ -104,9 +104,9 @@ module Solargraph
       def self.normalize_indentation text
         left = text.lines.map do |line|
           match = line.match(/^ +/)
-          next 0 unless match
-          # @sg-ignore Need to add nil check here
-          match[0].length
+          indent = match[0] if match
+          next 0 unless indent
+          indent.length
         end.min
         return text if left.nil? || left.zero?
         text.lines.map { |line| line[left..] }.join
