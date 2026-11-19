@@ -1081,6 +1081,43 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:name)).not_to include('bar:')
   end
 
+  it 'infers a block parameter that shadows a method parameter' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param pin [String]
+        def bar pin
+          # @type [Array<Integer>]
+          arr = []
+          arr.each do |pin|
+            pin
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [7, 13])
+    expect(clip.infer.to_s).to eq('Integer')
+  end
+
+  it 'infers a block parameter that shadows an outer block parameter' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String>]
+      strs = []
+      # @type [Array<Integer>]
+      ints = []
+      strs.each do |val|
+        ints.each do |val|
+          val
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [7, 11])
+    expect(clip.infer.to_s).to eq('Integer')
+  end
+
   it 'includes tagged params for double splats' do
     source = Solargraph::Source.load_string(%(
       class Foo
