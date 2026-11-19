@@ -231,9 +231,9 @@ module Solargraph
           ComplexType.try_parse(t)
         end
         if base == 'Hash' && params.length == 2
-          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: rooted, parameters_type: :hash)
+          ComplexType::UniqueType.intern(base, [params.first], [params.last], rooted: rooted, parameters_type: :hash)
         else
-          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: rooted, parameters_type: :list)
+          ComplexType::UniqueType.intern(base, [], params.reject(&:undefined?), rooted: rooted, parameters_type: :list)
         end
       end
     end

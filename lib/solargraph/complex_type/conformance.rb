@@ -132,11 +132,11 @@ module Solargraph
 
         return false if inferred.key_types.empty?
 
-        unless ComplexType.new(inferred.key_types).conforms_to?(api_map,
-                                                                ComplexType.new(expected.key_types),
-                                                                situation,
-                                                                rules,
-                                                                variance: inferred.parameter_variance(situation))
+        unless ComplexType.intern(inferred.key_types).conforms_to?(api_map,
+                                                                   ComplexType.intern(expected.key_types),
+                                                                   situation,
+                                                                   rules,
+                                                                   variance: inferred.parameter_variance(situation))
           return false
         end
 
@@ -156,11 +156,11 @@ module Solargraph
 
         return false if inferred.subtypes.empty?
 
-        ComplexType.new(inferred.subtypes).conforms_to?(api_map,
-                                                        ComplexType.new(expected.subtypes),
-                                                        situation,
-                                                        rules,
-                                                        variance: inferred.parameter_variance(situation))
+        ComplexType.intern(inferred.subtypes).conforms_to?(api_map,
+                                                           ComplexType.intern(expected.subtypes),
+                                                           situation,
+                                                           rules,
+                                                           variance: inferred.parameter_variance(situation))
       end
 
       # @return [self]

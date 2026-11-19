@@ -151,7 +151,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= return_type_from_inline_rbs || ComplexType.new(signatures.map(&:return_type).flat_map(&:items))
+        @return_type ||= return_type_from_inline_rbs || ComplexType.intern(signatures.map(&:return_type).flat_map(&:items))
       end
 
       # @param parameters [::Array<Parameter>]
@@ -715,7 +715,7 @@ module Solargraph
         end
         result.push ComplexType::NIL if has_nil
         return ComplexType::UNDEFINED if result.empty?
-        ComplexType.new(result.uniq)
+        ComplexType.intern(result.uniq)
       end
 
       # @param [ApiMap] api_map
@@ -730,7 +730,7 @@ module Solargraph
           types.push type if type.defined?
         end
         return ComplexType::UNDEFINED if types.empty?
-        ComplexType.new(types.uniq)
+        ComplexType.intern(types.uniq)
       end
 
       # When YARD parses an overload tag, it includes rest modifiers in the parameters names.
