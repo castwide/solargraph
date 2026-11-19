@@ -179,8 +179,9 @@ module Solargraph
                  else
                    choose(other, :name)
                  end
-        raise TypeError, "name must be a String, got #{result.inspect}" unless result.is_a?(String)
-        result
+        return result if result.is_a?(String)
+
+        raise TypeError, "name must be a String, got #{result.inspect}"
       end
 
       # @return [void]
@@ -253,7 +254,7 @@ module Solargraph
         # true and false are different classes and can't be sorted
 
         return results.include?(true) if results.intersect?([true, false])
-        return results.first if results.any? { |r| r.is_a? AST::Node }
+        return results.first if results.any?(AST::Node)
         results.min
       rescue StandardError
         warn("Problem handling #{attr} for \n#{inspect}\n and \n#{other.inspect}\n\n#{send(attr).inspect} vs #{other.send(attr).inspect}")
