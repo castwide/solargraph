@@ -64,4 +64,55 @@ describe Solargraph::Pin::Base, '#combine_with' do
       expect(combined.return_type.to_s).to eq('self')
     end
   end
+
+  context 'with namespace pins' do
+    let(:yard_pin) do
+      Solargraph::Pin::Namespace.new(
+        name: 'Foo::Bar',
+        type: :module,
+        visibility: :public,
+        gates: ['Foo', ''],
+        closure: Solargraph::Pin::ROOT_PIN,
+        source: :yardoc
+      )
+    end
+
+    let(:rbs_pin) do
+      Solargraph::Pin::Namespace.new(
+        name: 'Foo::Bar',
+        type: :module,
+        generics: %w[T U],
+        generic_defaults: { 'U' => Solargraph::ComplexType.try_parse('String') },
+        closure: Solargraph::Pin::ROOT_PIN,
+        source: :rbs
+      )
+    end
+
+    it 'takes generics from the RBS side when the YARD side has none' do
+      combined = rbs_pin.combine_with(yard_pin)
+      expect(combined.generics).to eq(%w[T U])
+    end
+
+    it 'takes generic_defaults from the RBS side when the YARD side has none' do
+      combined = rbs_pin.combine_with(yard_pin)
+      expect(combined.generic_defaults.keys).to eq(['U'])
+    end
+
+    it 'keeps the real type instead of resetting to the constructor default' do
+      combined = rbs_pin.combine_with(yard_pin)
+      expect(combined.type).to eq(:module)
+    end
+
+    it 'keeps the real gates instead of resetting to the constructor default' do
+      combined = rbs_pin.combine_with(yard_pin)
+      expect(combined.gates).to eq(['Foo::Bar', 'Foo', ''])
+    end
+
+    it 'produces the same result regardless of combine order' do
+      combined = yard_pin.combine_with(rbs_pin)
+      expect(combined.generics).to eq(%w[T U])
+      expect(combined.type).to eq(:module)
+      expect(combined.gates).to eq(['Foo::Bar', 'Foo', ''])
+    end
+  end
 end
