@@ -34,6 +34,7 @@ module Solargraph
         autoload :ClassDefinition,  'solargraph/parser/parser_gem/node_processors/class_definition'
         autoload :StructDefinition, 'solargraph/parser/parser_gem/node_processors/struct_definition'
         autoload :DataDefinition,   'solargraph/parser/parser_gem/node_processors/data_definition'
+        autoload :CaseMatchNode,    'solargraph/parser/parser_gem/node_processors/case_match_node'
       end
     end
 
@@ -73,6 +74,9 @@ module Solargraph
       register :while,        ParserGem::NodeProcessors::WhileNode
       register :and,          ParserGem::NodeProcessors::AndNode
       register :or,           ParserGem::NodeProcessors::OrNode
+      register :case_match,   ParserGem::NodeProcessors::CaseMatchNode
+      register :match_pattern, ParserGem::NodeProcessors::CaseMatchNode
+      register :match_pattern_p, ParserGem::NodeProcessors::CaseMatchNode
     end
   end
 end

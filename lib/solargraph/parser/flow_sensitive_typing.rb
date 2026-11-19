@@ -190,6 +190,53 @@ module Solargraph
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
+      # Narrow a variable subject to the constant each `in` clause
+      # matches, over that clause's guard and body:
+      #
+      #   case x
+      #   in Foo   # x is a Foo here
+      #   in Bar   # x is a Bar here
+      #   end
+      #
+      # @param case_node [Parser::AST::Node]
+      #
+      # @return [void]
+      def process_case_match case_node
+        return unless case_node.type == :case_match
+
+        subject = case_node.children.fetch(0)
+        return unless subject.is_a?(::Parser::AST::Node) && %i[lvar ivar].include?(subject.type)
+
+        pin = find_var(subject.children.fetch(0).to_s, get_node_start_position(subject))
+        return unless pin
+
+        clauses = case_node.children.drop(1).compact
+        clauses.each do |clause|
+          next unless clause.is_a?(::Parser::AST::Node) && clause.type == :in_pattern
+
+          process_in_pattern(pin, clause)
+        end
+      end
+
+      # A case/in clause runs its guard and body only when its pattern
+      # matched, so a capture whose pattern cannot match nil is not nil there
+      #
+      # @param in_pattern [Parser::AST::Node] (in_pattern PATTERN GUARD BODY)
+      # @param vars [Array<Parser::AST::Node>] match_var nodes of those captures
+      #
+      # @return [void]
+      def process_in_captures in_pattern, vars
+        presence = in_clause_presence(in_pattern)
+        return unless presence
+
+        vars.each do |var|
+          pin = find_capture(var)
+          next unless pin
+
+          process_facts({ pin => [{ not_type: ComplexType::NIL }] }, [presence])
+        end
+      end
+
       class << self
         include Logging
       end
@@ -250,6 +297,59 @@ module Solargraph
         process_and(expression_node, true_ranges, false_ranges)
         process_or(expression_node, true_ranges, false_ranges)
         process_variable(expression_node, true_ranges, false_ranges)
+        process_pattern_match(expression_node, true_ranges)
+      end
+
+      # `x in PAT` binds every capture in PAT when it is true
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_pattern_match node, true_presences
+        # `a && (x in PAT)` wraps the match in a one-child begin
+        while node.type == :begin && node.children.length == 1
+          inner = node.children.fetch(0)
+          break unless inner.is_a?(::Parser::AST::Node)
+
+          node = inner
+        end
+        return unless node.type == :match_pattern_p
+
+        pattern = node.children.fetch(1)
+        return unless pattern.is_a?(::Parser::AST::Node)
+
+        capture_vars(pattern).each do |var|
+          # The capture is present from just after its start
+          pin = find_var(var.children.fetch(0).to_s, get_node_end_position(var))
+          next unless pin
+
+          process_facts({ pin => [{ not_type: ComplexType::NIL }] }, true_presences)
+        end
+      end
+
+      # @param var [Parser::AST::Node] a match_var node
+      # @return [Pin::LocalVariable, nil] the capture var declares, not an
+      #   earlier one of the same name
+      def find_capture var
+        name = var.children.fetch(0).to_s
+        start = get_node_start_position(var)
+        locals.each do |pin|
+          return pin if pin.is_a?(Pin::LocalVariable) && pin.name == name && pin.location&.range&.start == start
+        end
+        nil
+      end
+
+      # @param pattern [Parser::AST::Node]
+      # @return [Array<Parser::AST::Node>] the match_var nodes in pattern
+      def capture_vars pattern
+        return [pattern] if pattern.type == :match_var
+
+        pattern.children.flat_map do |child|
+          next [] unless child.is_a?(::Parser::AST::Node)
+
+          capture_vars(child)
+        end
       end
 
       # @param call_node [Parser::AST::Node]
@@ -451,6 +551,50 @@ module Solargraph
         return unless module_type_name
 
         "#{module_type_name}::#{class_node}"
+      end
+
+      # @param pin [Pin::BaseVariable] the case subject
+      # @param in_pattern [Parser::AST::Node] (in_pattern PATTERN GUARD BODY)
+      #
+      # @return [void]
+      def process_in_pattern pin, in_pattern
+        pattern = in_pattern.children.fetch(0)
+        return unless pattern.is_a?(::Parser::AST::Node)
+        # `in Pt(x:)` on subject x rebinds x, so x is no longer the subject
+        return if binds_name?(pattern, pin.name)
+
+        type_name = pattern_type_name(pattern)
+        presence = in_clause_presence(in_pattern)
+        return if type_name.nil? || presence.nil?
+
+        process_facts({ pin => [{ type: ComplexType.parse(type_name) }] }, [presence])
+      end
+
+      # @param in_pattern [Parser::AST::Node] (in_pattern PATTERN GUARD BODY)
+      # @return [Range, nil] the clause's guard and body, or nil if it has neither
+      def in_clause_presence in_pattern
+        guard_and_body = in_pattern.children.drop(1).compact
+        return if guard_and_body.empty?
+
+        first_node = guard_and_body.fetch(0)
+        last_node = guard_and_body.fetch(-1)
+        return unless first_node.is_a?(::Parser::AST::Node) && last_node.is_a?(::Parser::AST::Node)
+
+        before_loc = first_node.location.expression.adjust(begin_pos: -1)
+        Range.new(Position.new(before_loc.line, before_loc.column), get_node_end_position(last_node))
+      end
+
+      # @param pattern [Parser::AST::Node]
+      # @param name [String]
+      # @return [Boolean] true if the pattern captures into a variable named name
+      def binds_name? pattern, name
+        return true if pattern.type == :match_var && pattern.children.fetch(0).to_s == name
+
+        pattern.children.any? do |child|
+          next false unless child.is_a?(::Parser::AST::Node)
+
+          binds_name?(child, name)
+        end
       end
 
       # @param clause_node [Parser::AST::Node, nil]

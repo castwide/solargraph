@@ -153,6 +153,8 @@ module Solargraph
           elsif n.type == :array
             chained_children = n.children.map { |c| NodeChainer.chain(c) }
             result.push Source::Chain::Array.new(chained_children, n)
+          elsif %i[match_pattern_p match_pattern].include?(n.type)
+            result.push pattern_match_link(n)
           elsif inside_method_call? # If the node is inside a method call, it may be a parameter.
             lit = infer_literal_node_type(n)
             if lit
@@ -166,6 +168,17 @@ module Solargraph
             # result.push Chain::Link.new
           end
           result
+        end
+
+        # `subject in pattern` evaluates to true or false; `subject =>
+        # pattern` evaluates to nil or raises
+        #
+        # @param node [Parser::AST::Node] a match_pattern_p or match_pattern node
+        # @return [Chain::Literal]
+        def pattern_match_link node
+          return Chain::Literal.new('::Boolean', node) if node.type == :match_pattern_p
+
+          Chain::Literal.new('nil', nil)
         end
 
         def inside_method_call?
