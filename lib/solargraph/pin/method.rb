@@ -18,6 +18,9 @@ module Solargraph
 
       attr_writer :signatures
 
+      # @return [::Set<::String>]
+      attr_writer :rbs_annotations
+
       # @return [Parser::AST::Node]
       attr_reader :node
 
@@ -28,11 +31,13 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
+      # @param rbs_annotations [::Enumerable<::String>] RBS method annotations
+      #   (not YARD tags), e.g. 'pure' from %a{pure}
       # @param context [ComplexType, ComplexType::UniqueType, nil]
       # @param overloading [Boolean] true for an RBS `def m: ... | ...` that adds to an earlier declaration's overloads
       # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
-                     context: nil, overloading: false, **splat
+                     rbs_annotations: [], context: nil, overloading: false, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -41,6 +46,7 @@ module Solargraph
         @attribute = attribute
         @signatures = signatures
         @anon_splat = anon_splat
+        @rbs_annotations = rbs_annotations.to_set
         @context = context if context
         @overloading = overloading
       end
@@ -76,6 +82,7 @@ module Solargraph
           parameters: parameters,
           signatures: sigs,
           anon_splat: assert_same(other, :anon_splat?),
+          rbs_annotations: rbs_annotations | other.rbs_annotations,
           return_type: nil # pulled from signatures on first call
         }.merge(attrs)
         super(other, new_attrs)
@@ -389,6 +396,15 @@ module Solargraph
         @attribute
       end
 
+      # The method's RBS method annotations, e.g. 'pure' from %a{pure};
+      # not YARD tags. See
+      # https://github.com/ruby/rbs/blob/master/docs/syntax.md#annotations
+      #
+      # @return [::Set<::String>]
+      def rbs_annotations
+        @rbs_annotations ||= Set.new
+      end
+
       # True when this pin's signatures add to, rather than replace,
       # those of an earlier declaration of the same method.
       #
@@ -404,6 +420,14 @@ module Solargraph
         m.reset_generated!
         m.signatures = signatures
         m
+      end
+
+      # True when the method returns a collection with its receiver's nil
+      # elements (Hash: nil values) removed (RBS %a{solargraph:removes-nil})
+      #
+      # @return [Boolean]
+      def removes_nil?
+        rbs_annotations.include?('solargraph:removes-nil')
       end
 
       # @parm other [self]

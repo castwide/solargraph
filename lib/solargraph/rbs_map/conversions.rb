@@ -551,6 +551,14 @@ module Solargraph
         generics = decl.overloads.map(&:method_type).map do |method_type|
           type_parameter_names method_type
         end
+        rbs_annotations = method_rbs_annotations(decl)
+        if decl.overloading? && decl.overloads.empty? && rbs_annotations.any?
+          # '%a{pure} def name: ...' only adds its annotations to a method
+          # declared elsewhere; a plain 'def name: ...', e.g. Range#to_a,
+          # still declares the method in this class
+          rbs_annotation_overrides(decl, closure, rbs_annotations)
+          return
+        end
 
         if decl.instance?
           name = decl.name.to_s
@@ -565,6 +573,7 @@ module Solargraph
             signatures: [],
             generics: generics,
             visibility: visibility,
+            rbs_annotations: rbs_annotations,
             overloading: decl.overloading?,
             source: :rbs
           )
@@ -588,11 +597,38 @@ module Solargraph
           scope: final_scope,
           signatures: [],
           generics: generics,
+          rbs_annotations: rbs_annotations,
           overloading: decl.overloading?,
           source: :rbs
         )
         pin.signatures.concat method_def_to_sigs(decl, pin)
         pins.push pin
+      end
+
+      # The method's RBS annotations, plus any that every overload has
+      #
+      # @param decl [RBS::AST::Members::MethodDefinition]
+      # @return [Set<String>]
+      def method_rbs_annotations decl
+        rbs_annotations = decl.annotations.to_set(&:string)
+        return rbs_annotations if decl.overloads.empty?
+
+        rbs_annotations | decl.overloads.map { |overload| overload.annotations.to_set(&:string) }.reduce(:&)
+      end
+
+      # @param decl [RBS::AST::Members::MethodDefinition] a 'def name: ...'
+      #   with no overloads of its own
+      # @param closure [Pin::Closure]
+      # @param rbs_annotations [Set<String>]
+      # @return [void]
+      def rbs_annotation_overrides decl, closure, rbs_annotations
+        location = location_decl_to_pin_location(decl.location)
+        paths = []
+        paths.push "#{closure.path}##{decl.name}" if decl.instance?
+        paths.push "#{closure.path}.#{decl.name}" if decl.singleton?
+        paths.each do |path|
+          pins.push Pin::Reference::Override.new(location, path, [], rbs_annotations: rbs_annotations, source: :rbs)
+        end
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]

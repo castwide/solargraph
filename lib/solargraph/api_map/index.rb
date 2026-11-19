@@ -162,6 +162,7 @@ module Solargraph
         @macro_method_names = macro_pins.to_set(&:name)
         @macro_method_name_pins = macro_pins.to_set.classify(&:name)
         map_factory_parameters
+        map_rbs_annotation_overrides
         map_overrides
         pins_by_class(Pin::Reference::TypeAlias).each { |pin| alias_hash[pin.name] = pin.return_type }
         self
@@ -176,6 +177,18 @@ module Solargraph
         # @param pin [generic<T>]
         pins_by_class(klass).each do |pin|
           hash[pin.namespace].push pin
+        end
+      end
+
+      # Adds each override's RBS annotations, e.g. 'pure' from
+      # '%a{pure} def name: ...', to the methods it names
+      #
+      # @return [void]
+      def map_rbs_annotation_overrides
+        pins_by_class(Pin::Reference::Override).each do |ovr|
+          (path_pin_hash[ovr.name] || []).each do |pin|
+            pin.rbs_annotations = pin.rbs_annotations | ovr.rbs_annotations if pin.is_a?(Pin::Method)
+          end
         end
       end
 
