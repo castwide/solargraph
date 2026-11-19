@@ -33,7 +33,7 @@ module Solargraph
                    rules: workspace ? workspace.rules(level) : Rules.new(level, {})
       @filename = filename
       # @todo Smarter directory resolution
-      @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename),
+      @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename || raise(ArgumentError, 'Need a filename or an api_map')),
                                                     loose_unions: !rules.require_all_unique_types_support_call?)
       @rules = rules
       # @type [Array<Range>]

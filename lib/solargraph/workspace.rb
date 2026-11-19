@@ -132,6 +132,7 @@ module Solargraph
       @rbs_collection_path ||= read_rbs_collection_path
     end
 
+    # @rbs %a{pure}
     # @return [String, nil]
     def rbs_collection_config_path
       @rbs_collection_config_path ||= unless directory.empty? || directory == '*'
@@ -233,6 +234,7 @@ module Solargraph
     def read_rbs_collection_path
       return unless rbs_collection_config_path
 
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       path = YAML.load_file(rbs_collection_config_path)&.fetch('path')
       # make fully qualified
       File.expand_path(path, directory)

@@ -47,6 +47,7 @@ module Solargraph
         new_log_level = LOG_LEVELS[log_level.to_s]
         logger = Logger.new($stderr, level: new_log_level)
 
+        # @sg-ignore Union argument rejected when no single signature accepts every member
         logger.formatter = @@logger.formatter
         logger
       end
