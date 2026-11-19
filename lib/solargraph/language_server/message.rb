@@ -38,9 +38,8 @@ module Solargraph
         # @param path [String]
         # @return [Class<Solargraph::LanguageServer::Message::Base>]
         def select path
-          map = method_map
-          if map.key?(path)
-            map[path]
+          if method_map.key?(path)
+            method_map[path]
           elsif path.start_with?('$/')
             MethodNotImplemented
           else
@@ -50,6 +49,7 @@ module Solargraph
 
         private
 
+        # @rbs %a{pure}
         # @return [Hash{String => Class<Message::Base>}]
         def method_map
           @method_map ||= {}
