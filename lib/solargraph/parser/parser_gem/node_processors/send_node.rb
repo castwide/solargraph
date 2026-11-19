@@ -218,20 +218,6 @@ module Solargraph
             end
           end
 
-          # @param options [Hash{String => AST::Node}]
-          # @param name [String]
-          # @param default [Boolean]
-          # @return [Boolean]
-          def boolean_option options, name, default
-            value = options[name]
-            return default unless Parser.is_ast_node?(value)
-            # rubocop:disable Lint/BooleanSymbol -- these are AST node types
-            return true if value.type == :true
-            return false if value.type == :false
-            # rubocop:enable Lint/BooleanSymbol
-            default
-          end
-
           # @return [void]
           def process_include
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const

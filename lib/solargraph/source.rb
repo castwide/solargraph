@@ -473,7 +473,6 @@ module Solargraph
     # @return [String]
     def code= val
       @code_lines = nil
-      @node_map = nil
       @finalized = false
       @code = val
     end

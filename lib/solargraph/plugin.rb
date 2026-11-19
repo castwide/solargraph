@@ -9,14 +9,19 @@ module Solargraph
 
     EMPTY_ADDON = Addon.new.freeze
 
+    # @return [Set<Class<Plugin::Base>>]
     def self.registry
       @registry ||= Set.new
     end
 
+    # @param klass [Class<Plugin::Base>]
+    # @return [void]
     def self.register klass
       registry.add klass
     end
 
+    # @param klass [Class<Plugin::Base>]
+    # @return [void]
     def self.unregister klass
       registry.delete klass
     end

@@ -189,7 +189,7 @@ module Solargraph
       metagems.each do |metagem|
         Collection::Gem.uncache(metagem) if options[:rebuild]
         puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
-        Collection::Gem.load(metagem)
+        Collection::Gem.load(metagem, repo)
       end
       puts "Documentation cached for #{metagems.count} gems."
     end

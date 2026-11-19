@@ -83,12 +83,15 @@ module Solargraph
       pins_by_class(Pin::Reference::Require)
     end
 
+    # @param method_names [Array<Symbol, String>]
+    # @return [Array<Call>]
     def calls *method_names
       symbolized = method_names.map(&:to_sym)
       node_map.find_by_type(:send).select { |node| node.children[0].nil? && symbolized.include?(node.children[1].to_sym) }
               .map { |node| Call.new(self, Parser.chain(node), locate_namespace_pin(node.loc.line, node.loc.column)) }
     end
 
+    # @return [Source::NodeMap]
     def node_map
       @node_map ||= Source::NodeMap.new(source.node)
     end
@@ -139,6 +142,10 @@ module Solargraph
       _locate_pin line, character, Pin::Namespace, Pin::Method
     end
 
+    # @param line [Integer]
+    # @param character [Integer]
+    # @return [Pin::Namespace, Pin::Singleton, nil]
+    # @sg-ignore generic<T> from _locate_pin is not resolved from its class arguments
     def locate_namespace_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Singleton
     end
@@ -212,7 +219,7 @@ module Solargraph
 
     private
 
-    # @return [Hash{Class, Pin::Base => Array<Pin::Base>}]
+    # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}] # rubocop:disable YARD/CollectionStyle -- https://github.com/lsegal/yard/pull/1710
     def pin_class_hash
       # @todo Need to support generic resolution in classify and transform_values
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
