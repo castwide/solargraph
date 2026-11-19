@@ -34,6 +34,7 @@ module Solargraph
                 visibility: :public,
                 parameters: methpin.parameters,
                 node: methpin.node,
+                call_site_templates: methpin.call_site_templates,
                 source: :parser
               )
               pins.push Solargraph::Pin::Method.new(
@@ -46,6 +47,7 @@ module Solargraph
                 visibility: :private,
                 parameters: methpin.parameters,
                 node: methpin.node,
+                call_site_templates: methpin.call_site_templates,
                 source: :parser
               )
             else

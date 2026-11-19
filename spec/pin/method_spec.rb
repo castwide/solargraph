@@ -128,6 +128,41 @@ describe Solargraph::Pin::Method do
     expect(result.length).to eq(signatures.length)
   end
 
+  it 'combines call site templates from both pins' do
+    pin1 = described_class.new(name: 'foo', call_site_templates: %i[one two])
+    pin2 = described_class.new(name: 'foo', call_site_templates: %i[two three])
+    expect(pin1.combine_with(pin2).call_site_templates).to eq(%i[one two three])
+  end
+
+  it 'keeps call site templates through serialization' do
+    pin = described_class.new(name: 'foo', call_site_templates: [:one])
+    expect(Marshal.load(Marshal.dump(pin)).call_site_templates).to eq([:one])
+  end
+
+  it 'allocates call site templates only when they are used' do
+    pin = described_class.new(name: 'foo')
+    expect(pin.instance_variable_defined?(:@call_site_templates)).to be(false)
+    expect(pin.call_site_templates).to eq([])
+  end
+
+  it 'shares call site templates with module_function copies' do
+    source = Solargraph::SourceMap.load_string(%(
+      module Before
+        module_function
+        def flag; end
+      end
+      module After
+        def flag; end
+        module_function :flag
+      end
+    ), 'test.rb')
+    %w[Before After].each do |namespace|
+      copies = source.pins.select { |pin| pin.is_a?(described_class) && pin.namespace == namespace }
+      expect(copies.map(&:scope)).to contain_exactly(:class, :instance)
+      expect(copies.first.call_site_templates).to equal(copies.last.call_site_templates)
+    end
+  end
+
   it 'does not merge with changes in parameters' do
     # @todo Method pin parameters are pins now
     pin1 = described_class.new(name: 'bar', parameters: %w[one two])
