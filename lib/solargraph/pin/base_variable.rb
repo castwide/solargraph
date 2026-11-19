@@ -169,8 +169,9 @@ module Solargraph
             rng = Range.from_node(node)
             next if rng.nil?
             pos = rng.ending
-            # @sg-ignore Need to add nil check here
-            clip = api_map.clip_at(location.filename, pos)
+            # Assignments combined from other files carry their own filename
+            filename = Location.from_node(node)&.filename || location&.filename
+            clip = api_map.clip_at(filename, pos)
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
