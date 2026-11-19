@@ -31,6 +31,14 @@ describe Solargraph::Workspace do
     expect(workspace.filenames).not_to include(source.filename)
   end
 
+  it 'does not merge sources without a filename' do
+    wildcard = described_class.new('*')
+    source = Solargraph::Source.load_string("x = 1\n", nil)
+
+    expect(wildcard.merge(source)).to be(false)
+    expect(wildcard.filenames).to be_empty
+  end
+
   it 'updates sources' do
     original = workspace.source(file_path)
     updated = Solargraph::Source.load_string('puts "updated"', file_path)

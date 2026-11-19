@@ -10,17 +10,16 @@ module Solargraph
           def process
             pins = host.document_symbols params['textDocument']['uri']
             info = pins.map do |pin|
-              next nil unless pin.best_location&.filename
+              loc = pin.best_location
+              next if loc.nil? || loc.filename.nil?
 
               result = {
                 name: pin.name,
                 containerName: pin.namespace,
                 kind: pin.symbol_kind,
                 location: {
-                  # @sg-ignore Need to add nil check here
-                  uri: file_to_uri(pin.best_location.filename),
-                  # @sg-ignore Need to add nil check here
-                  range: pin.best_location.range.to_hash
+                  uri: file_to_uri(loc.filename),
+                  range: loc.range.to_hash
                 },
                 deprecated: pin.deprecated?
               }
