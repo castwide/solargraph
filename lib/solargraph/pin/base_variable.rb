@@ -385,6 +385,7 @@ module Solargraph
         asserted = type_from_assertion
         return asserted unless asserted.nil?
         tag = docstring.tag(:type)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         return ComplexType.try_parse(*tag.types) unless tag.nil? || tag.types.nil? || tag.types.empty?
         nil
       end

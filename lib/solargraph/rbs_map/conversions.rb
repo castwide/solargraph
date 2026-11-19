@@ -339,9 +339,11 @@ module Solargraph
         )
         pins.push class_pin
         if decl.super_class
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           type = build_type(decl.super_class.name, decl.super_class.args)
           generic_values = type.all_params.map(&:to_s)
           pins.push Solargraph::Pin::Reference::Superclass.new(
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
             type_location: location_decl_to_pin_location(decl.super_class.location),
             closure: class_pin,
             generic_values: generic_values,
