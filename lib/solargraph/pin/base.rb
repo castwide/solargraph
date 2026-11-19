@@ -158,6 +158,11 @@ module Solargraph
       # @param other [self]
       # @return [Pin::Closure, nil]
       def combine_closure other
+        # Source maps close a def in `class << self` or a block over that
+        # scope; RBS closes it over the namespace the scope sits in.
+        namespace = namespace_enclosing(closure, other.closure) || namespace_enclosing(other.closure, closure)
+        return namespace if namespace
+
         chosen = choose_pin_attr_with_same_name(other, :closure)
         return chosen unless chosen.is_a?(Pin::Namespace) && chosen.generics.empty?
 
@@ -169,6 +174,17 @@ module Solargraph
         return theirs if theirs.is_a?(Pin::Namespace) && !theirs.generics.empty?
 
         chosen
+      end
+
+      # @param scope [Pin::Closure, nil]
+      # @param namespace [Pin::Closure, nil]
+      # @return [Pin::Namespace, nil] namespace, if scope is a singleton class
+      #   or block directly inside it
+      def namespace_enclosing scope, namespace
+        return unless namespace.is_a?(Pin::Namespace)
+        return unless scope.is_a?(Pin::Singleton) || scope.is_a?(Pin::Block)
+
+        namespace if scope&.closure&.path == namespace.path
       end
 
       # @param other [self]

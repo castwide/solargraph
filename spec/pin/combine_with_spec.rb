@@ -64,4 +64,49 @@ describe Solargraph::Pin::Base, '#combine_with' do
       expect(combined.return_type.to_s).to eq('self')
     end
   end
+
+  context 'with a source pin nested in a class body scope' do
+    let(:source_pins) do
+      Solargraph::SourceMap.load_string(%(
+        class Foo
+          class << self
+            def bar; end
+          end
+          Baz = Struct.new(:x) do
+            def qux; end
+          end
+        end
+      ), 'foo.rb').pins
+    end
+
+    # A method pin as RBS describes it, directly inside its namespace
+    # @param path [String]
+    # @param name [String]
+    # @param scope [::Symbol]
+    def rbs_method_pin path, name, scope
+      location = Solargraph::Location.new('foo.rbs', Solargraph::Range.from_to(0, 0, 0, 0))
+      namespace = Solargraph::Pin::Namespace.new(name: path, closure: Solargraph::Pin::ROOT_PIN, type: :class,
+                                                 location: location, source: :rbs)
+      Solargraph::Pin::Method.new(name: name, closure: namespace, scope: scope, parameters: [],
+                                  location: location, source: :rbs)
+    end
+
+    it 'keeps the namespace closure for a method in class << self' do
+      code_pin = source_pins.find { |pin| pin.path == 'Foo.bar' }
+      rbs_pin = rbs_method_pin('Foo', 'bar', :class)
+      with_env_var('SOLARGRAPH_ASSERTS', 'on') do
+        expect(rbs_pin.combine_with(code_pin).closure).to be(rbs_pin.closure)
+        expect(code_pin.combine_with(rbs_pin).closure).to be(rbs_pin.closure)
+      end
+    end
+
+    it 'keeps the namespace closure for a method in a Struct.new block' do
+      code_pin = source_pins.find { |pin| pin.path == 'Foo::Baz#qux' }
+      rbs_pin = rbs_method_pin('Foo::Baz', 'qux', :instance)
+      with_env_var('SOLARGRAPH_ASSERTS', 'on') do
+        expect(rbs_pin.combine_with(code_pin).closure).to be(rbs_pin.closure)
+        expect(code_pin.combine_with(rbs_pin).closure).to be(rbs_pin.closure)
+      end
+    end
+  end
 end
