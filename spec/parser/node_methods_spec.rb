@@ -17,6 +17,18 @@ describe Solargraph::Parser::NodeMethods do
     expect(described_class.infer_literal_node_type(ast.children[1])).to eq '::String'
   end
 
+  it 'infers backticks as strings' do
+    ast = parse('x = `echo hi`')
+    expect(described_class.infer_literal_node_type(ast.children[1])).to eq '::String'
+  end
+
+  it 'infers interpolated backticks as strings' do
+    ast = parse(<<~'RUBY')
+      x = `echo #{y}`
+    RUBY
+    expect(described_class.infer_literal_node_type(ast.children[1])).to eq '::String'
+  end
+
   it 'infers literal hashes' do
     ast = parse('x = {}')
     expect(described_class.infer_literal_node_type(ast.children[1])).to eq '::Hash'
