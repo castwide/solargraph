@@ -101,8 +101,7 @@ module Solargraph
         # @return [Pin::Closure, nil]
         def named_path_pin position
           pins.select do |pin|
-            # @sg-ignore Need to add nil check here
-            pin.is_a?(Pin::Closure) && pin.path && !pin.path.empty? && pin.location.range.contain?(position)
+            pin.is_a?(Pin::Closure) && pin.path && !pin.path.empty? && pin.location!.range.contain?(position)
           end.last
         end
 
@@ -111,16 +110,14 @@ module Solargraph
         # @return [Pin::Closure, nil]
         def block_pin position
           # @todo determine if this can return a Pin::Block
-          # @sg-ignore Need to add nil check here
-          pins.select { |pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position) }.last
+          pins.select { |pin| pin.is_a?(Pin::Closure) && pin.location!.range.contain?(position) }.last
         end
 
         # @todo Candidate for deprecation
         # @param position [Solargraph::Position]
         # @return [Pin::Closure, nil]
         def closure_pin position
-          # @sg-ignore Need to add nil check here
-          pins.select { |pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position) }.last
+          pins.select { |pin| pin.is_a?(Pin::Closure) && pin.location!.range.contain?(position) }.last
         end
       end
     end
