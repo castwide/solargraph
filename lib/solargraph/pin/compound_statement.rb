@@ -50,6 +50,14 @@ module Solargraph
         super(**splat)
         @node = node
       end
+
+      private
+
+      # @return [void]
+      def preassign_ivars
+        super
+        @node = nil
+      end
     end
   end
 end

@@ -81,6 +81,16 @@ module Solargraph
 
         "[#{generics.map(&:to_s).join(', ')}] "
       end
+
+      private
+
+      # @return [void]
+      def preassign_ivars
+        super
+        @scope = :class
+        @generics = nil
+        @generic_defaults = nil
+      end
     end
   end
 end
