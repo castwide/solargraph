@@ -62,6 +62,18 @@ describe Solargraph::RbsMap::Core do
     expect(signature.block.parameters.map(&:return_type).map(&:to_s)).to eq(['String'])
   end
 
+  it 'keeps interface generics unresolved for receivers without parameters' do
+    api_map = Solargraph::ApiMap.new
+    methods = api_map.get_methods('Enumerable')
+    each_pins = methods.select { |pin| pin.path.end_with?('#each') }
+    each_pin = each_pins.first
+    signature = each_pin.signatures.first
+    # Without type parameters on the receiver there is nothing to bind the
+    # _Each interface's type parameter to, but the generic must survive
+    # rather than collapse to undefined, so callers can bind it from context
+    expect(signature.block.parameters.map(&:return_type).map(&:to_s)).to eq(['generic<E>'])
+  end
+
   it 'understands defaulted type parameters' do
     pending('defaulted type parameter support')
 

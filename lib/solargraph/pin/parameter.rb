@@ -106,6 +106,10 @@ module Solargraph
         decl == :restarg
       end
 
+      def optarg?
+        decl == :optarg
+      end
+
       def mandatory_positional?
         decl == :arg
       end
@@ -194,6 +198,17 @@ module Solargraph
           end
         end
         super
+      end
+
+      def typedef_typeset
+        # Proxied pins should already have their types declared
+        return super if proxied?
+
+        tag = param_tag
+        return super unless tag
+
+        type = ComplexType.try_parse(*tag.types)
+        type.to_typedef_typeset
       end
 
       # The parameter's zero-based location in the block's signature.

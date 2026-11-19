@@ -4,6 +4,10 @@ module Solargraph
   class Source
     class Chain
       class If < Link
+        # @todo misnomer - should be chains
+        attr_reader :links
+        alias chains links
+
         # @param links [::Array<Chain>]
         def initialize links
           super('<if>')
