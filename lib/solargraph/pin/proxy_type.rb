@@ -7,13 +7,43 @@ module Solargraph
       # @param gates [Array<String>, nil] Namespaces to try while resolving non-rooted types
       # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @param gates [Array<String>, nil]
+      # @param receiver_steps [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>, nil] see #receiver_steps
+      # @param receiver_bindings [::Array<Pin::LocalVariable>] see #receiver_bindings
       # @param [Hash{Symbol => Object}] splat
-      def initialize return_type: ComplexType::UNDEFINED, binder: nil, gates: nil, **splat
+      def initialize return_type: ComplexType::UNDEFINED, binder: nil, gates: nil, receiver_steps: nil,
+                     receiver_bindings: [], **splat
         super(**splat)
         @gates = gates
         @return_type = return_type
         @binder = binder if binder
+        @receiver_steps = receiver_steps
+        @receiver_bindings = receiver_bindings
       end
+
+      # Pin::ExpressionNarrowing steps of the chain this pin is the
+      # receiver of, e.g. [[:lvar, :pin], [:call, :location]] in
+      # 'pin.location.filename', [] for self, or nil if not all variables,
+      # attr_readers and pure calls; see Chain#define
+      #
+      # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+      #     ::Array(:call, ::Symbol),
+      #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+      #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+      #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+      #       ::Array(:cvar, ::Symbol)>)>, nil]
+      attr_reader :receiver_steps
+
+      # The local variable #receiver_steps starts at, if any
+      #
+      # @return [::Array<Pin::LocalVariable>]
+      attr_reader :receiver_bindings
 
       def context
         @return_type

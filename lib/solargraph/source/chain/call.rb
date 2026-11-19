@@ -87,7 +87,7 @@ module Solargraph
           # Accumulating every type's result treats the binder as a union, which is the only
           # multi-type binder ComplexType builds; dedup on rooted_tags rather than #tag, which
           # reports only the first member and so collapses two distinct unions.
-          resolved.uniq { |pin| [pin.path, pin.return_type.rooted_tags] }
+          narrowed(resolved.uniq { |pin| [pin.path, pin.return_type.rooted_tags] }, api_map, name_pin, locals)
         end
 
         private
@@ -207,6 +207,86 @@ module Solargraph
                  end
           type ||= ComplexType::UNDEFINED
           [type, new_signature_pin]
+        end
+
+        # Narrows what an argument-less attr_reader or pure (RBS %a{pure})
+        # call returns, e.g. 'pin.location' after 'return unless
+        # pin.location', by the Pin::ExpressionNarrowing pins
+        # FlowSensitiveTyping recorded for the same expression. Its receiver
+        # must be variables and such calls (see Chain#next_receiver_steps):
+        # other calls aren't known to return the same value twice.
+        #
+        # @param pins [::Array<Pin::Base>] what this call resolved to
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @param locals [::Array<Pin::LocalVariable, Pin::ExpressionNarrowing>]
+        # @return [::Array<Pin::Base>]
+        def narrowed pins, api_map, name_pin, locals
+          steps = call_steps(name_pin)
+          return pins if steps.nil? || location.nil? || with_block? || !arguments.empty?
+          return pins unless pins.all? { |pin| pin.is_a?(Pin::Method) && (pin.attribute? || pin.pure?) }
+
+          bindings = name_pin.is_a?(Pin::ProxyType) ? name_pin.receiver_bindings : []
+          viewing = name_pin
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1338
+          viewing = viewing.closure until viewing.nil? || viewing.is_a?(Pin::Closure)
+          narrowings = locals.grep(Pin::ExpressionNarrowing).select do |narrowing|
+            narrowing.expression == steps && narrowing.visible_at?(viewing, location) &&
+              # @sg-ignore Unresolved call to proves? on Solargraph::Pin::LocalVariable,
+              #   Solargraph::Pin::ExpressionNarrowing
+              narrowing.proves?(api_map, bindings) && !rebound_between?(viewing, narrowing)
+          end
+          return pins if narrowings.empty?
+
+          pins.map do |pin|
+            type = pin.typify(api_map)
+            type = pin.probe(api_map) if type.undefined?
+            # @sg-ignore Wrong argument type for Enumerable#reduce: method expected
+            #   Symbol, received Solargraph::ComplexType,
+            #   Solargraph::ComplexType::UniqueType
+            type = narrowings.reduce(type) { |result, narrowing| narrowing.narrow(result, api_map) }
+            # an undefined type would shadow the method's own
+            type.defined? ? pin.proxy(type) : pin
+          end
+        end
+
+        # @param name_pin [Pin::Base]
+        # @return [::Array<::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+        #     ::Array(:cvar, ::Symbol), ::Array(:self_call, ::Symbol),
+        #     ::Array(:call, ::Symbol),
+        #     ::Array(:call, :[], ::Array<::Array(:literal, :str, ::String),
+        #       ::Array(:literal, :sym, ::Symbol), ::Array(:literal, :int, ::Integer),
+        #       ::Array(:lvar, ::Symbol), ::Array(:ivar, ::Symbol),
+        #       ::Array(:cvar, ::Symbol)>)>, nil] the Pin::ExpressionNarrowing steps
+        #   this call reads, or nil if its receiver is not narrowable
+        def call_steps name_pin
+          # a head call with no local of its name is an implicit-self call
+          return [[:self_call, word.to_sym]] if head?
+
+          receiver = name_pin.receiver_steps if name_pin.is_a?(Pin::ProxyType)
+          return if receiver.nil?
+
+          receiver + [[receiver.empty? ? :self_call : :call, word.to_sym]]
+        end
+
+        # A narrowing of self or an instance variable, e.g. of 'location' or
+        # '@pin.location', stops at a block that rebinds self, e.g. via
+        # instance_eval
+        #
+        # @param viewing [Pin::Closure, nil] the closure of this call
+        # @param narrowing [Pin::ExpressionNarrowing]
+        # @return [Boolean]
+        def rebound_between? viewing, narrowing
+          return false if narrowing.steps.first&.first == :lvar
+
+          here = viewing
+          until here.nil? || here == narrowing.closure
+            return true if here.is_a?(Pin::Block) && here.rebound?
+
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1322
+            here = here.closure
+          end
+          false
         end
 
         # @param pins [::Enumerable<Pin::Base>]

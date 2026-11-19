@@ -7,6 +7,7 @@ module Solargraph
     class BaseVariable < Base
       # include Solargraph::Source::NodeMethods
       include Solargraph::Parser::NodeMethods
+      include ExpressionType
 
       # @return [Array<Parser::AST::Node>]
       attr_reader :assignments
@@ -221,6 +222,11 @@ module Solargraph
         assignment == other.assignment
       end
 
+      # @return [String]
+      def expression
+        name
+      end
+
       def type_desc
         "#{super} = #{assignment&.type.inspect}"
       end
@@ -242,11 +248,9 @@ module Solargraph
       end
 
       # @param other_loc [Location]
-      # @sg-ignore flow sensitive typing needs to handle attrs
       def starts_at? other_loc
         location&.filename == other_loc.filename &&
           presence &&
-          # @sg-ignore flow sensitive typing needs to handle attrs
           presence.start == other_loc.range.start
       end
 
@@ -258,7 +262,6 @@ module Solargraph
       def combine_presence other
         return presence || other.presence if presence.nil? || other.presence.nil?
 
-        # @sg-ignore flow sensitive typing needs to handle attrs
         Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
       end
 
@@ -294,7 +297,6 @@ module Solargraph
       def visible_at? other_closure, other_loc
         # @sg-ignore flow sensitive typing needs to handle attrs
         location.filename == other_loc.filename &&
-          # @sg-ignore flow sensitive typing needs to handle attrs
           (!presence || presence.include?(other_loc.range.start)) &&
           visible_in_closure?(other_closure)
       end

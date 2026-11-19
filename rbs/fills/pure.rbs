@@ -1,0 +1,16 @@
+# Marks read-only core methods %a{pure}: they don't change the receiver
+# and return the same value for the same receiver, so flow-sensitive
+# typing can narrow a repeated argument-less call after a guard.
+#
+# Each 'def name: ...' has no overloads of its own, so it only adds its
+# annotations to the core method.
+
+class Array[unchecked out E]
+  # reads the first element(s)
+  %a{pure}
+  def first: ...
+
+  # reads the last element(s)
+  %a{pure}
+  def last: ...
+end

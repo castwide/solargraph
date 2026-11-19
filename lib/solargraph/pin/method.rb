@@ -5,18 +5,30 @@ module Solargraph
     # The base class for method and attribute pins.
     #
     class Method < Callable
+      # One RBS annotation, e.g. %a{pure}, with any delimiter RBS allows
+      RBS_ANNOTATION = /%a(?:\{[^}]*\}|\([^)]*\)|\[[^\]]*\]|<[^>]*>|\|[^|]*\|)/
+      private_constant :RBS_ANNOTATION
+
       include Solargraph::Parser::NodeMethods
 
       # Matches the prefix of an inline RBS method type, either `#: () -> T`
-      # or `# @rbs () -> T`. Other `@rbs` forms, such as `@rbs x: Integer`,
-      # are not method types.
-      INLINE_RBS_PREFIX = /\A(?:: |@rbs\s+(?=[(\[{]|\?\{|->))/
+      # or `# @rbs () -> T`, with any annotations before the type. Other
+      # `@rbs` forms, such as `@rbs x: Integer`, are not method types.
+      INLINE_RBS_PREFIX = /\A(?:: (?:#{RBS_ANNOTATION}\s*)*|@rbs\s+(?:#{RBS_ANNOTATION}\s*)*(?=[(\[{]|\?\{|->))/
       private_constant :INLINE_RBS_PREFIX
+
+      # Matches the annotations of `# @rbs %a{pure}`, alone or before a
+      # method type, as in rbs-inline
+      INLINE_RBS_ANNOTATIONS = /\A(?::|@rbs)\s+((?:#{RBS_ANNOTATION}\s*)+)/
+      private_constant :INLINE_RBS_ANNOTATIONS
 
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
 
       attr_writer :signatures
+
+      # @return [::Set<::String>]
+      attr_writer :rbs_annotations
 
       # @return [Parser::AST::Node]
       attr_reader :node
@@ -28,11 +40,13 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
+      # @param rbs_annotations [::Enumerable<::String>] RBS method annotations
+      #   (not YARD tags), e.g. 'pure' from %a{pure}
       # @param context [ComplexType, ComplexType::UniqueType, nil]
       # @param overloading [Boolean] true for an RBS `def m: ... | ...` that adds to an earlier declaration's overloads
       # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
-                     context: nil, overloading: false, **splat
+                     rbs_annotations: [], context: nil, overloading: false, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -41,8 +55,10 @@ module Solargraph
         @attribute = attribute
         @signatures = signatures
         @anon_splat = anon_splat
+        @rbs_annotations = rbs_annotations.to_set
         @context = context if context
         @overloading = overloading
+        @rbs_annotations |= inline_rbs_annotations
       end
 
       # @param other [Pin::Method]
@@ -76,6 +92,7 @@ module Solargraph
           parameters: parameters,
           signatures: sigs,
           anon_splat: assert_same(other, :anon_splat?),
+          rbs_annotations: rbs_annotations | other.rbs_annotations,
           return_type: nil # pulled from signatures on first call
         }.merge(attrs)
         super(other, new_attrs)
@@ -389,12 +406,29 @@ module Solargraph
         @attribute
       end
 
+      # The method's RBS method annotations, e.g. 'pure' from %a{pure};
+      # not YARD tags. See
+      # https://github.com/ruby/rbs/blob/master/docs/syntax.md#annotations
+      #
+      # @return [::Set<::String>]
+      def rbs_annotations
+        @rbs_annotations ||= Set.new
+      end
+
       # True when this pin's signatures add to, rather than replace,
       # those of an earlier declaration of the same method.
       #
       # @return [Boolean]
       def overloading?
         !!@overloading
+      end
+
+      # True when the method is declared to return the same value for the
+      # same receiver and arguments, with no side effects (RBS %a{pure})
+      #
+      # @return [Boolean]
+      def pure?
+        rbs_annotations.include?('pure')
       end
 
       # @param signatures [::Array<Signature>]
@@ -796,6 +830,15 @@ module Solargraph
                 .grep(INLINE_RBS_PREFIX)
                 .map { |line| line.sub(INLINE_RBS_PREFIX, '').strip }
                 .join("\n")
+      end
+
+      # @return [::Set<::String>]
+      def inline_rbs_annotations
+        comments.lines
+                .filter_map { |line| line[INLINE_RBS_ANNOTATIONS, 1] }
+                .join(' ')
+                .scan(RBS_ANNOTATION)
+                .to_set { |annotation| annotation[3..-2] }
       end
     end
   end
