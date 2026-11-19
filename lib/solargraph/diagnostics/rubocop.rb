@@ -23,6 +23,8 @@ module Solargraph
       # @param _api_map [Solargraph::ApiMap]
       # @return [Array<Hash>]
       def diagnose source, _api_map
+        return [] if source.transformed?
+
         @source = source
         require_rubocop(rubocop_version)
         # @sg-ignore Need to add nil check here

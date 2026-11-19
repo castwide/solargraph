@@ -17,7 +17,7 @@ module Solargraph
 
           namespace = closure_at(pins, comment_position) if namespace.location&.range&.start&.line&.< comment_position.line # rubocop:disable Style/SafeNavigationChainLength
           begin
-            src = Solargraph::Source.load_string("def #{directive.tag.name};end", source.filename)
+            src = Solargraph::Source.new("def #{directive.tag.name};end", source.filename)
             region = Parser::Region.new(source: src, closure: namespace)
             method_gen_pins = Parser.process_node(src.node, region).first.select { |pin| pin.is_a?(Pin::Method) }
             gen_pin = method_gen_pins.last

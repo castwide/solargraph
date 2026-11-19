@@ -15,6 +15,33 @@ describe Solargraph::Diagnostics::Rubocop do
     expect(result).to be_a(Array)
   end
 
+  context 'with a source transformed by a convention' do
+    let(:fake_convention) do
+      Class.new(Solargraph::Convention::Base) do
+        def transform_source filename, code
+          code.gsub(/^> ?/, '') if filename.end_with?('.fake')
+        end
+      end
+    end
+
+    let(:code) { "> # frozen_string_literal: true\n>\n> foo = 1  \n> puts foo\n" }
+
+    before { Solargraph::Convention.register fake_convention }
+
+    after { Solargraph::Convention.unregister fake_convention }
+
+    it 'does not lint the transformed source' do
+      source = Solargraph::Source.load_string(code, 'file.fake')
+      expect(described_class.new.diagnose(source, nil)).to eq([])
+    end
+
+    it 'still lints Ruby files with the same code' do
+      source = Solargraph::Source.load_string(code.gsub(/^> ?/, ''), 'file.rb')
+      codes = described_class.new.diagnose(source, nil).map { |diag| diag[:code] }
+      expect(codes).to include('Layout/TrailingWhitespace')
+    end
+  end
+
   context 'with validation error' do
     let(:fixture_path) do
       File.absolute_path('spec/fixtures/rubocop-validation-error').gsub('\\', '/')

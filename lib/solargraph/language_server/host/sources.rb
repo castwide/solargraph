@@ -25,7 +25,7 @@ module Solargraph
         # @return [Source]
         def open uri, text, version
           filename = uri_to_file(uri)
-          source = Solargraph::Source.new(text, filename, version)
+          source = Solargraph::Source.load_string(text, filename, version)
           open_source_hash[uri] = source
         end
 

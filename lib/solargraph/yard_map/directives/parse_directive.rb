@@ -15,7 +15,7 @@ module Solargraph
         def process_directive source, pins, source_position, comment_position, directive
           ns = closure_at(pins, source_position)
           pins_copy = pins.dup
-          src = Solargraph::Source.load_string(directive.tag.text.to_s, source.filename)
+          src = Solargraph::Source.new(directive.tag.text.to_s, source.filename)
           region = Parser::Region.new(source: src, closure: ns)
           # @todo These pins may need to be marked not explicit
           old_pins_index = pins.length

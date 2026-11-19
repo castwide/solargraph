@@ -9,6 +9,7 @@ module Solargraph
       # @return [Array<Hash>]
       def diagnose source, api_map
         # return [] unless args.include?('always') || api_map.workspaced?(source.filename)
+        return [] if source.transformed?
         severity = Diagnostics::Severities::ERROR
         level = args.reverse.find { |a| %w[normal typed strict strong].include?(a) } || :normal
         checker = Solargraph::TypeChecker.new(source.filename, api_map: api_map, level: level.to_sym)

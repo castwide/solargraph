@@ -211,6 +211,39 @@ describe Solargraph::Library do
     expect(result.to_s).to include('rubocop')
   end
 
+  context 'with a source transformed by a convention' do
+    let(:fake_convention) do
+      Class.new(Solargraph::Convention::Base) do
+        def transform_source filename, code
+          code.gsub(/^(?:> |(.))/) { Regexp.last_match(1) ? '#' : '  ' } if filename.end_with?('.fake')
+        end
+      end
+    end
+
+    let(:library) do
+      config = instance_double(Solargraph::Workspace::Config)
+      allow(config).to receive_messages(plugins: [], required: [], reporters: ['typecheck:strict'])
+      described_class.new Solargraph::Workspace.new('', config)
+    end
+
+    let(:code) { "> def foo(bar)\n>   undefined_call  \n> end\n" }
+
+    before { Solargraph::Convention.register fake_convention }
+
+    after { Solargraph::Convention.unregister fake_convention }
+
+    it 'does not typecheck the transformed source' do
+      library.attach Solargraph::Source.load_string(code, 'file.fake', 0)
+      expect(library.diagnose('file.fake')).to eq([])
+    end
+
+    it 'still typechecks Ruby files' do
+      library.attach Solargraph::Source.load_string(code.gsub(/^> /, ''), 'file.rb', 0)
+      sources = library.diagnose('file.rb').map { |diag| diag[:source] }
+      expect(sources).to include('Typecheck')
+    end
+  end
+
   it 'documents symbols' do
     library = described_class.new
     src = Solargraph::Source.load_string(%(

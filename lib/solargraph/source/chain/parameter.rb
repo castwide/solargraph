@@ -30,7 +30,7 @@ module Solargraph
           return [] unless method_pin
 
           # Use indexed lookup for better performance
-          api_map.factory_parameters_for_method(method_pin).select do |fp|
+          matches = api_map.factory_parameters_for_method(method_pin).select do |fp|
             param_index = method_pin.parameters.find_index { |param| param.name == fp.param_name }
             next if param_index.nil?
             next false unless fp.value == literal_value
@@ -38,6 +38,8 @@ module Solargraph
             # a splat takes every argument from its position on
             method_pin.parameters[param_index].restarg? ? current_index >= param_index : current_index == param_index
           end
+          # several sources can declare the same factory parameter
+          matches.uniq { |fp| [fp.location, fp.return_type] }
         end
 
         # @return [Boolean] true if this is a parameter of Kernel#require

@@ -35,6 +35,22 @@ module Solargraph
       result
     end
 
+    # Transform the text of a file into Ruby code with the first convention
+    # that claims it. Ruby files and unnamed sources are never transformed.
+    #
+    # @param filename [String, nil]
+    # @param code [String]
+    # @return [String, nil] The transformed code, or nil if no convention
+    #   claims the file
+    def self.transform_source filename, code
+      return nil if filename.nil? || filename.end_with?('.rb')
+      @@conventions.each do |conv|
+        result = conv.transform_source(filename, code)
+        return result if result
+      end
+      nil
+    end
+
     # @todo Determine what argument needs to be passed here
     #
     # @param object [Object]

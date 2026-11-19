@@ -32,9 +32,9 @@ module Solargraph
                    end
       @config = config
       @server = server
+      require_plugins
       load_sources
       @gemnames = []
-      require_plugins
     end
 
     # The require paths associated with the workspace.
