@@ -209,6 +209,169 @@ describe Solargraph::Source::Chain do
     Solargraph::Convention.unregister dummy_convention
   end
 
+  it 'defines factory parameters when no signature matches the arguments' do
+    # The pins below stand for:
+    #
+    #   module Routes
+    #     # @param controller [Integer] e.g. an RBS type alias the literal does not conform to
+    #     # @return [void]
+    #     def self.controller(controller); end
+    #   end
+    dummy_convention = Class.new(Solargraph::Convention::Base) do
+      def local _source_map
+        namespace = Solargraph::Pin::Namespace.new(name: 'Routes', type: :module)
+        method = Solargraph::Pin::Method.new(name: 'controller', closure: namespace, scope: :class)
+        signature = Solargraph::Pin::Signature.new(closure: method, parameters: [],
+                                                   return_type: Solargraph::ComplexType::VOID)
+        signature.parameters << Solargraph::Pin::Parameter.new(name: 'controller', closure: signature,
+                                                               return_type: Solargraph::ComplexType.parse('Integer'))
+        method.signatures = [signature]
+        Solargraph::Environ.new(
+          pins: [
+            namespace,
+            method,
+            Solargraph::Pin::FactoryParameter.new(
+              method_name: 'controller',
+              method_namespace: 'Routes',
+              method_scope: :class,
+              param_name: 'controller',
+              value: :posts,
+              return_type: nil,
+              location: Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 6, 0, 18))
+            )
+          ]
+        )
+      end
+    end
+
+    Solargraph::Convention.register dummy_convention
+
+    source = Solargraph::Source.new(%(
+      Routes.controller(:posts)
+    ), 'test.rb')
+    source_map = Solargraph::SourceMap.map(source)
+
+    api_map = Solargraph::ApiMap.new
+    api_map.index source_map.pins + source_map.convention_pins
+    chain = Solargraph::Source::SourceChainer.chain(source_map.source, Solargraph::Position.new(1, 26))
+    pins = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(pins.map(&:value)).to eq([:posts])
+    Solargraph::Convention.unregister dummy_convention
+  end
+
+  it 'defines factory parameters only of the signature that matches the arguments' do
+    # The pins below stand for:
+    #
+    #   module Routes
+    #     # @overload find(kind, extra)
+    #     #   @param kind [Symbol]
+    #     #   @param extra [Symbol]
+    #     #   @return [void]
+    #     # @overload find(id, name)
+    #     #   @param id [Integer]
+    #     #   @param name [Symbol]
+    #     #   @return [void]
+    #     def self.find(*args); end
+    #   end
+    dummy_convention = Class.new(Solargraph::Convention::Base) do
+      def local _source_map
+        namespace = Solargraph::Pin::Namespace.new(name: 'Routes', type: :module)
+        method = Solargraph::Pin::Method.new(name: 'find', closure: namespace, scope: :class)
+        method.signatures = [%w[Symbol kind Symbol extra], %w[Integer id Symbol name]].map do |type1, name1, type2, name2|
+          signature = Solargraph::Pin::Signature.new(closure: method, parameters: [],
+                                                     return_type: Solargraph::ComplexType::VOID)
+          [[type1, name1], [type2, name2]].each do |type, name|
+            signature.parameters << Solargraph::Pin::Parameter.new(name: name, closure: signature,
+                                                                   return_type: Solargraph::ComplexType.parse(type))
+          end
+          signature
+        end
+        Solargraph::Environ.new(
+          pins: [
+            namespace,
+            method,
+            Solargraph::Pin::FactoryParameter.new(
+              method_name: 'find',
+              method_namespace: 'Routes',
+              method_scope: :class,
+              param_name: 'name',
+              value: :admin,
+              return_type: nil,
+              location: Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 6, 0, 18))
+            )
+          ]
+        )
+      end
+    end
+
+    Solargraph::Convention.register dummy_convention
+
+    source = Solargraph::Source.new(%(
+      Routes.find(:posts, :admin)
+    ), 'test.rb')
+    source_map = Solargraph::SourceMap.map(source)
+
+    api_map = Solargraph::ApiMap.new
+    api_map.index source_map.pins + source_map.convention_pins
+    chain = Solargraph::Source::SourceChainer.chain(source_map.source, Solargraph::Position.new(1, 28))
+    pins = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(pins).to be_empty
+    Solargraph::Convention.unregister dummy_convention
+  end
+
+  context 'with factory parameters passed as keywords' do
+    # @param call [String] a call to Routes.get
+    # @param column [Integer] where the literal is in the call
+    # @param param_name [String]
+    # @param parameters [String] the parameters of Routes.get
+    # @return [Array<Solargraph::Pin::Base>]
+    def define_literal call, column, param_name, parameters: 'path = nil, to: nil, **mapping'
+      factory_parameter = Solargraph::Pin::FactoryParameter.new(
+        method_name: 'get',
+        method_namespace: 'Routes',
+        method_scope: :class,
+        param_name: param_name,
+        value: 'posts#show',
+        return_type: nil,
+        location: Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 6, 0, 18))
+      )
+      source = Solargraph::Source.load_string(%(module Routes
+  def self.get(#{parameters}); end
+end
+#{call}
+), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.index Solargraph::SourceMap.map(source).pins + [factory_parameter]
+      chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, column))
+      chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
+    end
+
+    it 'defines a literal passed to a keyword parameter' do
+      pins = define_literal("Routes.get('latest', to: 'posts#show')", 27, 'to')
+      expect(pins.map(&:value)).to eq(['posts#show'])
+    end
+
+    it 'defines a literal passed to a keyword rest parameter' do
+      pins = define_literal("Routes.get('latest' => 'posts#show')", 25, 'mapping')
+      expect(pins.map(&:value)).to eq(['posts#show'])
+    end
+
+    it 'does not pass a named keyword to the keyword rest parameter' do
+      pins = define_literal("Routes.get('latest', to: 'posts#show')", 27, 'mapping')
+      expect(pins).to be_empty
+    end
+
+    it 'defines a literal in a hash passed to a positional parameter' do
+      pins = define_literal("Routes.get('latest' => 'posts#show')", 25, 'options', parameters: 'options')
+      expect(pins.map(&:value)).to eq(['posts#show'])
+    end
+
+    it 'does not pass a keyword to a positional parameter' do
+      pins = define_literal("Routes.get(to: 'posts#show')", 17, 'path')
+      expect(pins).to be_empty
+    end
+  end
+
   it "follows constant chains" do
     source = Solargraph::Source.load_string(%(
       module Mixin; end
