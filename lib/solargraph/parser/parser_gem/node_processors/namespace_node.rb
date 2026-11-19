@@ -41,26 +41,17 @@ module Solargraph
           private
 
           # Type arguments for a generic superclass in inline RBS syntax, e.g.,
-          # `class Foo < Array #[String]`. Only recognized where RBS defines
-          # it: directly after the superclass, on the same line, with no space
-          # between `#` and `[`. Anything else is an ordinary comment.
+          # `class Foo < Array #[String]`.
           #
           # @return [String, nil]
           def parameters_from_inline_rbs
             superclass = node.children[1]
             return unless superclass
 
-            source = region.source.code
-            pos = get_node_end_position(superclass)
-            offset = Position.line_char_to_offset(source, pos.line, pos.character)
-            eol = source.index("\n", offset) || source.length
-            match = source[offset...eol].to_s.match(/\A\s*#\[([^\]]*)\]/)
-            return unless match
+            args = trailing_rbs_type_args(superclass, region.source.code)
+            return if args.empty?
 
-            code = match[1].strip
-            return if code.empty?
-
-            "<#{code}>"
+            "<#{args.join(', ')}>"
           end
 
           def type_from_node
