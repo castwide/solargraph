@@ -28,7 +28,7 @@ module Solargraph
         #
         # @return [void]
         def deregister type, cls
-          @@processors[type].delete(cls)
+          @@processors.fetch(type).delete(cls)
         end
       end
 

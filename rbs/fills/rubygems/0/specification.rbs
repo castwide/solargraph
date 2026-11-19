@@ -173,7 +173,7 @@ class Gem::Specification < Gem::BasicSpecification
   #
   #     spec.version = '0.4.1'
   #
-  attr_reader version: String
+  attr_reader version: Gem::Version
 
   # <!-- rdoc-file=lib/rubygems/specification.rb -->
   # A short summary of this gem's description.  Displayed in `gem list -d`.

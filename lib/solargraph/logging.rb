@@ -47,7 +47,8 @@ module Solargraph
         new_log_level = LOG_LEVELS[log_level.to_s]
         logger = Logger.new($stderr, level: new_log_level)
 
-        logger.formatter = @@logger.formatter
+        formatter = @@logger.formatter
+        logger.formatter = formatter unless formatter.nil?
         logger
       end
     end

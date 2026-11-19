@@ -10,6 +10,11 @@ module Solargraph
         class Formatting < Base
           include Solargraph::Diagnostics::RubocopHelpers
 
+          # Defined at runtime by #formatter_class, once RuboCop is loaded.
+          #
+          # @!parse
+          #   class BlankRubocopFormatter < ::RuboCop::Formatter::BaseFormatter; end
+
           def process
             file_uri = params['textDocument']['uri']
             config = config_for(file_uri)
@@ -84,11 +89,9 @@ module Solargraph
           end
 
           # @param config [Hash{String => String}]
-          # @sg-ignore
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
-              # @sg-ignore
               BlankRubocopFormatter
             else
               require_rubocop(config['version'])
@@ -101,9 +104,7 @@ module Solargraph
           #
           # @return [String, nil]
           def cop_list value
-            # @type [String]
-            # @sg-ignore Translate to something flow sensitive typing understands
-            value = value.join(',') if value.respond_to?(:join)
+            value = value.join(',') if value.is_a?(Array)
             return nil if value == '' || !value.is_a?(String)
             value
           end

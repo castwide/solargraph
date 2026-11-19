@@ -293,6 +293,90 @@ describe Solargraph::Shell do
     end
   end
 
+  describe 'profile' do
+    # vernier is an optional dependency (see the LoadError rescue in
+    # Shell#profile) and isn't installed in this repo's Gemfile, so stub it
+    # out entirely rather than requiring the real gem.
+    before do
+      allow(shell).to receive(:require).with('vernier').and_return(true)
+      stub_const('Vernier', Module.new)
+      allow(Vernier).to receive(:profile).and_yield
+    end
+
+    it 'profiles go-to-definition against a real workspace' do
+      Dir.mktmpdir do |output_dir|
+        output = capture_both do
+          shell.options = { directory: 'spec/fixtures/workspace', output_dir: output_dir, line: 4, column: 10 }
+          shell.profile
+        end
+
+        expect(output).to include('Processing go-to-definition request...')
+        expect(output).to include('Result: [{')
+        expect(output).to include('uri')
+        expect(output).to include('thing.rb"')
+      end
+    end
+
+    it 'explains how to install vernier when it is missing' do
+      allow(shell).to receive(:require).with('vernier').and_raise(LoadError)
+
+      output = capture_both { shell.profile }
+
+      expect(output).to include("gem 'vernier'")
+    end
+
+    it 'stops when the workspace has no Ruby files' do
+      Dir.mktmpdir do |dir|
+        Dir.mktmpdir do |output_dir|
+          output = capture_both do
+            shell.options = { directory: dir, output_dir: output_dir, line: 0, column: 0 }
+            shell.profile
+          end
+
+          expect(output).to include('No Ruby files found in workspace')
+        end
+      end
+    end
+
+    it 'finishes and lists saved profiles after CTRL-C' do
+      handler = nil
+      allow(Signal).to receive(:trap) do |*_args, &block|
+        handler = block if block
+        'DEFAULT'
+      end
+      allow(Process).to receive(:kill)
+      allow(Vernier).to receive(:profile) { handler.call }
+
+      Dir.mktmpdir do |output_dir|
+        File.write(File.join(output_dir, 'parse_benchmark.json.gz'), '')
+        output = capture_both do
+          shell.options = { directory: 'spec/fixtures/workspace', output_dir: output_dir, line: 4, column: 10 }
+          shell.profile
+        end
+        # A second CTRL-C restores the default handler and re-sends the signal
+        handler.call
+
+        expect(output).to include('Profile run interrupted')
+        expect(output).to include('Profiles saved to:')
+        expect(Process).to have_received(:kill).with('INT', Process.pid)
+      end
+    end
+  end
+
+  describe 'profile_test_file' do
+    it 'uses the given file' do
+      expect(shell.send(:profile_test_file, '/ws', 'a.rb')).to eq('/ws/a.rb')
+    end
+
+    it 'falls back to any Ruby file in the workspace' do
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, 'app.rb'), '')
+
+        expect(shell.send(:profile_test_file, dir, nil)).to end_with('app.rb')
+      end
+    end
+  end
+
   context 'with unbundled environments' do
     let!(:command_path) { File.realpath(File.join('spec', 'fixtures', 'shim.rb')) }
     let!(:unbundled_env) { Bundler.unbundled_env.merge({ 'BUNDLE_GEMFILE' => nil }) }

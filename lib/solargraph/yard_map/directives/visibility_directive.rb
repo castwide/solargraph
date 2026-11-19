@@ -17,8 +17,7 @@ module Solargraph
         def process_directive source, pins, source_position, comment_position, directive
           kind = directive.tag.text&.to_sym
 
-          # @sg-ignore include? only expects Symbol, but receives Symbol or nil
-          return [] unless VALID_VISIBILITIES.include?(kind.to_sym)
+          return [] unless VALID_VISIBILITIES.include?(kind)
 
           name = directive.tag.name
           closure = closure_at(pins, source_position) || pins.first

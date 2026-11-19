@@ -63,7 +63,7 @@ module Solargraph
         # @return [void]
         def tick
           message = @mutex.synchronize do
-            @resource.wait(@mutex) if messages.empty?
+            @resource.wait(@mutex) while messages.empty?
             next_message
           end
           # @sg-ignore Need to add nil check here

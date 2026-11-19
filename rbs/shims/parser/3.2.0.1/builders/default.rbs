@@ -185,11 +185,13 @@ module Parser
       # @return [Boolean]
       attr_accessor emit_file_line_as_literals: bool
 
-      def value: (untyped token) -> untyped
+      private
 
-      def string_value: (untyped token) -> String
+      def value: [T] ([T, Source::Range] token) -> T
 
-      def loc: (untyped token) -> untyped
+      def string_value: ([String, Source::Range] token) -> String
+
+      def loc: ([top, Source::Range]? token) -> Source::Range?
     end
   end
 end

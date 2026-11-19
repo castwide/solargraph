@@ -49,6 +49,14 @@ describe Solargraph::ApiMap::Store do
     expect(store.get_path_pins('Bar')).to eq([bar_pin])
   end
 
+  it 'adds block pins when updating to no pinsets' do
+    foo_pin = Solargraph::Pin::Namespace.new(name: 'Foo')
+    store = described_class.new([])
+    store.update { [foo_pin] }
+
+    expect(store.get_path_pins('Foo')).to eq([foo_pin])
+  end
+
   # @todo This will become #get_superclass
   describe '#get_superclass' do
     it 'returns simple superclasses' do

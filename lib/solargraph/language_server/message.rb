@@ -49,6 +49,7 @@ module Solargraph
 
         private
 
+        # @rbs %a{pure}
         # @return [Hash{String => Class<Message::Base>}]
         def method_map
           @method_map ||= {}

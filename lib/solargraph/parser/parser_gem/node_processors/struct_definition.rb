@@ -125,8 +125,7 @@ module Solargraph
             # @return [YARD::Docstring]
             def parse_comments
               struct_comments = comments_for(node) || ''
-              # @sg-ignore Need to add nil check here
-              struct_definition_node.attributes.each do |attr_node, attr_name|
+              struct_definition_node&.attributes&.each do |attr_node, attr_name|
                 comment = comments_for(attr_node)
                 next if comment.nil?
 

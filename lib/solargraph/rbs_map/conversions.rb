@@ -57,8 +57,11 @@ module Solargraph
         core_aware_environment(loader, fallback: environment).type_alias_decls.each_value do |entry|
           type_alias_decls[entry.decl.name.to_s] = entry.decl
         end
-        # @sg-ignore Need a downcast here
-        environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
+        environment.declarations.each do |decl|
+          next unless decl.is_a?(RBS::AST::Declarations::Base)
+
+          convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN)
+        end
       rescue RBS::DuplicatedDeclarationError => e
         Solargraph.logger.warn "RBS conversion failed due to duplicate declarations: [#{e.class}] #{e.message}"
       end
@@ -201,6 +204,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1352
       def rooted_name type_name
         name = type_name.to_s
         RBS_TO_CLASS.fetch(name, name)
@@ -212,6 +216,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1352
       def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")
@@ -621,7 +626,7 @@ module Solargraph
       # @param location [RBS::Location, nil]
       # @return [Solargraph::Location, nil]
       def location_decl_to_pin_location location
-        return nil if location&.name.nil?
+        return nil if location.nil? || location.name.nil?
 
         start_pos = Position.new(location.start_line - 1, location.start_column)
         end_pos = Position.new(location.end_line - 1, location.end_column)

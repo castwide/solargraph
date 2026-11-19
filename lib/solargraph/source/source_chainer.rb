@@ -96,10 +96,9 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
-      # @sg-ignore Need to add nil check here
       # @return [String]
       def phrase
-        @phrase ||= source.code[signature_data..(offset - 1)]
+        @phrase ||= source.code[signature_data..(offset - 1)] || ''
       end
 
       # @sg-ignore Need to add nil check here
@@ -168,13 +167,10 @@ module Solargraph
           if brackets.zero? && parens.zero? && squares.zero? && [' ', "\r", "\n", "\t"].include?(char)
             in_whitespace = true
           else
-            # @sg-ignore Need to add nil check here
-            if brackets.zero? && parens.zero? && squares.zero? && in_whitespace && !((char == '.') || @source.code[(index + 1)..].strip.start_with?('.'))
-              @source.code[(index + 1)..]
-              # @sg-ignore Need to add nil check here
-              @source.code[(index + 1)..].lstrip
-              # @sg-ignore Need to add nil check here
-              index += (@source.code[(index + 1)..].length - @source.code[(index + 1)..].lstrip.length)
+            if brackets.zero? && parens.zero? && squares.zero? && in_whitespace && !((char == '.') || (@source.code[(index + 1)..] || '').strip.start_with?('.'))
+              rest = @source.code[(index + 1)..] || ''
+              rest.lstrip
+              index += (rest.length - rest.lstrip.length)
               break
             end
             case char

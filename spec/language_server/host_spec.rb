@@ -12,6 +12,15 @@ describe Solargraph::LanguageServer::Host do
     end
   end
 
+  it 'normalizes alternate separators when preparing a workspace' do
+    stub_const('File::ALT_SEPARATOR', '\\')
+    host = described_class.new
+    Dir.mktmpdir do |dir|
+      host.prepare(dir.tr('/', '\\'))
+      expect(host.libraries.first.workspace.directory).to eq(File.absolute_path(dir))
+    end
+  end
+
   it 'processes responses to message requests' do
     host = described_class.new
     done_somethings = 0

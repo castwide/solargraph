@@ -33,8 +33,8 @@ module Solargraph
         # @return [void]
         def update_libraries uri
           src = sources.find(uri)
-          # @sg-ignore Need to add nil check here
-          using = libraries.select { |lib| lib.contain?(src.filename) }
+          filename = src.filename
+          using = libraries.select { |lib| filename && lib.contain?(filename) }
           using.push library_for(uri) if using.empty?
           using.each { |lib| lib.merge src }
           diagnoser.schedule uri
