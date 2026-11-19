@@ -22,14 +22,11 @@ module Solargraph
       #
       # @return [void]
       def process_and and_node, true_ranges = [], false_ranges = []
-        return unless and_node.type == :and
+        return unless and_node in [:and, ::Parser::AST::Node => lhs, ::Parser::AST::Node => rhs]
 
-        # @type [Parser::AST::Node]
-        lhs = and_node.children[0]
-        # @type [Parser::AST::Node]
-        rhs = and_node.children[1]
-
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
 
         rhs_presence = Range.new(before_rhs_pos,
@@ -48,14 +45,11 @@ module Solargraph
       #
       # @return [void]
       def process_or or_node, true_ranges = [], false_ranges = []
-        return unless or_node.type == :or
+        return unless or_node in [:or, ::Parser::AST::Node => lhs, ::Parser::AST::Node => rhs]
 
-        # @type [Parser::AST::Node]
-        lhs = or_node.children[0]
-        # @type [Parser::AST::Node]
-        rhs = or_node.children[1]
-
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
 
         rhs_presence = Range.new(before_rhs_pos,
@@ -90,7 +84,10 @@ module Solargraph
       #
       # @return [void]
       def process_if if_node, true_ranges = [], false_ranges = []
-        return if if_node.type != :if
+        if_node => [:if,
+                    ::Parser::AST::Node => conditional_node,
+                    ::Parser::AST::Node | nil => then_clause,
+                    ::Parser::AST::Node | nil => else_clause]
 
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
@@ -103,11 +100,6 @@ module Solargraph
         #   s(:send, nil, :foo),
         #   s(:send, nil, :bar))
         # [4] pry(main)>
-        conditional_node = if_node.children[0]
-        # @type [Parser::AST::Node, nil]
-        then_clause = if_node.children[1]
-        # @type [Parser::AST::Node, nil]
-        else_clause = if_node.children[2]
 
         unless enclosing_breakable_pin.nil?
           rest_of_breakable_body = Range.new(get_node_end_position(if_node),
@@ -132,21 +124,27 @@ module Solargraph
           true_ranges << rest_of_returnable_body if always_leaves_compound_statement?(else_clause)
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         unless then_clause.nil?
           #
           # If the condition is true we can assume things about the then clause
           #
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_then_clause_pos = Position.new(before_then_clause_loc.line, before_then_clause_loc.column)
           true_ranges << Range.new(before_then_clause_pos,
                                    get_node_end_position(then_clause))
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         unless else_clause.nil?
           #
           # If the condition is true we can assume things about the else clause
           #
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_else_clause_loc = else_clause.location.expression.adjust(begin_pos: -1)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_else_clause_pos = Position.new(before_else_clause_loc.line, before_else_clause_loc.column)
           false_ranges << Range.new(before_else_clause_pos,
                                     get_node_end_position(else_clause))
@@ -161,7 +159,7 @@ module Solargraph
       #
       # @return [void]
       def process_while while_node, true_ranges = [], false_ranges = []
-        return if while_node.type != :while
+        while_node => [:while, ::Parser::AST::Node => conditional_node, ::Parser::AST::Node | nil => do_clause]
 
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
@@ -173,15 +171,15 @@ module Solargraph
         #     s(:send, nil, :b),
         #     s(:send, nil, :c)))
         # [4] pry(main)>
-        conditional_node = while_node.children[0]
-        # @type [Parser::AST::Node, nil]
-        do_clause = while_node.children[1]
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         unless do_clause.nil?
           #
           # If the condition is true we can assume things about the do clause
           #
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_do_clause_loc = do_clause.location.expression.adjust(begin_pos: -1)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_do_clause_pos = Position.new(before_do_clause_loc.line, before_do_clause_loc.column)
           true_ranges << Range.new(before_do_clause_pos,
                                    get_node_end_position(do_clause))
@@ -258,24 +256,28 @@ module Solargraph
       #   function, then receiver of function if it's a variable,
       #   otherwise nil if no simple variable receiver
       def parse_call call_node, method_name
-        return unless call_node&.type == :send && call_node.children[1] == method_name
         # Check if conditional node follows this pattern:
         #   s(:send,
         #     s(:send, nil, :foo), :is_a?,
         #     s(:const, nil, :Baz)),
         #
-        call_receiver = call_node.children[0]
-        call_arg = type_name(call_node.children[2])
+        return unless call_node in [:send, ::Parser::AST::Node | nil => call_receiver, ^method_name, *args]
+
+        call_arg = (args in [::Parser::AST::Node => arg, *]) ? type_name(arg) : nil
 
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
-        if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
-          variable_name = call_receiver.children[1].to_s
+        if call_receiver in [:send, nil, Symbol => receiver_method, *]
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+          variable_name = receiver_method.to_s
         end
         # or like this:
         # (lvar :repr)
-        variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
+        if call_receiver in [:lvar | :ivar, Symbol => receiver_variable, *]
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+          variable_name = receiver_variable.to_s
+        end
         return unless variable_name
 
         [call_arg, variable_name]
@@ -387,9 +389,7 @@ module Solargraph
         # => s(:send,
         #   s(:int, 2), :!)
         #       end
-        return unless bang_node.type == :send && bang_node.children[1] == :!
-
-        receiver = bang_node.children[0]
+        return unless bang_node in [:send, ::Parser::AST::Node => receiver, :!, *]
 
         # swap the two presences
         process_expression(receiver, false_presences, true_presences)
@@ -398,10 +398,12 @@ module Solargraph
       # @param var_node [Parser::AST::Node]
       #
       # @return [String, nil] Variable name referenced
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1416
       def parse_variable var_node
-        return if var_node.children.length != 1
+        # only reached for lvar, ivar, cvar and gvar nodes
+        var_node => [_, Symbol => variable_name]
 
-        var_node.children[0]&.to_s
+        variable_name&.to_s
       end
 
       # @return [void]
@@ -439,12 +441,9 @@ module Solargraph
       def type_name node
         # e.g.,
         #  s(:const, nil, :Baz)
-        return unless node&.type == :const
-        # @type [Parser::AST::Node, nil]
-        module_node = node.children[0]
-        # @type [Parser::AST::Node, nil]
-        class_node = node.children[1]
+        return unless node in [:const, ::Parser::AST::Node | nil => module_node, Symbol => class_node]
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         return class_node.to_s if module_node.nil?
 
         module_type_name = type_name(module_node)

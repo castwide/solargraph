@@ -437,6 +437,58 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.map(&:type)).to eq(%i[send zsuper])
   end
 
+  describe 'returns_from_method_body' do
+    it 'skips nested definitions in a compound body' do
+      node = parse("def foo\n  def bar; end\n  1\nend").children[2]
+      rets = described_class.returns_from_method_body(node)
+      expect(rets.map(&:to_s)).to eq(['(int 1)'])
+    end
+
+    it 'reads the body of a resbody in a compound statement' do
+      node = Parser::AST::Node.new(:begin, [
+                                     Parser::AST::Node.new(:resbody, [nil, nil, Parser::AST::Node.new(:int, [1])]),
+                                     Parser::AST::Node.new(:int, [2])
+                                   ])
+      rets = described_class.returns_from_method_body(node)
+      expect(rets.map(&:to_s)).to eq(['(int 1)', '(int 2)'])
+    end
+
+    it 'follows explicit returns out of a block in a conditional branch' do
+      node = parse("def foo\n  if x\n    bar { return 1 }\n  end\nend").children[2]
+      rets = described_class.returns_from_method_body(node)
+      expect(rets.map(&:to_s)).to eq(['(nil)'])
+    end
+  end
+
+  describe 'drill_signature' do
+    it 'joins constant paths with ::' do
+      expect(described_class.drill_signature(parse('Foo::Bar'), '')).to eq('Foo::Bar')
+    end
+
+    it 'joins call chains with .' do
+      expect(described_class.drill_signature(parse('@foo.bar.baz'), '')).to eq('@foo.bar.baz')
+    end
+
+    it 'adds :: for a top-level constant base' do
+      cbase = parse('::Foo').children[0]
+      expect(described_class.drill_signature(cbase, 'A')).to eq('A::')
+    end
+
+    it 'ignores other nodes' do
+      expect(described_class.drill_signature(parse('1'), 'A')).to eq('A')
+    end
+  end
+
+  describe 'splatted_hash?' do
+    it 'detects a leading double splat' do
+      expect(described_class.splatted_hash?(parse('{**foo}'))).to be(true)
+    end
+
+    it 'rejects a hash without a leading double splat' do
+      expect(described_class.splatted_hash?(parse('{a: 1, **foo}'))).to be(false)
+    end
+  end
+
   describe 'convert_hash' do
     it 'converts literal hash arguments' do
       node = parse('{foo: :bar}')

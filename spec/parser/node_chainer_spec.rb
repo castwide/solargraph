@@ -185,4 +185,23 @@ describe 'NodeChainer' do
       expect(block_variable_node.word).to be_nil
     end
   end
+
+  context 'with hand-built nodes the parser does not emit' do
+    it 'chains a receiverless safe-navigation call' do
+      node = Parser::AST::Node.new(:csend, [nil, :foo])
+      chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
+      expect(chain.links.map(&:word)).to eq(['foo'])
+      expect(chain.links.first).to be_a(Solargraph::Source::Chain::QCall)
+    end
+
+    it 'rejects a send whose receiver is not a node' do
+      node = Parser::AST::Node.new(:send, [1, :foo])
+      expect { Solargraph::Parser::ParserGem::NodeChainer.chain(node) }.to raise_error(RuntimeError, /No idea/)
+    end
+
+    it 'rejects a safe-navigation call whose receiver is not a node' do
+      node = Parser::AST::Node.new(:csend, [1, :foo])
+      expect { Solargraph::Parser::ParserGem::NodeChainer.chain(node) }.to raise_error(RuntimeError, /No idea/)
+    end
+  end
 end

@@ -149,6 +149,30 @@ describe Solargraph::Parser::ParserGem::NodeProcessors::StructDefinition do
     end
   end
 
+  describe 'node wrappers' do
+    it 'names a struct assigned to a scoped constant' do
+      source = Solargraph::SourceMap.load_string(%(
+        Outer::Foo = Struct.new(:bar)
+      ), 'test.rb')
+
+      expect(source.pins.map(&:path)).to include('Outer::Foo#bar')
+    end
+
+    it 'returns the class body from a struct definition' do
+      node = Solargraph::Parser.parse("class Foo < Struct.new(:bar)\n  def baz; end\nend")
+      body = Solargraph::Parser::ParserGem::NodeProcessors::StructDefinition::StructDefintionNode.new(node).body_node
+
+      expect(body.type).to eq(:def)
+    end
+
+    it 'returns the assigned value from a struct assignment' do
+      node = Solargraph::Parser.parse("Foo = Struct.new(:bar) do\n  def baz; end\nend")
+      body = Solargraph::Parser::ParserGem::NodeProcessors::StructDefinition::StructAssignmentNode.new(node).body_node
+
+      expect(body.type).to eq(:block)
+    end
+  end
+
   context 'with typechecking' do
     def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)

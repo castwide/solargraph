@@ -9,48 +9,52 @@ module Solargraph
 
           # @sg-ignore @override is adding, not overriding
           def process
-            # @sg-ignore Variable type could not be inferred for method_name
-            # @type [Symbol]
-            method_name = node.children[1]
-            # :nocov:
-            unless method_name.instance_of?(Symbol)
-              Solargraph.assert_or_log(:parser_method_name,
-                                       "Expected method name to be a Symbol, got #{method_name.class} for node #{node.inspect}")
-              return process_children
-            end
-            # :nocov:
-            if node.children[0].nil?
+            # s(:send, receiver, method_name, *args)
+            node => [:send, ::Parser::AST::Node | nil => receiver, Symbol => method_name, *args]
+
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            if receiver.nil?
               if %i[private public protected].include?(method_name)
                 process_visibility
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :module_function
                 process_module_function
               elsif %i[attr_reader attr_writer attr_accessor].include?(method_name)
                 process_attribute
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :include
                 process_include
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :extend
                 process_extend
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :prepend
                 process_prepend
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :require
                 process_require
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :autoload
                 process_autoload
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :private_constant
                 process_private_constant
-              elsif method_name == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              elsif method_name == :alias_method && (args in [[:sym, *], [:sym, *], *])
                 process_alias_method
               elsif %i[def_delegator def_delegators].include?(method_name) && extends_forwardable?
                 process_def_delegators
-              elsif method_name == :private_class_method && node.children[2].is_a?(AST::Node)
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              elsif method_name == :private_class_method && (args in [::AST::Node, *])
                 # Processing a private class can potentially handle children on its own
                 return if process_private_class_method
               end
-            elsif %i[include extend prepend].include?(method_name) && Parser.is_ast_node?(node.children[0]) && node.children[0].type == :const
+            elsif %i[include extend prepend].include?(method_name) && (receiver in [:const, *])
               process_qualified_mixin method_name
-            elsif included_hook_parameter?(node.children[0])
+            elsif included_hook_parameter?(receiver)
               process_included_hook_mixin method_name
-            elsif method_name == :require && node.children[0].to_s == '(const nil :Bundler)'
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            elsif method_name == :require && (receiver in [:const, nil, :Bundler])
               pins.push Pin::Reference::Require.new(
                 Solargraph::Location.new(region.filename,
                                          Solargraph::Range.from_to(0, 0, 0, 0)), 'bundler/require', source: :parser
@@ -148,21 +152,17 @@ module Solargraph
 
           # @return [void]
           def process_visibility
-            if node.children.length > 2
+            node => [:send, _, Symbol => visibility, *args]
+
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            if args.empty?
+              # @todo Smelly instance variable access
+              region.instance_variable_set(:@visibility, visibility)
+            else
               # @sg-ignore Need to add nil check here
-              node.children[2..].each do |child|
-                # @sg-ignore Variable type could not be inferred for method_name
-                # @type [Symbol]
-                visibility = node.children[1]
-                # :nocov:
-                unless visibility.instance_of?(Symbol)
-                  Solargraph.assert_or_log(:parser_visibility,
-                                           "Expected visibility name to be a Symbol, got #{visibility.class} for node #{node.inspect}")
-                  return process_children
-                end
-                # :nocov:
-                if child.is_a?(::Parser::AST::Node) && %i[sym str].include?(child.type)
-                  name = child.children[0].to_s
+              args.each do |child|
+                if child in ::Parser::AST::Node[:sym | :str, Symbol | String => value, *]
+                  name = value.to_s
                   matches = pins.select { |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance) }
                   matches.each do |pin|
                     # @todo Smelly instance variable access
@@ -172,24 +172,25 @@ module Solargraph
                   process_children region.update(visibility: visibility)
                 end
               end
-            else
-              # @todo Smelly instance variable access
-              region.instance_variable_set(:@visibility, node.children[1])
             end
           end
 
           # @return [void]
           def process_attribute
+            node => [:send, _, Symbol => attr_method, *args]
+
             # @sg-ignore Need to add nil check here
-            node.children[2..].each do |a|
+            args.each do |a|
+              # s(:sym, name) or s(:str, name); attr_reader(*X) passes s(:splat, s(:const, nil, :X))
+              attr_name = (a in [_, value, *]) ? value : nil
               loc = get_node_location(node)
               clos = region.closure
               cmnt = comments_for(node)
-              if %i[attr_reader attr_accessor].include?(node.children[1])
+              if %i[attr_reader attr_accessor].include?(attr_method)
                 pins.push Solargraph::Pin::Method.new(
                   location: loc,
                   closure: clos,
-                  name: a.children[0].to_s,
+                  name: attr_name.to_s,
                   comments: cmnt,
                   scope: region.scope || :instance,
                   visibility: region.visibility,
@@ -197,11 +198,11 @@ module Solargraph
                   source: :parser
                 )
               end
-              next unless %i[attr_writer attr_accessor].include?(node.children[1])
+              next unless %i[attr_writer attr_accessor].include?(attr_method)
               method_pin = Solargraph::Pin::Method.new(
                 location: loc,
                 closure: clos,
-                name: "#{a.children[0]}=",
+                name: "#{attr_name}=",
                 comments: cmnt,
                 scope: region.scope || :instance,
                 visibility: region.visibility,
@@ -234,10 +235,12 @@ module Solargraph
 
           # @return [void]
           def process_include
-            return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
+            node => [:send, _, _, *args]
+            return unless args in [::AST::Node[:const, *], *]
+
             cp = region.closure
             # @sg-ignore Need to add nil check here
-            node.children[2..].each do |i|
+            args.each do |i|
               type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
               pins.push type.new(
                 location: get_node_location(i),
@@ -250,10 +253,12 @@ module Solargraph
 
           # @return [void]
           def process_prepend
-            return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
+            node => [:send, _, _, *args]
+            return unless args in [::AST::Node[:const, *], *]
+
             cp = region.closure
             # @sg-ignore Need to add nil check here
-            node.children[2..].each do |i|
+            args.each do |i|
               pins.push Pin::Reference::Prepend.new(
                 location: get_node_location(i),
                 closure: cp,
@@ -278,12 +283,14 @@ module Solargraph
               prepend: Pin::Reference::Prepend
             }[keyword]
             return if reference_class.nil?
-            receiver = node.children[0]
+            # s(:send, receiver, keyword, *args) - the caller checked receiver is a constant
+            node => [:send, ::Parser::AST::Node => receiver, _, *args]
             target = unpack_name(receiver)
             return if target.nil? || target.empty?
             closure = Pin::Namespace.new(location: get_node_location(receiver), name: target, source: :parser)
-            node.children[2..].each do |arg|
-              next unless Parser.is_ast_node?(arg)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            args.each do |child|
+              next unless child in ::Parser::AST::Node => arg
               name = if arg.type == :self
                        region.closure&.full_context&.namespace
                      elsif arg.type == :const
@@ -301,8 +308,10 @@ module Solargraph
 
           # @return [void]
           def process_extend
+            node => [:send, _, _, *args]
+
             # @sg-ignore Need to add nil check here
-            node.children[2..].each do |i|
+            args.each do |i|
               loc = get_node_location(node)
               if i.type == :self
                 pins.push Pin::Reference::Extend.new(
@@ -368,27 +377,36 @@ module Solargraph
 
           # @return [void]
           def process_require
-            return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :str
-            path = node.children[2].children[0].to_s
+            # require 'path' - s(:send, nil, :require, s(:str, path))
+            return unless node in [:send, _, _, ::AST::Node[:str, String => value, *], *]
+
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            path = value.to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
 
           # @return [void]
           def process_autoload
-            return unless node.children[3].is_a?(AST::Node) && node.children[3].type == :str
-            path = node.children[3].children[0].to_s
+            # autoload :Name, 'path' - s(:send, nil, :autoload, s(:sym, name), s(:str, path))
+            return unless node in [:send, _, _, _, ::AST::Node[:str, String => value, *], *]
+
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            path = value.to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
 
           # @return [void]
           def process_module_function
-            if node.children[2].nil?
+            node => [:send, _, _, *args]
+
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            if args.empty?
               # @todo Smelly instance variable access
               region.instance_variable_set(:@visibility, :module_function)
-            elsif %i[sym str].include?(node.children[2].type)
+            elsif args in [[:sym | :str, *], *]
               # @sg-ignore Need to add nil check here
-              node.children[2..].each do |x|
-                cn = x.children[0].to_s
+              args.each do |x|
+                cn = (x in [_, Symbol | String => value, *]) ? value.to_s : ''
                 # @type [Pin::Method, nil]
                 ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
                 next if ref.nil?
@@ -436,15 +454,17 @@ module Solargraph
                   )
                 end
               end
-            elsif node.children[2].type == :def
-              NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals, ivars
+            elsif args in [::Parser::AST::Node[:def, *] => def_node, *]
+              NodeProcessor.process def_node, region.update(visibility: :module_function), pins, locals, ivars
             end
           end
 
           # @return [void]
           def process_private_constant
-            return unless node.children[2] && %i[sym str].include?(node.children[2].type)
-            cn = node.children[2].children[0].to_s
+            return unless node in [:send, _, _, [:sym | :str, Symbol | String => value, *], *]
+
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            cn = value.to_s
             ref = pins.select do |p|
               [Solargraph::Pin::Namespace,
                Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn
@@ -455,12 +475,18 @@ module Solargraph
 
           # @return [void]
           def process_alias_method
+            # alias_method :new, :old - s(:send, nil, :alias_method, s(:sym, new), s(:sym, old))
+            # only reached when both arguments are sym nodes (see #process)
+            node => [:send, _, _, [_, Symbol => new_name, *], [_, Symbol => original, *], *]
+
             get_node_location(node)
             pins.push Solargraph::Pin::MethodAlias.new(
               location: get_node_location(node),
               closure: region.closure,
-              name: node.children[2].children[0].to_s,
-              original: node.children[3].children[0].to_s,
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              name: new_name.to_s,
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              original: original.to_s,
               scope: region.scope || :instance,
               source: :parser
             )
@@ -468,9 +494,10 @@ module Solargraph
 
           # @return [Boolean]
           def process_private_class_method
-            if %i[sym str].include?(node.children[2].type)
+            if node in [:send, _, _, [:sym | :str, Symbol | String => value, *], *]
               ref = pins.select do |p|
-                p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == value.to_s
               end.first
               # HACK: Smelly instance variable access
               ref&.instance_variable_set(:@visibility, :private)
