@@ -4,6 +4,7 @@ module Solargraph
   module Pin
     class Reference
       class Extend < Reference
+        include ClosureRequired
       end
     end
   end
