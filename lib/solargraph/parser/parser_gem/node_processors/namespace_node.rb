@@ -8,9 +8,11 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             name = unpack_name(node.children[0])
             comments = comments_for(node)
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             superclass_name = if node.type == :class && node.children[1]&.type == :const
               "#{type_from_node}#{parameters_from_inline_rbs}"
             end
@@ -51,6 +53,7 @@ module Solargraph
             return unless superclass
 
             source = region.source.code
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             pos = get_node_end_position(superclass)
             offset = Position.line_char_to_offset(source, pos.line, pos.character)
             eol = source.index("\n", offset) || source.length
@@ -64,6 +67,7 @@ module Solargraph
           end
 
           def type_from_node
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             unpack_name(node.children[1]) if node.children[1]&.type == :const
           end
         end

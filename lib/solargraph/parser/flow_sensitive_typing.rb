@@ -25,8 +25,10 @@ module Solargraph
         return unless and_node.type == :and
 
         # @type [Parser::AST::Node]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         lhs = and_node.children[0]
         # @type [Parser::AST::Node]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         rhs = and_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -51,8 +53,10 @@ module Solargraph
         return unless or_node.type == :or
 
         # @type [Parser::AST::Node]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         lhs = or_node.children[0]
         # @type [Parser::AST::Node]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         rhs = or_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -105,8 +109,10 @@ module Solargraph
         # [4] pry(main)>
         conditional_node = if_node.children[0]
         # @type [Parser::AST::Node, nil]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         then_clause = if_node.children[1]
         # @type [Parser::AST::Node, nil]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         else_clause = if_node.children[2]
 
         unless enclosing_breakable_pin.nil?
@@ -152,6 +158,7 @@ module Solargraph
                                     get_node_end_position(else_clause))
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
@@ -175,6 +182,7 @@ module Solargraph
         # [4] pry(main)>
         conditional_node = while_node.children[0]
         # @type [Parser::AST::Node, nil]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         do_clause = while_node.children[1]
 
         unless do_clause.nil?
@@ -187,6 +195,7 @@ module Solargraph
                                    get_node_end_position(do_clause))
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
@@ -265,11 +274,13 @@ module Solargraph
         #     s(:const, nil, :Baz)),
         #
         call_receiver = call_node.children[0]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         call_arg = type_name(call_node.children[2])
 
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
           variable_name = call_receiver.children[1].to_s
         end
@@ -392,6 +403,7 @@ module Solargraph
         receiver = bang_node.children[0]
 
         # swap the two presences
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         process_expression(receiver, false_presences, true_presences)
       end
 
@@ -441,8 +453,10 @@ module Solargraph
         #  s(:const, nil, :Baz)
         return unless node&.type == :const
         # @type [Parser::AST::Node, nil]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         module_node = node.children[0]
         # @type [Parser::AST::Node, nil]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?
