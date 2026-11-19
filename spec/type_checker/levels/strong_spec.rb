@@ -1344,6 +1344,16 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+    it 'ignores calls on an undefined return value from a gem method' do
+      checker = type_checker_with_gems(%(
+        require 'kramdown-parser-gfm'
+
+        value = Kramdown::Parser::GFM.new(nil, nil).parse
+        value.no_such_method
+      ), ['kramdown-parser-gfm'])
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to no_such_method')
+    end
+
     it 'resolves methods delegated from a class variable' do
       checker = type_checker_with_gems(%(
         require 'forwardable'
