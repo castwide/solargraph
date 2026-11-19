@@ -564,4 +564,28 @@ describe Solargraph::Source::Chain do
     type = chain.infer(api_map, obj_fn_pin, api_map.source_map('test.rb').locals)
     expect(type.to_s).to eq('String')
   end
+
+  it 'infers return types from the RBS overload matching the argument type after combining with a YARD pin' do
+    rbs_pin = Solargraph::ApiMap.new.get_method_stack('Integer', '+').first
+    yard_pin = Solargraph::Pin::Method.new(closure: rbs_pin.closure, name: '+', scope: :instance, comments: %(
+@overload +(other)
+  @param other [Integer]
+  @return [Integer]
+    ))
+    api_map = Solargraph::ApiMap.new(pins: [rbs_pin.combine_with(yard_pin)])
+    source = Solargraph::Source.load_string(%(
+1 + 1
+1 + 1.0
+1 + Rational(1, 2)
+1 + Complex(1, 2)
+    ), 'test.rb')
+    infer = lambda do |line|
+      chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(line, 2))
+      chain.infer(api_map, Solargraph::Pin::ROOT_PIN, []).to_s
+    end
+    expect(infer.call(1)).to eq('Integer')
+    expect(infer.call(2)).to eq('Float')
+    expect(infer.call(3)).to eq('Rational')
+    expect(infer.call(4)).to eq('Complex')
+  end
 end

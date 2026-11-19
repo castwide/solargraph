@@ -112,23 +112,31 @@ module Solargraph
         [generics, blockless_parameters.map(&:arity_decl), block&.arity]
       end
 
-      # e.g., [["T"], "1", "?3", "foo:5"] - parameter arity
-      #   declarations, including the number of unique types in each
-      #   parameter.  Used to determine whether combining two
-      #   signatures has lost useful information mapping specific
-      #   parameter types to specific return types.
+      # Whether +other+ declares the same parameter types, so merging cannot
+      # take away an argument type's ability to select a return type.  Return
+      # types are excluded: widening one is the purpose of merging.  An
+      # undefined parameter type matches any type, as it has nothing to
+      # select a return type with.
       #
-      # @return [Array<Array, String, nil>]
-      def type_arity
-        [generics, blockless_parameters.map(&:type_arity_decl), block&.type_arity]
-      end
+      # Rootedness is ignored deliberately: GemPins.combine matches a YARD
+      # pin, whose types are still unqualified, against its RBS counterpart,
+      # whose types are rooted, so String and ::String are one overload here.
+      #
+      # @param other [Callable]
+      # @return [Boolean]
+      def same_parameter_types? other
+        return false unless generics == other.generics
+        return false unless block.nil? == other.block.nil?
+        types = blockless_parameters.map(&:return_type)
+        other_types = other.blockless_parameters.map(&:return_type)
+        return false unless types.length == other_types.length
+        # @param type [ComplexType]
+        # @param other_type [ComplexType]
+        return false unless types.zip(other_types).all? do |type, other_type|
+          type.undefined? || other_type.undefined? || type.tags == other_type.tags
+        end
 
-      # Same as type_arity, but includes return type arity at the front.
-      #
-      # @return [Array<Array, String, nil>]
-      def full_type_arity
-        # @sg-ignore flow sensitive typing needs to handle attrs
-        [return_type ? return_type.items.count.to_s : nil] + type_arity
+        block.nil? || block.same_parameter_types?(other.block)
       end
 
       # @param generics_to_resolve [Enumerable<String>]
