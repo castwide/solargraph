@@ -118,8 +118,7 @@ describe Solargraph::ApiMap do
   end
 
   describe '#get_method_stack' do
-    let(:out) { StringIO.new }
-    let(:api_map) { described_class.load_with_cache(Dir.pwd, out) }
+    let(:api_map) { described_class.load('') }
 
     context 'with stdlib that has vital dependencies' do
       let(:external_requires) { ['yaml'] }
@@ -131,8 +130,13 @@ describe Solargraph::ApiMap do
     end
 
     context 'with thor' do
+      # A bundle gem, unlike the stdlib above, has to be cached before its
+      # pins exist.
+      let(:api_map) { described_class.new }
       let(:external_requires) { ['thor'] }
       let(:method_stack) { api_map.get_method_stack('Thor', 'desc', scope: :class) }
+
+      before { cache_unloaded_gems(api_map, bench) }
 
       it 'handles finding Thor.desc' do
         expect(method_stack).not_to be_empty
