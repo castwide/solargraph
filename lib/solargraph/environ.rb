@@ -19,15 +19,20 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :yard_plugins
 
+    # @return [Array<CodeLens>]
+    attr_reader :code_lenses
+
     # @param requires [Array<String>]
     # @param domains [Array<String>]
     # @param pins [Array<Pin::Base>]
     # @param yard_plugins [Array<String>]
-    def initialize requires: [], domains: [], pins: [], yard_plugins: []
+    # @param code_lenses [Array<CodeLens>]
+    def initialize requires: [], domains: [], pins: [], yard_plugins: [], code_lenses: []
       @requires = requires
       @domains = domains
       @pins = pins
       @yard_plugins = yard_plugins
+      @code_lenses = code_lenses
     end
 
     # @return [self]
@@ -36,6 +41,7 @@ module Solargraph
       requires.clear
       pins.clear
       yard_plugins.clear
+      code_lenses.clear
       self
     end
 
@@ -46,6 +52,7 @@ module Solargraph
       requires.concat other.requires
       pins.concat other.pins
       yard_plugins.concat other.yard_plugins
+      code_lenses.concat other.code_lenses
       self
     end
   end

@@ -5,9 +5,10 @@ module Solargraph
     module Message
       class Initialized < Base
         def process
-          # @todo Temporarily removed textDocument/codeAction
           host.register_capabilities %w[
             textDocument/completion
+            textDocument/codeAction
+            textDocument/codeLens
             textDocument/hover
             textDocument/signatureHelp
             textDocument/formatting
