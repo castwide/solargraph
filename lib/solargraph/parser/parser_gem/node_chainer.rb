@@ -77,9 +77,9 @@ module Solargraph
           elsif n.type == :csend
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
+              result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             elsif n.children[0].nil?
-              result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
+              result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             else
               raise "No idea what to do with #{n}"
             end
