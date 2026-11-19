@@ -712,6 +712,66 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.complete.pins.map(&:path)).to include('Par#hidden')
   end
 
+  it 'keeps the @yieldreceiver of an enclosing block in nested blocks' do
+    source = Solargraph::Source.load_string(%(
+      class Par
+        def action; end
+        def scope; yield; end
+      end
+      # @yieldreceiver [Par]
+      def bar; end
+      bar do
+        scope do
+          action
+        end
+      end
+    ), 'file.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('file.rb', [9, 12])
+    expect(clip.define.map(&:path)).to eq(['Par#action'])
+  end
+
+  it 'resolves the receiver of a block call inside a rebound block' do
+    source = Solargraph::Source.load_string(%(
+      class Par
+        def scope; yield; end
+      end
+      # @yieldreceiver [Par]
+      def bar; end
+      bar do
+        scope do
+        end
+      end
+    ), 'file.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('file.rb', [7, 10])
+    expect(clip.define.map(&:path)).to eq(['Par#scope'])
+  end
+
+  it 'resolves the receiver of a block call once the block is rebound' do
+    source = Solargraph::Source.load_string(%(
+      class Baz; end
+      class Foo
+        # @yieldreceiver [Baz]
+        def baz; end
+      end
+      # @yieldreceiver [Foo]
+      def bar; end
+      bar do
+        baz do
+          x
+        end
+      end
+    ), 'file.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    api_map.clip_at('file.rb', [10, 10]).complete
+    clip = api_map.clip_at('file.rb', [9, 9])
+    expect(clip.define.map(&:path)).to eq(['Foo#baz'])
+  end
+
   it 'infers instance variable types in rebound blocks' do
     source = Solargraph::Source.load_string(%(
       class Foo

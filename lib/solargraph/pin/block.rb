@@ -33,6 +33,9 @@ module Solargraph
 
       def binder
         out = @rebind if @rebind&.defined?
+        # a block without its own receiver runs with the enclosing block's self
+        enclosing = closure
+        out ||= enclosing.binder if enclosing.is_a?(Block)
         out ||= super
       end
 
@@ -96,6 +99,8 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def maybe_rebind api_map
+        enclosing = closure
+        enclosing.rebind(api_map) if enclosing.is_a?(Block)
         return ComplexType::UNDEFINED unless receiver
 
         # @sg-ignore Need to add nil check here
