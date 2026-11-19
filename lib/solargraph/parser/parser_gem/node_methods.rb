@@ -223,7 +223,7 @@ module Solargraph
             end
             # @sg-ignore Need to add nil check here
             node.children[1..].each { |child| result.concat call_nodes_from(child) }
-          elsif node.type == :send
+          elsif %i[send csend].include?(node.type)
             result.push node
             result.concat call_nodes_from(node.children.first)
             # @sg-ignore Need to add nil check here
